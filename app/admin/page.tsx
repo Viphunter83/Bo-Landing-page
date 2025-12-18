@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react'
 import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import AdminOrderModal from '../components/AdminOrderModal'
 
 export const dynamic = 'force-dynamic'
 
 export default function AdminDashboard() {
     const [bookings, setBookings] = useState<any[]>([])
     const [stats, setStats] = useState({ total: 0, pending: 0, today: 0 })
+    const [filter, setFilter] = useState('all')
+    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
 
     useEffect(() => {
         if (!db) return
@@ -33,45 +36,84 @@ export default function AdminDashboard() {
         await updateDoc(doc(db, 'bookings', id), { status })
     }
 
+    const filteredBookings = filter === 'all'
+        ? bookings
+        : bookings.filter(b => b.type === filter || (!b.type && filter === 'dine_in')) // backwards compat
+
     return (
         <div className="space-y-8">
-            <div>
-                <h2 className="text-3xl font-bold mb-2">Dashboard</h2>
-                <p className="text-zinc-400">Welcome back to Bo OS.</p>
+            <div className="flex justify-between items-end">
+                <div>
+                    <h2 className="text-3xl font-bold mb-2">Unified Orders</h2>
+                    <p className="text-zinc-400">Manage Dine-in, Delivery, and Pickup orders.</p>
+                </div>
+                <button
+                    onClick={() => setIsOrderModalOpen(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2"
+                >
+                    + New Order
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <StatCard title="Total Bookings" value={stats.total.toString()} change={`${stats.today} today`} />
-                <StatCard title="Pending" value={stats.pending.toString()} change="Action needed" color="text-yellow-500" />
-                <StatCard title="Vibe Check Stats" value="Spicy" change="Trending today" />
+                <StatCard title="Total Orders" value={stats.total.toString()} change={`${stats.today} today`} />
+                <StatCard title="Pending Action" value={stats.pending.toString()} change="Needs attention" color="text-yellow-500" />
+                <StatCard title="Active Mode" value={filter.toUpperCase()} change="Filter applied" />
             </div>
 
             {/* Quick Actions */}
             <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-                <h3 className="text-xl font-bold mb-4">Recent Bookings</h3>
+                <div className="flex gap-4 border-b border-zinc-800 mb-6">
+                    {['all', 'dine_in', 'delivery', 'pickup'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setFilter(tab)}
+                            className={`pb-3 px-1 text-sm font-medium capitalize transition-colors ${filter === tab
+                                ? 'text-red-500 border-b-2 border-red-500'
+                                : 'text-zinc-400 hover:text-white'
+                                }`}
+                        >
+                            {tab.replace('_', ' ')}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm text-zinc-400">
                         <thead className="bg-zinc-800/50 text-zinc-200 uppercase font-medium">
                             <tr>
-                                <th className="p-3">Guest</th>
-                                <th className="p-3">Date & Time</th>
-                                <th className="p-3">Guests</th>
+                                <th className="p-3">Type</th>
+                                <th className="p-3">Customer</th>
+                                <th className="p-3">Details</th>
+                                <th className="p-3">Notes/Items</th>
                                 <th className="p-3">Status</th>
                                 <th className="p-3">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800">
-                            {bookings.map((booking) => (
+                            {filteredBookings.map((booking) => (
                                 <tr key={booking.id} className="hover:bg-zinc-800/20 transition-colors">
+                                    <td className="p-3">
+                                        <Badge type={booking.type || 'dine_in'} />
+                                    </td>
                                     <td className="p-3">
                                         <div className="font-bold text-white">{booking.name}</div>
                                         <div className="text-xs">{booking.phone}</div>
+                                        {booking.address && (
+                                            <div className="text-xs text-zinc-500 mt-1 flex gap-1 items-center">
+                                                📍 {booking.address}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="p-3">
                                         <div className="text-white">{booking.date}</div>
                                         <div className="text-xs">{booking.time}</div>
+                                        <div className="text-xs mt-1">{booking.guests} ppl</div>
                                     </td>
-                                    <td className="p-3">{booking.guests} ppl</td>
+                                    <td className="p-3 max-w-xs">
+                                        <div className="truncate text-white">{booking.items || '-'}</div>
+                                        <div className="text-xs text-zinc-500 truncate">{booking.specialRequests || booking.notes}</div>
+                                    </td>
                                     <td className="p-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${booking.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
                                             booking.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
@@ -84,10 +126,10 @@ export default function AdminDashboard() {
                                         {booking.status === 'pending' && (
                                             <>
                                                 <button onClick={() => updateStatus(booking.id, 'confirmed')} className="text-green-500 hover:text-green-400 font-medium text-xs border border-green-500/30 px-2 py-1 rounded">
-                                                    Confirm
+                                                    Accept
                                                 </button>
                                                 <button onClick={() => updateStatus(booking.id, 'cancelled')} className="text-red-500 hover:text-red-400 font-medium text-xs border border-red-500/30 px-2 py-1 rounded">
-                                                    Cancel
+                                                    Reject
                                                 </button>
                                             </>
                                         )}
@@ -96,12 +138,32 @@ export default function AdminDashboard() {
                             ))}
                         </tbody>
                     </table>
-                    {bookings.length === 0 && (
-                        <div className="p-8 text-center text-zinc-500">No bookings found.</div>
+                    {filteredBookings.length === 0 && (
+                        <div className="p-8 text-center text-zinc-500">No orders found in this category.</div>
                     )}
                 </div>
             </div>
+
+            <AdminOrderModal
+                isOpen={isOrderModalOpen}
+                onClose={() => setIsOrderModalOpen(false)}
+            />
         </div>
+    )
+}
+
+function Badge({ type }: { type: string }) {
+    const colors = {
+        dine_in: 'bg-purple-500/20 text-purple-400',
+        delivery: 'bg-blue-500/20 text-blue-400',
+        pickup: 'bg-orange-500/20 text-orange-400'
+    }
+    // @ts-ignore
+    const color = colors[type] || colors.dine_in
+    return (
+        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${color}`}>
+            {type.replace('_', ' ')}
+        </span>
     )
 }
 

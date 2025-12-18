@@ -3,7 +3,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
     try {
-        const { name, phone, date, time, guests, specialRequests } = await request.json();
+        const {
+            name, phone, date, time, guests, specialRequests,
+            type = 'dine_in',
+            address,
+            items,
+            source = 'web'
+        } = await request.json();
 
         const token = process.env.TELEGRAM_BOT_TOKEN;
         const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -13,16 +19,40 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Configuration error' }, { status: 500 });
         }
 
+        // 1. Determine Header based on Type
+        let header = '🍽️ *New Table Booking!*';
+        if (type === 'delivery') header = '🛵 *New Delivery Order!*';
+        if (type === 'pickup') header = '🛍️ *New Pickup Order!*';
+
+        // 2. Format Address (Google Maps Link)
+        let locationSection = '';
+        if (type === 'delivery' && address) {
+            const encodedAddress = encodeURIComponent(address);
+            locationSection = `📍 *Address:* [${address}](https://www.google.com/maps/search/?api=1&query=${encodedAddress})\n`;
+        }
+
+        // 3. Format Items
+        let itemsSection = '';
+        if (items) {
+            itemsSection = `📦 *Order:* \n${items}\n`;
+        }
+
+        // 4. Source Badge
+        const sourceBadge = source === 'manual' ? '🛠️ *Admin Created*' : '🌐 *Web Booking*';
+
         const message = `
-🔥 *New Booking!*
+${header}
 
 👤 *Name:* ${name}
 📞 *Phone:* ${phone}
 📅 *Date:* ${date}
 ⏰ *Time:* ${time}
-👥 *Guests:* ${guests}
+${guests ? `👥 *Guests:* ${guests}` : ''}
+${locationSection}
+${itemsSection}
 ${specialRequests ? `📝 *Note:* ${specialRequests}` : ''}
 
+${sourceBadge}
 _Sent from Bo OS_
     `.trim();
 
@@ -35,6 +65,7 @@ _Sent from Bo OS_
                 chat_id: chatId,
                 text: message,
                 parse_mode: 'Markdown',
+                disable_web_page_preview: true
             }),
         });
 

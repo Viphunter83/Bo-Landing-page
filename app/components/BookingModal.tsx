@@ -82,7 +82,11 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
     fetch('/api/notifications/telegram', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
+      body: JSON.stringify({
+        ...formData,
+        type: 'dine_in',
+        source: 'web'
+      })
     }).catch(err => console.error("Failed to send telegram notification", err))
   }
 
