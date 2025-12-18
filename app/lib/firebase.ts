@@ -13,6 +13,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// Safe initialization for build time
 const db = getFirestore(app);
 const auth = getAuth(app);
 

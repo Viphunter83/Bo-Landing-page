@@ -6,6 +6,8 @@ import { db } from '../../lib/firebase'
 import { fullMenu } from '../../data/menuData'
 import { content } from '../../data/content'
 
+export const dynamic = 'force-dynamic'
+
 export default function MigrationPage() {
     const [status, setStatus] = useState('Idle')
     const [log, setLog] = useState<string[]>([])

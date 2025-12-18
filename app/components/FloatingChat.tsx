@@ -62,7 +62,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
 
     useEffect(() => {
         scrollToBottom()
-    }, [messages])
+    }, [messages.length])
 
     // Initial greeting
     useEffect(() => {
