@@ -54,7 +54,7 @@ export class ProxyAIProvider implements AIProvider {
                     'Authorization': `Bearer ${this.apiKey}`
                 },
                 body: JSON.stringify({
-                    model: 'gpt-4o-mini', // Cost-effective and fast
+                    model: 'gpt-3.5-turbo', // Fallback to stable model
                     messages: apiMessages,
                     max_tokens: 300,
                     temperature: 0.7
