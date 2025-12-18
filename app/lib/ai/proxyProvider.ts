@@ -67,7 +67,8 @@ export class ProxyAIProvider implements AIProvider {
             return data.choices[0].message.content
         } catch (error) {
             console.error('ProxyAI Error:', error)
-            return "I'm a bit overwhelmed right now. Can you repeat that?"
+            console.error('ProxyAI Error:', error)
+            return `System Error: ${error instanceof Error ? error.message : 'Unknown AI Error'}. (Please check Vercel Logs)`
         }
     }
 }
