@@ -8,7 +8,7 @@ interface Message {
     content: string
 }
 
-export default function FloatingChat({ lang, activeVibe }: { lang: string, activeVibe: string }) {
+export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang: string, activeVibe: string, onVibeChange?: (vibe: string) => void }) {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
@@ -37,7 +37,22 @@ export default function FloatingChat({ lang, activeVibe }: { lang: string, activ
                 })
             })
             const data = await response.json()
-            if (data.content) setMessages(prev => [...prev, { role: 'assistant', content: data.content }])
+            if (data.content) {
+                let content = data.content
+
+                // Agentic Vibe Check
+                const vibeMatch = content.match(/\[VIBE: (\w+)\]/)
+                if (vibeMatch) {
+                    const newVibe = vibeMatch[1].toLowerCase()
+                    if (['classic', 'spicy', 'vegan', 'seafood', 'sweet'].includes(newVibe)) {
+                        onVibeChange?.(newVibe)
+                        // Remove tag from display
+                        content = content.replace(/\[VIBE: \w+\]/, '').trim()
+                    }
+                }
+
+                setMessages(prev => [...prev, { role: 'assistant', content: content }])
+            }
         } catch (e) { console.error(e) } finally { setIsLoading(false) }
     }
 
@@ -84,7 +99,19 @@ export default function FloatingChat({ lang, activeVibe }: { lang: string, activ
             const data = await response.json()
 
             if (data.content) {
-                setMessages(prev => [...prev, { role: 'assistant', content: data.content }])
+                let content = data.content
+
+                // Agentic Vibe Check
+                const vibeMatch = content.match(/\[VIBE: (\w+)\]/)
+                if (vibeMatch) {
+                    const newVibe = vibeMatch[1].toLowerCase()
+                    if (['classic', 'spicy', 'vegan', 'seafood', 'sweet'].includes(newVibe)) {
+                        onVibeChange?.(newVibe)
+                        content = content.replace(/\[VIBE: \w+\]/, '').trim()
+                    }
+                }
+
+                setMessages(prev => [...prev, { role: 'assistant', content: content }])
             }
         } catch (error) {
             console.error('Failed to chat', error)

@@ -97,7 +97,7 @@ export default function Home({
       />
       <SocialProof t={content[lang as keyof typeof content]} />
       <FAQ lang={lang} />
-      <FloatingChat lang={lang} activeVibe={activeVibe} />
+      <FloatingChat lang={lang} activeVibe={activeVibe} onVibeChange={handleVibeChange} />
       <Footer lang={lang} t={content[lang as keyof typeof content]} />
 
       {/* Sticky Mobile CTA */}
