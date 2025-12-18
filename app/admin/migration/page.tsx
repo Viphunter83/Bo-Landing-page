@@ -18,12 +18,13 @@ export default function MigrationPage() {
         if (!db) return
         addLog('Starting Menu Migration...')
         try {
-            const batch = writeBatch(db)
+            const firestore = db
+            const batch = writeBatch(firestore)
 
-            fullMenu.forEach((item) => {
-                const ref = doc(db, 'menu_items', item.id)
+            for (const item of fullMenu) {
+                const ref = doc(firestore, 'menu_items', item.id)
                 batch.set(ref, item)
-            })
+            }
 
             await batch.commit()
             addLog(`Success: Migrated ${fullMenu.length} menu items.`)
@@ -37,13 +38,14 @@ export default function MigrationPage() {
         if (!db) return
         addLog('Starting Content Migration...')
         try {
-            const batch = writeBatch(db)
+            const firestore = db
+            const batch = writeBatch(firestore)
 
             // content is { en: {...}, ru: {...}, ar: {...} }
-            Object.entries(content).forEach(([lang, data]) => {
-                const ref = doc(db, 'site_content', lang)
+            for (const [lang, data] of Object.entries(content)) {
+                const ref = doc(firestore, 'site_content', lang)
                 batch.set(ref, data)
-            })
+            }
 
             await batch.commit()
             addLog(`Success: Migrated content for ${Object.keys(content).join(', ')}.`)

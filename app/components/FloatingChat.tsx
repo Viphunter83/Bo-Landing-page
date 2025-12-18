@@ -62,6 +62,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
 
     useEffect(() => {
         scrollToBottom()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [messages.length])
 
     // Initial greeting

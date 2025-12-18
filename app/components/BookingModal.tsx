@@ -77,6 +77,13 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
       alert("Failed to send booking. Please try again or call use directly.")
       setIsSubmitted(false)
     }
+
+    // Send Telegram Notification (Non-blocking)
+    fetch('/api/notifications/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    }).catch(err => console.error("Failed to send telegram notification", err))
   }
 
   const isRTL = lang === 'ar'
