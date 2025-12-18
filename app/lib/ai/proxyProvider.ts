@@ -5,7 +5,7 @@ export class ProxyAIProvider implements AIProvider {
     private apiKey: string
 
     constructor() {
-        this.apiKey = process.env.PROXY_API_KEY || ''
+        this.apiKey = (process.env.PROXY_API_KEY || '').trim()
     }
 
     async generateResponse(messages: ChatMessage[], context?: any): Promise<string> {
@@ -13,6 +13,8 @@ export class ProxyAIProvider implements AIProvider {
             console.error('PROXY_API_KEY is missing')
             return "I'm having trouble connecting to my brain right now. Please tell the administrator to check my API key! 🤖"
         }
+
+        console.log('Using ProxyAPI Key:', this.apiKey.substring(0, 8) + '...')
 
         // 1. Build System Prompt with Menu Context
         const menuContext = fullMenu.map(d => `${d.name} (${d.price}): ${d.desc}`).join('\n')
