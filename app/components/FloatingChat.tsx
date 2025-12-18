@@ -8,12 +8,38 @@ interface Message {
     content: string
 }
 
-export default function FloatingChat({ lang }: { lang: string }) {
+export default function FloatingChat({ lang, activeVibe }: { lang: string, activeVibe: string }) {
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+
+    // Trigger Surprise Me
+    const handleSurpriseMe = async () => {
+        if (isLoading) return
+        setIsOpen(true)
+        const surprisePrompt = lang === 'ru'
+            ? `Посоветуй что-нибудь неожиданное из категории ${activeVibe}`
+            : `Surprise me with something ${activeVibe}`
+
+        // Add fake user message for UI
+        setMessages(prev => [...prev, { role: 'user', content: "✨ Surprise Me!" }])
+        setIsLoading(true)
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [{ role: 'user', content: surprisePrompt }],
+                    context: { activeVibe }
+                })
+            })
+            const data = await response.json()
+            if (data.content) setMessages(prev => [...prev, { role: 'assistant', content: data.content }])
+        } catch (e) { console.error(e) } finally { setIsLoading(false) }
+    }
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -50,7 +76,8 @@ export default function FloatingChat({ lang }: { lang: string }) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    messages: [...messages, { role: 'user', content: userMessage }]
+                    messages: [...messages, { role: 'user', content: userMessage }],
+                    context: { activeVibe }
                 })
             })
 
@@ -106,6 +133,20 @@ export default function FloatingChat({ lang }: { lang: string }) {
                     </button>
                 </div>
 
+
+                {/* Quick Actions (only if empty) */}
+                {messages.length <= 1 && (
+                    <div className="px-4 pt-2 -mb-2">
+                        <button
+                            onClick={handleSurpriseMe}
+                            disabled={isLoading}
+                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs py-2 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                        >
+                            <Sparkles size={12} />
+                            {lang === 'ru' ? 'Удиви меня!' : 'Surprise Me!'}
+                        </button>
+                    </div>
+                )}
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[300px] scrollbar-thin scrollbar-thumb-zinc-800">
                     {messages.map((msg, idx) => (
@@ -115,8 +156,8 @@ export default function FloatingChat({ lang }: { lang: string }) {
                         >
                             <div
                                 className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === 'user'
-                                        ? 'bg-white text-black font-medium rounded-tr-sm'
-                                        : 'bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-tl-sm'
+                                    ? 'bg-white text-black font-medium rounded-tr-sm'
+                                    : 'bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-tl-sm'
                                     }`}
                             >
                                 {msg.content}
@@ -154,7 +195,7 @@ export default function FloatingChat({ lang }: { lang: string }) {
                         </button>
                     </div>
                 </form>
-            </div>
+            </div >
         </>
     )
 }
