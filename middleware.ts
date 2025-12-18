@@ -10,6 +10,7 @@ export function middleware(request: NextRequest) {
     // Ignore admin routes and static files
     if (
         pathname.startsWith('/admin') ||
+        pathname.startsWith('/api') ||
         pathname.startsWith('/_next') ||
         pathname.includes('.') ||
         pathname === '/favicon.ico'
