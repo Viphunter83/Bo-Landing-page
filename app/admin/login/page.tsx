@@ -11,6 +11,10 @@ export default function AdminLogin() {
     const router = useRouter()
 
     const handleLogin = async () => {
+        if (!auth) {
+            setError('Auth not initialized')
+            return
+        }
         try {
             const provider = new GoogleAuthProvider()
             await signInWithPopup(auth, provider)

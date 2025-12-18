@@ -15,6 +15,7 @@ export default function MigrationPage() {
     const addLog = (msg: string) => setLog(prev => [...prev, msg])
 
     const migrateMenu = async () => {
+        if (!db) return
         addLog('Starting Menu Migration...')
         try {
             const batch = writeBatch(db)
@@ -33,6 +34,7 @@ export default function MigrationPage() {
     }
 
     const migrateContent = async () => {
+        if (!db) return
         addLog('Starting Content Migration...')
         try {
             const batch = writeBatch(db)

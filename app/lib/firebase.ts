@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,11 +13,22 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = (!getApps().length && firebaseConfig.apiKey)
-    ? initializeApp(firebaseConfig)
-    : (getApps().length ? getApp() : {} as any);
+const getFirebaseApp = () => {
+    if (getApps().length) {
+        return getApp();
+    }
+    if (firebaseConfig.apiKey) {
+        return initializeApp(firebaseConfig);
+    }
+    console.warn("Firebase API Key missing in environment variables.");
+    return null;
+};
 
-const db = firebaseConfig.apiKey ? getFirestore(app) : {} as any;
-const auth = firebaseConfig.apiKey ? getAuth(app) : {} as any;
+const app = getFirebaseApp();
 
-export { app, db, auth };
+const db = app ? getFirestore(app) : null;
+const auth = app ? getAuth(app) : null;
+// Only init storage if app exists AND bucket is configures, otherwise safe fallback
+const storage = (app && firebaseConfig.storageBucket) ? getStorage(app) : null;
+
+export { app, db, auth, storage };

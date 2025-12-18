@@ -21,6 +21,8 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
   const [liveData, setLiveData] = useState<Record<string, any>>({})
 
   useEffect(() => {
+    if (!db) return // Skip if firebase not init
+
     // Listen to real-time menu updates
     const unsubscribe = onSnapshot(collection(db, 'menu_items'), (snapshot) => {
       const updates: Record<string, any> = {}

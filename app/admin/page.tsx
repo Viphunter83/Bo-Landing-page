@@ -11,6 +11,7 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState({ total: 0, pending: 0, today: 0 })
 
     useEffect(() => {
+        if (!db) return
         const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'), limit(50))
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
@@ -72,8 +73,8 @@ export default function AdminDashboard() {
                                     <td className="p-3">{booking.guests} ppl</td>
                                     <td className="p-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${booking.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
-                                                booking.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
-                                                    'bg-yellow-500/20 text-yellow-500'
+                                            booking.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
+                                                'bg-yellow-500/20 text-yellow-500'
                                             }`}>
                                             {booking.status.toUpperCase()}
                                         </span>

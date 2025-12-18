@@ -18,6 +18,7 @@ export default function AdminLayout({
     const pathname = usePathname()
 
     useEffect(() => {
+        if (!auth) return
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user)
             setLoading(false)
@@ -95,8 +96,8 @@ function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; l
         <Link
             href={href}
             className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${isActive
-                    ? 'bg-zinc-800 text-white'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+                ? 'bg-zinc-800 text-white'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
                 }`}
         >
             {icon}

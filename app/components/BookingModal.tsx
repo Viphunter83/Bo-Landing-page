@@ -33,6 +33,16 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
     // Basic validation
     if (!formData.date || !formData.time || !formData.name || !formData.phone) return
 
+    if (!db) {
+      alert("System unavailable: Database not connected.")
+      return
+    }
+
+    if (!db) {
+      alert("System unavailable: Database not connected.")
+      return
+    }
+
     setIsSubmitted(true) // Show loading state if needed, or better validation feedback
 
     try {
