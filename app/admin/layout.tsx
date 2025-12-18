@@ -31,6 +31,7 @@ export default function AdminLayout({
     }, [pathname, router])
 
     const handleSignOut = async () => {
+        if (!auth) return
         await signOut(auth)
         router.push('/admin/login')
     }

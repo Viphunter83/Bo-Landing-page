@@ -29,6 +29,7 @@ export default function AdminDashboard() {
     }, [])
 
     const updateStatus = async (id: string, status: string) => {
+        if (!db) return
         await updateDoc(doc(db, 'bookings', id), { status })
     }
 

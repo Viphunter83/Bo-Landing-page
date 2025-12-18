@@ -44,6 +44,10 @@ export default function MenuManager() {
     }
 
     const handleSave = async () => {
+        if (!db) {
+            alert("Database connection failed")
+            return
+        }
         try {
             if (isCreating) {
                 await addDoc(collection(db, 'menu_items'), editForm)
@@ -59,6 +63,7 @@ export default function MenuManager() {
     }
 
     const handleDelete = async (id: string, name: string) => {
+        if (!db) return
         if (!confirm(`Are you sure you want to delete "${name}"?`)) return
         try {
             await deleteDoc(doc(db, 'menu_items', id))
