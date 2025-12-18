@@ -12,10 +12,11 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const app = (!getApps().length && firebaseConfig.apiKey)
+    ? initializeApp(firebaseConfig)
+    : (getApps().length ? getApp() : {} as any);
 
-// Safe initialization for build time
-const db = getFirestore(app);
-const auth = getAuth(app);
+const db = firebaseConfig.apiKey ? getFirestore(app) : {} as any;
+const auth = firebaseConfig.apiKey ? getAuth(app) : {} as any;
 
 export { app, db, auth };
