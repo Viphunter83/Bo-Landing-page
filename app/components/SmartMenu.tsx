@@ -13,7 +13,24 @@ interface SmartMenuProps {
   activeVibe?: string
 }
 
+import { useEffect, useState } from 'react'
+import { collection, onSnapshot } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+
 export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activeVibe }: SmartMenuProps) {
+  const [liveData, setLiveData] = useState<Record<string, any>>({})
+
+  useEffect(() => {
+    // Listen to real-time menu updates
+    const unsubscribe = onSnapshot(collection(db, 'menu_items'), (snapshot) => {
+      const updates: Record<string, any> = {}
+      snapshot.forEach((doc) => {
+        updates[doc.id] = doc.data()
+      })
+      setLiveData(updates)
+    })
+    return () => unsubscribe()
+  }, [])
   // Get featured dishes based on active vibe or show default
   const featuredDishes = activeVibe && activeVibe !== 'all'
     ? getMenuByCategory(activeVibe).slice(0, 3)
@@ -40,7 +57,14 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {featuredDishes.map((dish, index) => {
+          {featuredDishes.map((staticDish, index) => {
+            // Merge static data with live data (if available)
+            const liveItem = liveData[staticDish.id]
+            const dish = liveItem ? { ...staticDish, ...liveItem } : staticDish
+
+            // Skip if out of stock (optional, or just show badge)
+            // if (dish.stock === 'out_of_stock') return null 
+
             const name = lang === 'en' ? dish.name : lang === 'ru' ? dish.nameRu : dish.nameAr
             const desc = lang === 'en' ? dish.desc : lang === 'ru' ? dish.descRu : dish.descAr
             const tag = dish.tag && (lang === 'en' ? dish.tag : lang === 'ru' ? dish.tagRu : dish.tagAr)
@@ -57,11 +81,18 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
                       {tag}
                     </div>
                   )}
+                  {dish.stock === 'out_of_stock' && (
+                    <div className="absolute inset-0 z-20 bg-black/70 flex items-center justify-center">
+                      <span className="text-red-500 font-black text-3xl -rotate-12 border-4 border-red-500 px-4 py-2 rounded">
+                        SOLD OUT
+                      </span>
+                    </div>
+                  )}
                   <Image
                     src={dish.image}
                     alt={name}
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    className={`object-cover transition-transform duration-700 group-hover:scale-110 ${dish.stock === 'out_of_stock' ? 'grayscale' : ''}`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
                       target.src = 'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1000&q=80'

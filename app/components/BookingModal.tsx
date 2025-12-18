@@ -10,6 +10,9 @@ interface BookingModalProps {
   t: any
 }
 
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+
 export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalProps) {
   const [formData, setFormData] = useState({
     date: '',
@@ -24,11 +27,27 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
 
   if (!isOpen) return null
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate booking submission
-    setTimeout(() => {
+
+    // Basic validation
+    if (!formData.date || !formData.time || !formData.name || !formData.phone) return
+
+    setIsSubmitted(true) // Show loading state if needed, or better validation feedback
+
+    try {
+      await addDoc(collection(db, 'bookings'), {
+        ...formData,
+        status: 'pending', // pending, confirmed, cancelled
+        createdAt: serverTimestamp(),
+        // Create a searchable timestamp for sorting
+        bookingDateTime: new Date(`${formData.date}T${formData.time}`).toISOString()
+      })
+
+      // Success UI
       setIsSubmitted(true)
+
+      // cleanup
       setTimeout(() => {
         setIsSubmitted(false)
         onClose()
@@ -41,8 +60,13 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
           email: '',
           specialRequests: ''
         })
-      }, 2000)
-    }, 500)
+      }, 3000)
+
+    } catch (error) {
+      console.error("Error adding booking: ", error)
+      alert("Failed to send booking. Please try again or call use directly.")
+      setIsSubmitted(false)
+    }
   }
 
   const isRTL = lang === 'ar'
@@ -73,11 +97,11 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
               {lang === 'en' ? 'Booking Confirmed!' : lang === 'ru' ? 'Бронь подтверждена!' : 'تم تأكيد الحجز!'}
             </h3>
             <p className="text-gray-400">
-              {lang === 'en' 
-                ? 'We will contact you shortly to confirm your reservation.' 
-                : lang === 'ru' 
-                ? 'Мы свяжемся с вами в ближайшее время для подтверждения брони.'
-                : 'سنتصل بك قريباً لتأكيد حجزك.'}
+              {lang === 'en'
+                ? 'We will contact you shortly to confirm your reservation.'
+                : lang === 'ru'
+                  ? 'Мы свяжемся с вами в ближайшее время для подтверждения брони.'
+                  : 'سنتصل بك قريباً لتأكيد حجزك.'}
             </p>
           </div>
         ) : (
