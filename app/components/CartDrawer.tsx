@@ -19,21 +19,28 @@ export default function CartDrawer({ lang }: { lang: string }) {
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'online'>('card')
     const [email, setEmail] = useState('')
 
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
     const sendOrderToAdmin = async (platform: 'WhatsApp' | 'Telegram') => {
+        if (isSubmitting) return
+        setIsSubmitting(true)
+
         try {
             // Validation
             if (orderType === 'delivery' && !address) {
                 alert(lang === 'ru' ? 'Пожалуйста, введите адрес доставки' : 'Please enter delivery address')
+                setIsSubmitting(false)
                 return
             }
             // Basic email validation if provided
             if (email && !email.includes('@')) {
                 alert(lang === 'ru' ? 'Пожалуйста, введите корректный Email' : 'Please enter valid email')
+                setIsSubmitting(false)
                 return
             }
 
-            // 1. Save to DB
-            createOrder({
+            // 1. Save to DB (Block only for essential data saving)
+            await createOrder({
                 items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
                 total: `${total} AED`,
                 platform,
@@ -46,21 +53,11 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 email
             })
 
-            // 2. Notify Admin via Telegram Bot (and constructing message for user)
-            const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join(platform === 'WhatsApp' ? '%0A' : '\n')
+            // 2. Notify Admin & Send Email (Non-blocking / Fire-and-forget)
+            // We do NOT await these because we want the user to get to WhatsApp/Telegram immediately.
+            // The browser will keep these requests alive since we open a new tab.
 
-            let locationText = ''
-            if (orderType === 'delivery') {
-                const addr = `📍 *Delivery to:* ${address} ${apartment ? `(Apt ${apartment})` : ''}`
-                locationText = platform === 'WhatsApp' ? `%0A${addr}` : `\n${addr}`
-            } else {
-                locationText = platform === 'WhatsApp' ? `%0A🛍️ *Pickup*` : `\n🛍️ *Pickup*`
-            }
-
-            const paymentText = platform === 'WhatsApp' ? `%0A💳 Payment: ${paymentMethod}` : `\n💳 Payment: ${paymentMethod}`
-
-            // For internal API notification
-            await fetch('/api/notifications/telegram', {
+            fetch('/api/notifications/telegram', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -73,11 +70,10 @@ export default function CartDrawer({ lang }: { lang: string }) {
                     address: orderType === 'delivery' ? `${address} ${apartment}` : undefined,
                     paymentMethod
                 })
-            })
+            }).catch(e => console.error('BG Telegram Error:', e))
 
-            // 3. Send Confirmation Email (if email is provided)
             if (email) {
-                await fetch('/api/email/send', {
+                fetch('/api/email/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -92,10 +88,22 @@ export default function CartDrawer({ lang }: { lang: string }) {
                             apartment
                         }
                     })
-                }).catch(err => console.error("Failed to send email", err))
+                }).catch(err => console.error("BG Email Error", err))
             }
 
-            // Open App
+            // 3. Construct Message & Open App
+            const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join(platform === 'WhatsApp' ? '%0A' : '\n')
+
+            let locationText = ''
+            if (orderType === 'delivery') {
+                const addr = `📍 *Delivery to:* ${address} ${apartment ? `(Apt ${apartment})` : ''}`
+                locationText = platform === 'WhatsApp' ? `%0A${addr}` : `\n${addr}`
+            } else {
+                locationText = platform === 'WhatsApp' ? `%0A🛍️ *Pickup*` : `\n🛍️ *Pickup*`
+            }
+
+            const paymentText = platform === 'WhatsApp' ? `%0A💳 Payment: ${paymentMethod}` : `\n💳 Payment: ${paymentMethod}`
+
             const totalText = `Total: ${total} AED`
             const msgBody = orderItems + locationText + paymentText + (platform === 'WhatsApp' ? `%0A%0A${totalText}` : `\n\n${totalText}`)
             const fullMsg = `Hi Bo! I would like to order:${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}${msgBody}${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}Please confirm! 🍜`
@@ -109,8 +117,12 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 })
             }
 
+            // Allow state to reset after a small delay to prevent double clicks immediately
+            setTimeout(() => setIsSubmitting(false), 2000)
+
         } catch (e) {
             console.error('Failed to notify admin', e)
+            setIsSubmitting(false)
         }
     }
 
@@ -301,7 +313,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     {/* WhatsApp Button */}
                                     <button
                                         onClick={() => sendOrderToAdmin('WhatsApp')}
-                                        className="bg-green-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-500 transition-colors flex items-center justify-center gap-2 text-sm"
+                                        disabled={isSubmitting}
+                                        className={`bg-green-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-500 transition-colors flex items-center justify-center gap-2 text-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <span>WhatsApp</span>
                                     </button>
@@ -309,7 +322,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     {/* Telegram Button */}
                                     <button
                                         onClick={() => sendOrderToAdmin('Telegram')}
-                                        className="bg-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-400 transition-colors flex items-center justify-center gap-2 text-sm"
+                                        disabled={isSubmitting}
+                                        className={`bg-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-400 transition-colors flex items-center justify-center gap-2 text-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         <span>Telegram</span>
                                     </button>
