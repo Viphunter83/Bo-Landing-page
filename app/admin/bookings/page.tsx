@@ -72,14 +72,14 @@ export default function BookingAdminPage() {
                     <div className="grid gap-4">
                         {items.map(booking => (
                             <div key={booking.id} className={`p-4 rounded-lg border flex flex-col md:flex-row justify-between gap-4 items-start md:items-center ${booking.status === 'confirmed' ? 'bg-green-900/10 border-green-900/30' :
-                                    booking.status === 'cancelled' ? 'bg-red-900/10 border-red-900/30 opacity-50' :
-                                        'bg-zinc-800 border-zinc-700'
+                                booking.status === 'cancelled' ? 'bg-red-900/10 border-red-900/30 opacity-50' :
+                                    'bg-zinc-800 border-zinc-700'
                                 }`}>
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-3">
                                         <span className={`text-sm font-bold px-2 py-1 rounded ${booking.status === 'confirmed' ? 'bg-green-600 text-white' :
-                                                booking.status === 'cancelled' ? 'bg-red-600 text-white' :
-                                                    'bg-yellow-600 text-white'
+                                            booking.status === 'cancelled' ? 'bg-red-600 text-white' :
+                                                'bg-yellow-600 text-white'
                                             }`}>
                                             {booking.time}
                                         </span>
@@ -93,7 +93,7 @@ export default function BookingAdminPage() {
                                         {booking.email && <span className="flex items-center gap-1"><Mail size={14} /> {booking.email}</span>}
                                     </div>
                                     {booking.specialRequests && (
-                                        <p className="text-yellow-500/80 text-xs mt-1 italic">"{booking.specialRequests}"</p>
+                                        <p className="text-yellow-500/80 text-xs mt-1 italic">&quot;{booking.specialRequests}&quot;</p>
                                     )}
                                 </div>
 
