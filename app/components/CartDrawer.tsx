@@ -5,13 +5,25 @@ import { X, Minus, Plus, ShoppingBag, Trash2, Send } from 'lucide-react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CONTACT_INFO } from '../data/contact'
+
 import { useState } from 'react'
+import { createOrder } from '../lib/db/orders'
 
 export default function CartDrawer({ lang }: { lang: string }) {
     const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total } = useCart()
 
     const sendOrderToAdmin = async (platform: 'WhatsApp' | 'Telegram') => {
         try {
+            // 1. Save to DB (Fire and Forget for UI speed, but await for reliability if needed)
+            // We don't await strictly to keep UI snappy, but here it's fast enough.
+            createOrder({
+                items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
+                total: `${total} AED`,
+                platform,
+                status: 'new'
+            })
+
+            // 2. Notify Admin via Telegram Bot
             const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n')
 
             await fetch('/api/notifications/telegram', {
