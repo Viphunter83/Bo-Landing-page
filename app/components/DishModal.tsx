@@ -26,7 +26,6 @@ export default function DishModal({ isOpen, onClose, dish, lang }: DishModalProp
   const handleAddToCart = () => {
     addToCart(dish, quantity)
     onClose()
-    toggleCart() // Open cart to show item
   }
 
   return (
