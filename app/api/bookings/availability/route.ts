@@ -10,8 +10,13 @@ export async function GET(req: Request) {
         const date = searchParams.get('date');
         const guests = parseInt(searchParams.get('guests') || '2');
 
+
         if (!date) {
             return NextResponse.json({ success: false, error: 'Date is required' }, { status: 400 });
+        }
+
+        if (!db) {
+            return NextResponse.json({ success: false, error: 'Database unavailable' }, { status: 500 });
         }
 
         // 1. Get Config (In a real app, fetch from DB. For now, use defaults)
