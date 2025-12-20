@@ -10,6 +10,27 @@ import { useState } from 'react'
 export default function CartDrawer({ lang }: { lang: string }) {
     const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total } = useCart()
 
+    const sendOrderToAdmin = async (platform: 'WhatsApp' | 'Telegram') => {
+        try {
+            const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n')
+
+            await fetch('/api/notifications/telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'pickup', // Defaulting to pickup/web order
+                    source: 'web',
+                    name: 'Online Customer',
+                    phone: platform, // Indicating which platform they used
+                    items: orderItems,
+                    total: `${total} AED`
+                })
+            })
+        } catch (e) {
+            console.error('Failed to notify admin', e)
+        }
+    }
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -110,6 +131,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     {/* WhatsApp Button */}
                                     <button
                                         onClick={() => {
+                                            sendOrderToAdmin('WhatsApp')
                                             const orderText = items.map(i => `${i.quantity}x ${i.name} (${i.price})`).join('%0A')
                                             const totalText = `Total: ${total} AED`
                                             const customerMsg = `Hi Bo! I would like to order:%0A%0A${orderText}%0A%0A${totalText}%0A%0APlease confirm! 🍜`
@@ -123,6 +145,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     {/* Telegram Button */}
                                     <button
                                         onClick={() => {
+                                            sendOrderToAdmin('Telegram')
                                             const orderText = items.map(i => `${i.quantity}x ${i.name} (${i.price})`).join('\n')
                                             const totalText = `Total: ${total} AED`
                                             const fullMsg = `Hi Bo! I would like to order:\n\n${orderText}\n\n${totalText}\n\nPlease confirm! 🍜`
