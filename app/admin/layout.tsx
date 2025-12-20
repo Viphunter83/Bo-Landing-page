@@ -65,6 +65,7 @@ export default function AdminLayout({
 
                 <nav className="flex-1 space-y-2">
                     <NavLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
+                    <NavLink href="/admin/analytics" icon={<Settings size={20} />} label="Analytics" />
                     <NavLink href="/admin/migration" icon={<Settings size={20} />} label="Migration" />
                     {/* <NavLink href="/admin/menu" icon={<Menu size={20} />} label="Menu Manager" /> */}
                     {/* <NavLink href="/admin/bookings" icon={<Users size={20} />} label="Bookings" /> */}

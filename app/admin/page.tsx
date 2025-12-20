@@ -15,25 +15,67 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         if (!db) return
-        const q = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'), limit(50))
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-            setBookings(data)
 
-            // Calc stats
-            const today = new Date().toISOString().split('T')[0]
-            setStats({
-                total: data.length,
-                pending: data.filter((b: any) => b.status === 'pending').length,
-                today: data.filter((b: any) => b.bookingDateTime?.startsWith(today)).length
-            })
+        // 1. Subscribe to Bookings
+        const qBookings = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'), limit(50))
+        const unsubBookings = onSnapshot(qBookings, (snapshot) => {
+            const bookingsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), dataSource: 'booking' }))
+            updateUnifiedList(bookingsData, null)
         })
-        return () => unsubscribe()
+
+        // 2. Subscribe to Orders (New)
+        const qOrders = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50))
+        const unsubOrders = onSnapshot(qOrders, (snapshot) => {
+            const ordersData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                dataSource: 'order',
+                type: 'online_order', // Distinguish from 'dine_in' booking
+                date: doc.data().createdAt?.toDate().toLocaleDateString() || 'Today',
+                time: doc.data().createdAt?.toDate().toLocaleTimeString() || 'Now'
+            }))
+            updateUnifiedList(null, ordersData)
+        })
+
+        return () => {
+            unsubBookings()
+            unsubOrders()
+        }
     }, [])
 
-    const updateStatus = async (id: string, status: string) => {
+    // Merge helper
+    const [rawBookings, setRawBookings] = useState<any[]>([])
+    const [rawOrders, setRawOrders] = useState<any[]>([])
+
+    const updateUnifiedList = (newBookings: any[] | null, newOrders: any[] | null) => {
+        let b = newBookings || rawBookings
+        let o = newOrders || rawOrders
+
+        if (newBookings) setRawBookings(newBookings)
+        if (newOrders) setRawOrders(newOrders)
+
+        // Merge and Sort
+        const merged = [...b, ...o].sort((a, b) => {
+            // Sort by createdAt descending
+            const tA = a.createdAt?.seconds || 0
+            const tB = b.createdAt?.seconds || 0
+            return tB - tA
+        })
+        setBookings(merged)
+
+        // Update Stats
+        const today = new Date().toISOString().split('T')[0]
+        setStats({
+            total: merged.length,
+            pending: merged.filter((x: any) => x.status === 'new' || x.status === 'pending').length,
+            today: merged.filter((x: any) => x.date === today || x.date === 'Today').length // Approximate
+        })
+    }
+
+    const updateStatus = async (id: string, status: string, dataSource: string) => {
         if (!db) return
-        await updateDoc(doc(db, 'bookings', id), { status })
+        const collectionName = dataSource === 'order' ? 'orders' : 'bookings'
+        await updateDoc(doc(db, collectionName, id), { status })
     }
 
     const filteredBookings = filter === 'all'
@@ -64,7 +106,7 @@ export default function AdminDashboard() {
             {/* Quick Actions */}
             <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
                 <div className="flex gap-4 border-b border-zinc-800 mb-6">
-                    {['all', 'dine_in', 'delivery', 'pickup'].map(tab => (
+                    {['all', 'dine_in', 'online_order', 'delivery', 'pickup'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setFilter(tab)}
@@ -115,20 +157,20 @@ export default function AdminDashboard() {
                                         <div className="text-xs text-zinc-500 truncate">{booking.specialRequests || booking.notes}</div>
                                     </td>
                                     <td className="p-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${booking.status === 'confirmed' ? 'bg-green-500/20 text-green-500' :
-                                            booking.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
-                                                'bg-yellow-500/20 text-yellow-500'
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${(booking.status === 'confirmed' || booking.status === 'ready') ? 'bg-green-500/20 text-green-500' :
+                                                booking.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
+                                                    'bg-yellow-500/20 text-yellow-500'
                                             }`}>
-                                            {booking.status.toUpperCase()}
+                                            {booking.status ? booking.status.toUpperCase() : 'UNKNOWN'}
                                         </span>
                                     </td>
                                     <td className="p-3 flex gap-2">
-                                        {booking.status === 'pending' && (
+                                        {(booking.status === 'pending' || booking.status === 'new') && (
                                             <>
-                                                <button onClick={() => updateStatus(booking.id, 'confirmed')} className="text-green-500 hover:text-green-400 font-medium text-xs border border-green-500/30 px-2 py-1 rounded">
+                                                <button onClick={() => updateStatus(booking.id, 'confirmed', booking.dataSource || 'booking')} className="text-green-500 hover:text-green-400 font-medium text-xs border border-green-500/30 px-2 py-1 rounded">
                                                     Accept
                                                 </button>
-                                                <button onClick={() => updateStatus(booking.id, 'cancelled')} className="text-red-500 hover:text-red-400 font-medium text-xs border border-red-500/30 px-2 py-1 rounded">
+                                                <button onClick={() => updateStatus(booking.id, 'cancelled', booking.dataSource || 'booking')} className="text-red-500 hover:text-red-400 font-medium text-xs border border-red-500/30 px-2 py-1 rounded">
                                                     Reject
                                                 </button>
                                             </>
@@ -156,7 +198,8 @@ function Badge({ type }: { type: string }) {
     const colors = {
         dine_in: 'bg-purple-500/20 text-purple-400',
         delivery: 'bg-blue-500/20 text-blue-400',
-        pickup: 'bg-orange-500/20 text-orange-400'
+        pickup: 'bg-orange-500/20 text-orange-400',
+        online_order: 'bg-teal-500/20 text-teal-400'
     }
     // @ts-ignore
     const color = colors[type] || colors.dine_in
