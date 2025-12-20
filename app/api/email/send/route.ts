@@ -2,10 +2,19 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplates } from '../../../lib/email/templates'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+
+// Initialize safely inside handler or check existence
+
 
 export async function POST(req: Request) {
     try {
+        const apiKey = process.env.RESEND_API_KEY
+        if (!apiKey) {
+            console.error('RESEND_API_KEY is missing')
+            return NextResponse.json({ success: false, error: 'Server configuration error: Missing Email API Key' }, { status: 500 })
+        }
+        const resend = new Resend(apiKey)
+
         const { type, data, to, subject } = await req.json()
 
         if (!to) {
