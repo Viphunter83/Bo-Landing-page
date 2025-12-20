@@ -14,13 +14,19 @@ export interface OrderData {
     platform?: 'WhatsApp' | 'Telegram' | 'Web'; // Made optional/broader
     status: 'new' | 'cooking' | 'ready' | 'completed' | 'cancelled';
     customerPhone?: string;
-    // New Fields for Phase 9.5
+    // New Fields for Phase 9.5 & 12
     type?: 'dine_in' | 'delivery' | 'pickup' | 'online_order';
     address?: string;
     apartment?: string;
     paymentMethod?: 'cash' | 'card' | 'online';
-    name?: string; // Often needed for delivery
+    name?: string;
     email?: string;
+
+    // Phase 12 Delivery Fields
+    deliveryZoneId?: string;
+    deliveryFee?: number;
+    deliveryStatus?: 'pending' | 'assigned' | 'out_for_delivery' | 'delivered';
+    driverId?: string;
 }
 
 export const createOrder = async (order: OrderData) => {
