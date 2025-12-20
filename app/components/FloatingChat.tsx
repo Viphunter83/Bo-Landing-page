@@ -125,7 +125,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
 
             setMessages([{ role: 'assistant', content: greeting }])
         }
-    }, [isOpen, lang])
+    }, [isOpen, lang, messages.length])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
