@@ -56,13 +56,11 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
     const finalTotal = total + deliveryFee
 
-
     const sendOrderToAdmin = async (platform: 'WhatsApp' | 'Telegram') => {
         if (isSubmitting) return
         setIsSubmitting(true)
 
         try {
-            // Validation
             // Validation
             if (orderType === 'delivery') {
                 if (!address) {
@@ -85,13 +83,13 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 }
             }
 
-            // ... email validation ...
             if (email && !email.includes('@')) {
-                // ... existing check
+                alert(lang === 'ru' ? 'Пожалуйста, введите корректный Email' : 'Please enter valid email')
+                setIsSubmitting(false)
+                return
             }
 
-
-            // 1. Construct Message First (Synchronous & Fast)
+            // 1. Construct Message
             const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join(platform === 'WhatsApp' ? '%0A' : '\n')
 
             let locationText = ''
@@ -114,23 +112,20 @@ export default function CartDrawer({ lang }: { lang: string }) {
             const msgBody = orderItems + locationText + paymentText + (platform === 'WhatsApp' ? `%0A%0A${costsText}` : `\n\n${costsText}`)
             const fullMsg = `Hi Bo! I would like to order:${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}${msgBody}${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}Please confirm! 🍜`
 
-            // 2. Open App IMMEDIATELY
-            // ... (existing window.open logic) ...
+            // 2. Open App IMMEDIATELY (INP Optimization)
             if (platform === 'WhatsApp') {
                 window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${fullMsg}`, '_blank')
             } else {
-                navigator.clipboard.writeText(fullMsg.replace(/%0A/g, '\n')).then(() => {
-                    alert(lang === 'ru' ? 'Заказ скопирован! Вставьте его в чат.' : 'Order copied! Paste it in the chat.')
-                    window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
-                }).catch(() => {
-                    window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
-                })
+                // Telegram: Copy first, then open. 
+                // Removed blocking alert() for speed. User can paste if copy worked.
+                navigator.clipboard.writeText(fullMsg.replace(/%0A/g, '\n')).catch(() => { })
+                window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
             }
 
-            // 3. Save to DB & Notify (Background)
+            // 3. Background: Save to DB
             createOrder({
                 items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-                total: `${finalTotal} AED`, // Save final total
+                total: `${finalTotal} AED`,
                 platform,
                 status: 'new',
                 type: orderType,
@@ -138,12 +133,11 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 apartment,
                 paymentMethod,
                 email,
-                // Delivery Fields
                 deliveryZoneId: selectedZoneId,
                 deliveryFee
             }).catch(err => console.error("BG DB Save Error", err))
 
-            // 4. Notifications (Background)
+            // 4. Background: Notify Admin
             fetch('/api/notifications/telegram', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -160,9 +154,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 })
             }).catch(e => console.error('BG Telegram Error:', e))
 
-            // ... email sending ...
+            // 5. Background: Send Email
             if (email) {
-                // ... existing email fetch ...
                 fetch('/api/email/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -176,16 +169,18 @@ export default function CartDrawer({ lang }: { lang: string }) {
                             type: orderType,
                             address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address}` : '',
                             apartment,
-                            deliveryFee // Pass fee to template if supported, or just total
+                            deliveryFee
                         }
                     })
                 }).catch(err => console.error("BG Email Error", err))
             }
 
+            // Reset UI state
             setTimeout(() => setIsSubmitting(false), 2000)
 
         } catch (e) {
-            // ...
+            console.error('Failed to notify admin', e)
+            setIsSubmitting(false)
         }
     }
 
@@ -193,36 +188,119 @@ export default function CartDrawer({ lang }: { lang: string }) {
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* ... (Backdrop & Drawer wrapper) ... */}
+                    {/* Backdrop */}
                     <motion.div
-                        // ... props ...
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={toggleCart}
+                        className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
+                    />
+
+                    {/* Drawer */}
+                    <motion.div
+                        initial={{ x: '100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         className="fixed right-0 top-0 h-full w-full max-w-md bg-zinc-900 border-l border-zinc-800 z-[70] flex flex-col shadow-2xl"
                     >
-                        {/* ... (Header & Items) ... */}
+                        {/* Header */}
+                        <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <ShoppingBag className="text-yellow-500" />
+                                    {lang === 'ru' ? 'Ваш заказ' : (lang === 'ar' ? 'طلبك' : 'Your Order')}
+                                    <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-1 rounded-full">
+                                        {items.length}
+                                    </span>
+                                </h2>
+                                <button onClick={toggleCart} className="text-zinc-500 hover:text-white transition-colors">
+                                    <X size={24} />
+                                </button>
+                            </div>
 
-                        {/* Footer */}
-                        {items.length > 0 && (
-                            <div className="p-6 border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-md space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-zinc-400 text-sm">
-                                        <span>{lang === 'ru' ? 'Сумма' : 'Subtotal'}</span>
-                                        <span className="text-white">{total} AED</span>
-                                    </div>
-                                    {deliveryFee > 0 && (
-                                        <div className="flex justify-between items-center text-zinc-400 text-sm">
-                                            <span>{lang === 'ru' ? 'Доставка' : 'Delivery'} ({zones.find(z => z.id === selectedZoneId)?.name})</span>
-                                            <span className="text-yellow-500">+{deliveryFee} AED</span>
-                                        </div>
-                                    )}
-                                    <div className="flex justify-between items-center text-zinc-400 text-sm pt-2 border-t border-zinc-800">
-                                        <span className="font-bold text-white">{lang === 'ru' ? 'Итого' : (lang === 'ar' ? 'المجموع' : 'Total')}</span>
-                                        <span className="text-white font-bold text-lg">{finalTotal} AED</span>
-                                    </div>
+                            {/* Email Input */}
+                            <div className="mb-4">
+                                <input
+                                    type="email"
+                                    placeholder={lang === 'ru' ? "Ваш Email (для чека)" : "Your Email (for receipt)"}
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border"
+                                />
+                            </div>
+
+                            {/* Delivery Toggle */}
+                            <div className="bg-zinc-800 p-1 rounded-lg grid grid-cols-2 gap-1">
+                                <button
+                                    onClick={() => setOrderType('delivery')}
+                                    className={`py-2 text-sm font-bold rounded-md transition-all ${orderType === 'delivery' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                                >
+                                    🛵 {lang === 'ru' ? 'Доставка' : 'Delivery'}
+                                </button>
+                                <button
+                                    onClick={() => setOrderType('pickup')}
+                                    className={`py-2 text-sm font-bold rounded-md transition-all ${orderType === 'pickup' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                                >
+                                    🛍️ {lang === 'ru' ? 'Самовывоз' : 'Pickup'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Items */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            {items.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4">
+                                    <ShoppingBag size={48} className="opacity-20" />
+                                    <p>{lang === 'ru' ? 'Корзина пуста' : (lang === 'ar' ? 'سلة التسوق فارغة' : 'Your cart is empty')}</p>
                                 </div>
+                            ) : (
+                                <>
+                                    {items.map(item => (
+                                        <div key={item.id} className="flex gap-4">
+                                            <div className="relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-800">
+                                                <Image src={item.image} alt={item.name} fill className="object-cover" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h3 className="font-bold text-white text-sm">
+                                                        {lang === 'ru' ? item.nameRu : (lang === 'ar' ? item.nameAr : item.name)}
+                                                    </h3>
+                                                    <span className="text-yellow-500 font-bold text-sm">{item.price}</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-500 mb-3 line-clamp-1">
+                                                    {item.ingredients?.join(', ')}
+                                                </p>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-3 bg-zinc-800 rounded-lg p-1">
+                                                        <button
+                                                            onClick={() => updateQuantity(item.id, -1)}
+                                                            className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white bg-zinc-700/50 rounded hover:bg-zinc-700 transition"
+                                                        >
+                                                            <Minus size={14} />
+                                                        </button>
+                                                        <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
+                                                        <button
+                                                            onClick={() => updateQuantity(item.id, 1)}
+                                                            className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white bg-zinc-700/50 rounded hover:bg-zinc-700 transition"
+                                                        >
+                                                            <Plus size={14} />
+                                                        </button>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => removeFromCart(item.id)}
+                                                        className="ml-auto text-red-500/50 hover:text-red-500 p-2 transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
 
-                                    {/* Order Type Specific Inputs */}
+                                    {/* Order Type Specific Inputs & Zones */}
                                     {orderType === 'delivery' && (
                                         <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4 animate-in slide-in-from-top-5 fade-in">
                                             <h3 className="font-bold text-white text-sm">
@@ -296,18 +374,29 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     </div>
                                 </>
                             )}
-                            </div>
+                        </div>
 
                         {/* Footer */}
                         {items.length > 0 && (
                             <div className="p-6 border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-md space-y-4">
-                                <div className="flex justify-between items-center text-zinc-400 text-sm">
-                                    <span>{lang === 'ru' ? 'Итого' : (lang === 'ar' ? 'المجموع' : 'Subtotal')}</span>
-                                    <span className="text-white font-bold text-lg">{total} AED</span>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-zinc-400 text-sm">
+                                        <span>{lang === 'ru' ? 'Сумма' : 'Subtotal'}</span>
+                                        <span className="text-white">{total} AED</span>
+                                    </div>
+                                    {deliveryFee > 0 && (
+                                        <div className="flex justify-between items-center text-zinc-400 text-sm">
+                                            <span>{lang === 'ru' ? 'Доставка' : 'Delivery'} ({zones.find(z => z.id === selectedZoneId)?.name})</span>
+                                            <span className="text-yellow-500">+{deliveryFee} AED</span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center text-zinc-400 text-sm pt-2 border-t border-zinc-800">
+                                        <span className="font-bold text-white">{lang === 'ru' ? 'Итого' : (lang === 'ar' ? 'المجموع' : 'Total')}</span>
+                                        <span className="text-white font-bold text-lg">{finalTotal} AED</span>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">
-                                    {/* WhatsApp Button */}
                                     <button
                                         onClick={() => sendOrderToAdmin('WhatsApp')}
                                         disabled={isSubmitting}
@@ -316,7 +405,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                         <span>WhatsApp</span>
                                     </button>
 
-                                    {/* Telegram Button */}
                                     <button
                                         onClick={() => sendOrderToAdmin('Telegram')}
                                         disabled={isSubmitting}
@@ -329,8 +417,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         )}
                     </motion.div>
                 </>
-            )
-            }
-        </AnimatePresence >
+            )}
+        </AnimatePresence>
     )
 }
