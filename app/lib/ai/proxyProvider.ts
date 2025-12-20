@@ -28,7 +28,14 @@ export class ProxyAIProvider implements AIProvider {
         console.log('Using ProxyAPI Key:', this.apiKey.substring(0, 8) + '...')
 
         // 1. Build System Prompt with Menu Context
-        const menuContext = fullMenu.map(d => `${d.name} (${d.price}): ${d.desc}`).join('\n')
+        const menuContext = fullMenu.map(d => `
+        - ID: ${d.id}
+          English: ${d.name} (${d.desc})
+          Russian: ${d.nameRu} (${d.descRu})
+          Arabic: ${d.nameAr}
+          Price: ${d.price}
+          Category: ${d.category}
+        `).join('\n')
 
         let userContext = `Context: User is currently browsing the "${context?.activeVibe || 'general'}" section.`
 

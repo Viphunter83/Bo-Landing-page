@@ -33,7 +33,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 backdrop-blur-md">
                             <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                 <ShoppingBag className="text-yellow-500" />
-                                {lang === 'ru' ? 'Ваш заказ' : 'Your Order'}
+                                {lang === 'ru' ? 'Ваш заказ' : (lang === 'ar' ? 'طلبك' : 'Your Order')}
                                 <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-1 rounded-full">
                                     {items.length}
                                 </span>
@@ -48,7 +48,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                             {items.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4">
                                     <ShoppingBag size={48} className="opacity-20" />
-                                    <p>{lang === 'ru' ? 'Корзина пуста' : 'Your cart is empty'}</p>
+                                    <p>{lang === 'ru' ? 'Корзина пуста' : (lang === 'ar' ? 'سلة التسوق فارغة' : 'Your cart is empty')}</p>
                                 </div>
                             ) : (
                                 items.map(item => (
@@ -100,11 +100,11 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         {items.length > 0 && (
                             <div className="p-6 border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-md space-y-4">
                                 <div className="flex justify-between items-center text-zinc-400 text-sm">
-                                    <span>{lang === 'ru' ? 'Итого' : 'Subtotal'}</span>
+                                    <span>{lang === 'ru' ? 'Итого' : (lang === 'ar' ? 'المجموع' : 'Subtotal')}</span>
                                     <span className="text-white font-bold text-lg">{total} AED</span>
                                 </div>
                                 <button className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform active:scale-[0.98] shadow-lg shadow-yellow-500/20">
-                                    {lang === 'ru' ? 'Оформить заказ' : 'Checkout'}
+                                    {lang === 'ru' ? 'Оформить заказ' : (lang === 'ar' ? 'الدفع' : 'Checkout')}
                                 </button>
                             </div>
                         )}
