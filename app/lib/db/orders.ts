@@ -20,6 +20,7 @@ export interface OrderData {
     apartment?: string;
     paymentMethod?: 'cash' | 'card' | 'online';
     name?: string; // Often needed for delivery
+    email?: string;
 }
 
 export const createOrder = async (order: OrderData) => {

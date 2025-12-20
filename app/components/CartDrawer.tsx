@@ -17,12 +17,18 @@ export default function CartDrawer({ lang }: { lang: string }) {
     const [address, setAddress] = useState('')
     const [apartment, setApartment] = useState('')
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'online'>('card')
+    const [email, setEmail] = useState('')
 
     const sendOrderToAdmin = async (platform: 'WhatsApp' | 'Telegram') => {
         try {
             // Validation
             if (orderType === 'delivery' && !address) {
                 alert(lang === 'ru' ? 'Пожалуйста, введите адрес доставки' : 'Please enter delivery address')
+                return
+            }
+            // Basic email validation if provided
+            if (email && !email.includes('@')) {
+                alert(lang === 'ru' ? 'Пожалуйста, введите корректный Email' : 'Please enter valid email')
                 return
             }
 
@@ -36,7 +42,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 type: orderType,
                 address,
                 apartment,
-                paymentMethod
+                paymentMethod,
+                email
             })
 
             // 2. Notify Admin via Telegram Bot (and constructing message for user)
@@ -63,9 +70,30 @@ export default function CartDrawer({ lang }: { lang: string }) {
                     phone: platform,
                     items: items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n'),
                     total: `${total} AED`,
-                    address: orderType === 'delivery' ? `${address} ${apartment}` : undefined
+                    address: orderType === 'delivery' ? `${address} ${apartment}` : undefined,
+                    paymentMethod
                 })
             })
+
+            // 3. Send Confirmation Email (if email is provided)
+            if (email) {
+                await fetch('/api/email/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'order',
+                        to: email,
+                        subject: lang === 'ru' ? 'Ваш заказ в Bo Dubai 🍜' : 'Your Order at Bo Dubai 🍜',
+                        data: {
+                            items: items.map(i => ({ name: lang === 'ru' ? i.nameRu : i.name, price: i.price, quantity: i.quantity })),
+                            total: `${total} AED`,
+                            type: orderType,
+                            address,
+                            apartment
+                        }
+                    })
+                }).catch(err => console.error("Failed to send email", err))
+            }
 
             // Open App
             const totalText = `Total: ${total} AED`
@@ -120,6 +148,17 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                 <button onClick={toggleCart} className="text-zinc-500 hover:text-white transition-colors">
                                     <X size={24} />
                                 </button>
+                            </div>
+
+                            {/* Email Input - New */}
+                            <div className="mb-4">
+                                <input
+                                    type="email"
+                                    placeholder={lang === 'ru' ? "Ваш Email (для чека)" : "Your Email (for receipt)"}
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border"
+                                />
                             </div>
 
                             {/* Delivery Toggle */}

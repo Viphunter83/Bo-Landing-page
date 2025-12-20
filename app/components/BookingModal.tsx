@@ -88,6 +88,20 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
         source: 'web'
       })
     }).catch(err => console.error("Failed to send telegram notification", err))
+
+    // Send Email Confirmation (Non-blocking)
+    if (formData.email) {
+      fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'booking',
+          to: formData.email,
+          subject: lang === 'ru' ? 'Бронь подтверждена! 🗓️' : 'Table Reservation Confirmed! 🗓️',
+          data: formData
+        })
+      }).catch(err => console.error("Failed to send email", err))
+    }
   }
 
   const isRTL = lang === 'ar'
