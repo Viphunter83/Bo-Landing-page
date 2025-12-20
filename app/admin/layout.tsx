@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from '../lib/firebase'
-import { LayoutDashboard, Menu, Users, Settings, LogOut, Megaphone } from 'lucide-react'
+import { LayoutDashboard, Menu, Users, Settings, LogOut, Megaphone, Truck } from 'lucide-react'
 
 export default function AdminLayout({
     children,
@@ -84,6 +84,7 @@ export default function AdminLayout({
                     <NavLink href="/admin/kitchen" icon={<Users size={20} />} label="Kitchen Display" />
                     <NavLink href="/admin/migration" icon={<Settings size={20} />} label="Migration" />
                     <NavLink href="/admin/marketing" icon={<Megaphone size={20} />} label="Marketing" />
+                    <NavLink href="/admin/delivery" icon={<Truck size={20} />} label="Delivery" />
                 </nav>
 
                 <button
