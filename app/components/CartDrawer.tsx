@@ -56,45 +56,45 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
     const finalTotal = total + deliveryFee
 
+    const [validationError, setValidationError] = useState<string | null>(null)
+
+    const validateOrder = () => {
+        setValidationError(null)
+        if (orderType === 'delivery') {
+            if (!selectedZoneId) return lang === 'ru' ? 'Выберите зону доставки' : 'Select a delivery zone'
+            if (!address) return lang === 'ru' ? 'Введите адрес' : 'Enter address'
+
+            const zone = zones.find(z => z.id === selectedZoneId)
+            if (zone && total < zone.minOrder) {
+                return lang === 'ru'
+                    ? `Мин. заказ: ${zone.minOrder} AED`
+                    : `Min order: ${zone.minOrder} AED`
+            }
+        }
+        if (email && !email.includes('@')) return lang === 'ru' ? 'Неверный Email' : 'Invalid valid email'
+        return null
+    }
+
     const sendOrderToAdmin = async (platform: 'WhatsApp' | 'Telegram') => {
-        if (isSubmitting) return
+        // 1. Immediate Validation
+        const error = validateOrder()
+        if (error) {
+            setValidationError(error)
+            // Auto-clear error after 3s
+            setTimeout(() => setValidationError(null), 3000)
+            return
+        }
+
         setIsSubmitting(true)
 
         try {
-            // Validation
-            if (orderType === 'delivery') {
-                if (!address) {
-                    alert(lang === 'ru' ? 'Пожалуйста, введите адрес доставки' : 'Please enter delivery address')
-                    setIsSubmitting(false)
-                    return
-                }
-                if (!selectedZoneId) {
-                    alert(lang === 'ru' ? 'Пожалуйста, выберите зону доставки' : 'Please select a delivery zone')
-                    setIsSubmitting(false)
-                    return
-                }
-                const zone = zones.find(z => z.id === selectedZoneId)
-                if (zone && total < zone.minOrder) {
-                    alert(lang === 'ru'
-                        ? `Минимальный заказ для "${zone.name}": ${zone.minOrder} AED`
-                        : `Minimum order for "${zone.name}": ${zone.minOrder} AED`)
-                    setIsSubmitting(false)
-                    return
-                }
-            }
-
-            if (email && !email.includes('@')) {
-                alert(lang === 'ru' ? 'Пожалуйста, введите корректный Email' : 'Please enter valid email')
-                setIsSubmitting(false)
-                return
-            }
-
-            // 1. Construct Message
+            // 2. Prepare Message
             const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join(platform === 'WhatsApp' ? '%0A' : '\n')
 
             let locationText = ''
             if (orderType === 'delivery') {
-                const zoneName = zones.find(z => z.id === selectedZoneId)?.name || ''
+                // Safe lookup
+                const zoneName = zones.find(z => z.id === selectedZoneId)?.name || 'Zone'
                 const addr = `📍 *Delivery to:* ${zoneName}, ${address} ${apartment ? `(Apt ${apartment})` : ''}`
                 locationText = platform === 'WhatsApp' ? `%0A${addr}` : `\n${addr}`
             } else {
@@ -112,51 +112,54 @@ export default function CartDrawer({ lang }: { lang: string }) {
             const msgBody = orderItems + locationText + paymentText + (platform === 'WhatsApp' ? `%0A%0A${costsText}` : `\n\n${costsText}`)
             const fullMsg = `Hi Bo! I would like to order:${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}${msgBody}${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}Please confirm! 🍜`
 
-            // 2. Open App IMMEDIATELY (INP Optimization)
+            // 3. Open App IMMEDIATELY (Critical for iOS)
+            // We do NOT wait for anything else.
             if (platform === 'WhatsApp') {
                 window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${fullMsg}`, '_blank')
             } else {
+                // Best effort copy, but don't block window.open
                 navigator.clipboard.writeText(fullMsg.replace(/%0A/g, '\n')).catch(() => { })
                 window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
             }
 
-            // 3. Defer Background Tasks to Next Tick to unblock UI
+            // 4. Background Tasks (Deferred)
             setTimeout(() => {
-                // Save to DB
-                createOrder({
-                    items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-                    total: `${finalTotal} AED`,
-                    platform,
-                    status: 'new',
-                    type: orderType,
-                    address,
-                    apartment,
-                    paymentMethod,
-                    email,
-                    deliveryZoneId: selectedZoneId,
-                    deliveryFee
-                }).catch(err => console.error("BG DB Save Error", err))
-
-                // Notify Admin
-                fetch('/api/notifications/telegram', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: orderType,
-                        source: 'web',
-                        name: 'Online Customer',
-                        phone: platform,
-                        items: items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n'),
+                // Parallel execution of non-critical tasks
+                const bgTasks = [
+                    createOrder({
+                        items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
                         total: `${finalTotal} AED`,
-                        address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address} ${apartment}` : undefined,
+                        platform,
+                        status: 'new',
+                        type: orderType,
+                        address,
+                        apartment,
                         paymentMethod,
+                        email,
+                        deliveryZoneId: selectedZoneId,
                         deliveryFee
-                    })
-                }).catch(e => console.error('BG Telegram Error:', e))
+                    }),
 
-                // Send Email
+                    fetch('/api/notifications/telegram', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: orderType,
+                            source: 'web',
+                            name: 'Online Customer',
+                            phone: platform,
+                            items: items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n'),
+                            total: `${finalTotal} AED`,
+                            address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address} ${apartment}` : undefined,
+                            paymentMethod,
+                            deliveryFee
+                        })
+                    })
+                ]
+
+                // Email is optional check
                 if (email) {
-                    fetch('/api/email/send', {
+                    bgTasks.push(fetch('/api/email/send', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -172,15 +175,22 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                 deliveryFee
                             }
                         })
-                    }).catch(err => console.error("BG Email Error", err))
+                    }))
                 }
 
+                Promise.allSettled(bgTasks).then(() => {
+                    console.log("Background tasks complete")
+                })
+
+                // Always reset UI state
                 setIsSubmitting(false)
-            }, 0)
+            }, 50)
 
         } catch (e) {
-            console.error('Failed to notify admin', e)
+            console.error('Critical Error in Order Flow', e)
+            // Ensure we reset state even if main crash (unlikely due to try/catch)
             setIsSubmitting(false)
+            setValidationError("System Error. Please try again.")
         }
     }
 
@@ -396,7 +406,12 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-3 relative">
+                                    {validationError && (
+                                        <div className="absolute -top-10 left-0 w-full bg-red-500/90 text-white text-xs font-bold p-2 rounded text-center animate-in slide-in-from-bottom-2">
+                                            {validationError}
+                                        </div>
+                                    )}
                                     <button
                                         onClick={() => sendOrderToAdmin('WhatsApp')}
                                         disabled={isSubmitting}
