@@ -69,7 +69,15 @@ export default function AdminLayout({
         )
     }
 
-    if (!user) return null
+    // Redirecting State
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center text-zinc-600 gap-4">
+                <div className="w-8 h-8 border-2 border-zinc-600 border-t-zinc-400 rounded-full animate-spin" />
+                <p className="text-sm">Redirecting...</p>
+            </div>
+        )
+    }
 
     return (
         <ToastProvider>
