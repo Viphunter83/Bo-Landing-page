@@ -1,11 +1,11 @@
-'use client'
-
 import { useEffect, useState } from 'react'
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
-import { Search, Edit2, Save, X, Plus, Trash2 } from 'lucide-react'
+import { Edit2, Plus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import ImageUpload from '../../components/ImageUpload'
+import { useToast } from '../context/ToastContext'
+import AdminDataTable from '../components/AdminDataTable'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +14,7 @@ export default function MenuManager() {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [isCreating, setIsCreating] = useState(false)
     const [editForm, setEditForm] = useState<any>({})
-    const [searchTerm, setSearchTerm] = useState('')
+    const { showToast } = useToast()
 
     useEffect(() => {
         if (!db) return
@@ -45,7 +45,7 @@ export default function MenuManager() {
 
     const handleSave = async () => {
         if (!db) {
-            alert("Database connection failed")
+            showToast("Database connection failed", "error")
             return
         }
         try {
@@ -56,9 +56,10 @@ export default function MenuManager() {
                 await updateDoc(doc(db, 'menu_items', editingId), editForm)
                 setEditingId(null)
             }
+            showToast("Item saved successfully", "success")
         } catch (e) {
             console.error("Failed to save item", e)
-            alert("Failed to save")
+            showToast("Failed to save item", "error")
         }
     }
 
@@ -67,16 +68,61 @@ export default function MenuManager() {
         if (!confirm(`Are you sure you want to delete "${name}"?`)) return
         try {
             await deleteDoc(doc(db, 'menu_items', id))
+            showToast("Item deleted", "success")
         } catch (e) {
             console.error("Failed to delete", e)
-            alert("Failed to delete")
+            showToast("Failed to delete item", "error")
         }
     }
 
-    const filteredItems = items.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category.includes(searchTerm.toLowerCase())
-    )
+    const columns = [
+        {
+            header: "Image",
+            cell: (item: any) => (
+                <div className="w-12 h-12 relative rounded overflow-hidden bg-zinc-800">
+                    {item.image ? (
+                        <Image src={item.image} alt={item.name} fill className="object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">No Img</div>
+                    )}
+                </div>
+            )
+        },
+        {
+            header: "Name",
+            accessorKey: "name" as keyof any,
+            sortable: true,
+            className: "font-medium text-white"
+        },
+        {
+            header: "Category",
+            accessorKey: "category" as keyof any,
+            sortable: true,
+            cell: (item: any) => (
+                <span className="bg-zinc-800 text-zinc-300 px-2 py-1 rounded text-xs capitalize border border-zinc-700">
+                    {item.category}
+                </span>
+            )
+        },
+        {
+            header: "Price",
+            accessorKey: "price" as keyof any,
+            sortable: true
+        },
+        {
+            header: "Status",
+            accessorKey: "stock" as keyof any,
+            sortable: true,
+            cell: (item: any) => (
+                <span className={`px-2 py-1 rounded text-xs font-bold ${item.stock === 'out_of_stock'
+                        ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                        : 'bg-green-500/10 text-green-500 border border-green-500/20'
+                    }`}>
+                    {item.stock === 'out_of_stock' ? 'SOLD OUT' : 'IN STOCK'}
+                </span>
+            )
+        }
+    ]
 
     return (
         <div className="space-y-6">
@@ -85,31 +131,22 @@ export default function MenuManager() {
                     <h2 className="text-3xl font-bold mb-2">Menu Manager</h2>
                     <p className="text-zinc-400">Manage your menu items, prices, and availability.</p>
                 </div>
-                <div className="flex gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search menu..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="bg-zinc-900 border border-zinc-800 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-red-600 w-64"
-                        />
-                    </div>
-                    <button
-                        onClick={handleCreate}
-                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                    >
-                        <Plus size={20} /> Add Item
-                    </button>
-                </div>
+                <button
+                    onClick={handleCreate}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 font-bold"
+                >
+                    <Plus size={20} /> Add Item
+                </button>
             </div>
 
-            {/* Editor Modal */}
+            {/* Editor Modal is unchanged - kept separate from table */}
             {(editingId || isCreating) && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        {/* ... (Modal Content - Keeping purely structural for brevity in replacement) ... */}
                         <div className="p-6 border-b border-zinc-800 flex justify-between items-center sticky top-0 bg-zinc-900 z-10">
+                            {/* ... Header ... */}
+                            {/* NOTE: I am re-implementing the modal content here because replace_content replaces everything in the range */}
                             <h3 className="text-xl font-bold text-white">
                                 {isCreating ? 'Add New Dish' : 'Edit Dish'}
                             </h3>
@@ -122,21 +159,15 @@ export default function MenuManager() {
                         </div>
 
                         <div className="p-6 space-y-6">
+                            {/* ... Form Fields ... */}
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="col-span-2">
                                     <label className="block text-sm font-medium text-zinc-400 mb-2">Photo</label>
                                     <ImageUpload
                                         initialImage={editForm.image}
-                                        onUpload={(url) => setEditForm({ ...editForm, image: url })}
+                                        onUpload={(url: string) => setEditForm({ ...editForm, image: url })}
                                     />
-                                    <div className="relative mt-3">
-                                        <div className="absolute inset-0 flex items-center">
-                                            <span className="w-full border-t border-zinc-800" />
-                                        </div>
-                                        <div className="relative flex justify-center text-xs uppercase">
-                                            <span className="bg-zinc-900 px-2 text-zinc-500">Or paste URL</span>
-                                        </div>
-                                    </div>
+                                    {/* URL Input */}
                                     <input
                                         type="text"
                                         placeholder="https://..."
@@ -201,7 +232,6 @@ export default function MenuManager() {
                                         placeholder="Dish description..."
                                     />
                                 </div>
-                                {/* Add more fields for Ru/Ar later */}
                             </div>
                         </div>
 
@@ -223,66 +253,64 @@ export default function MenuManager() {
                 </div>
             )}
 
-            <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
-                <table className="w-full text-left text-sm text-zinc-400">
-                    <thead className="bg-zinc-800/50 text-zinc-200 uppercase font-medium">
-                        <tr>
-                            <th className="p-4">Image</th>
-                            <th className="p-4">Item</th>
-                            <th className="p-4">Category</th>
-                            <th className="p-4">Price</th>
-                            <th className="p-4">Status</th>
-                            <th className="p-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800">
-                        {filteredItems.map((item) => (
-                            <tr key={item.id} className="hover:bg-zinc-800/20 transition-colors">
-                                <td className="p-4">
-                                    <div className="w-12 h-12 relative rounded overflow-hidden bg-zinc-800">
-                                        {item.image && (
-                                            <Image src={item.image} alt={item.name} fill className="object-cover" />
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="p-4 font-medium text-white">{item.name}</td>
-                                <td className="p-4">
-                                    <span className="bg-zinc-800 text-zinc-300 px-2 py-1 rounded text-xs capitalize">
-                                        {item.category}
-                                    </span>
-                                </td>
-                                <td className="p-4">{item.price}</td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-1 rounded text-xs font-bold ${item.stock === 'out_of_stock' ? 'bg-red-500/20 text-red-500' : 'bg-green-500/20 text-green-500'
-                                        }`}>
-                                        {item.stock === 'out_of_stock' ? 'SOLD OUT' : 'IN STOCK'}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <button onClick={() => handleEdit(item)} className="text-zinc-500 hover:text-white p-2 hover:bg-zinc-800 rounded transition-colors">
-                                            <Edit2 size={18} />
-                                        </button>
-                                        <button onClick={() => handleDelete(item.id, item.name)} className="text-zinc-500 hover:text-red-500 p-2 hover:bg-red-500/10 rounded transition-colors">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                {items.length === 0 && (
-                    <div className="p-12 text-center">
-                        <p className="text-zinc-500 mb-4">No items found.</p>
-                        <p className="text-sm text-zinc-600">
-                            Don&apos;t forget to run
-                            <a href="/admin/migration" className="text-red-500 hover:underline mx-1">Migration</a>
-                            to populate the database.
-                        </p>
+            <AdminDataTable
+                columns={columns}
+                data={items}
+                searchKeys={['name', 'category']}
+                searchPlaceholder="Search dishes..."
+                filters={[
+                    {
+                        key: 'category',
+                        label: 'Category',
+                        options: [
+                            { value: 'classic', label: 'Classic' },
+                            { value: 'spicy', label: 'Spicy' },
+                            { value: 'fresh', label: 'Fresh' },
+                            { value: 'drinks', label: 'Drinks' },
+                            { value: 'desserts', label: 'Desserts' }
+                        ]
+                    },
+                    {
+                        key: 'stock',
+                        label: 'Status',
+                        options: [
+                            { value: 'in_stock', label: 'In Stock' },
+                            { value: 'out_of_stock', label: 'Sold Out' }
+                        ]
+                    }
+                ]}
+                actions={(item) => (
+                    <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => handleEdit(item)} className="text-zinc-500 hover:text-white p-2 hover:bg-zinc-800 rounded transition-colors" title="Edit">
+                            <Edit2 size={18} />
+                        </button>
+                        <button onClick={() => handleDelete(item.id, item.name)} className="text-zinc-500 hover:text-red-500 p-2 hover:bg-red-500/10 rounded transition-colors" title="Delete">
+                            <Trash2 size={18} />
+                        </button>
                     </div>
                 )}
-            </div>
+            />
         </div>
     )
 }
+
+// Helper icon component since X is used in modal
+function X({ size }: { size: number }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    )
+}
+

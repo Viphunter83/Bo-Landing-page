@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { X, Calendar, Clock, User, Phone, MapPin, ShoppingBag, Truck, Check } from 'lucide-react'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { useToast } from '../admin/context/ToastContext'
+import { OrderType, ORDER_TYPES } from '../lib/types/core'
 
 interface OrderModalProps {
     isOpen: boolean
@@ -11,10 +13,9 @@ interface OrderModalProps {
     onSuccess?: () => void
 }
 
-type OrderType = 'dine_in' | 'delivery' | 'pickup'
-
 export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
     const [isLoading, setIsLoading] = useState(false)
+    const { showToast } = useToast()
     const [orderType, setOrderType] = useState<OrderType>('dine_in')
     const [formData, setFormData] = useState({
         name: '',
@@ -31,18 +32,54 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!db) return
+        if (!db) {
+            showToast("Database connection failed", "error")
+            return
+        }
         setIsLoading(true)
 
         try {
-            await addDoc(collection(db, 'bookings'), {
-                ...formData,
-                type: orderType, // New field to distinguish order types
-                source: 'manual', // Created by admin
-                status: 'pending',
+            const commonData = {
+                name: formData.name,
+                phone: formData.phone,
+                notes: formData.items + (formData.notes ? `\nNote: ${formData.notes}` : ''),
+                source: 'manual_admin',
                 createdAt: serverTimestamp(),
-                bookingDateTime: new Date(`${formData.date}T${formData.time}`).toISOString()
-            })
+                type: orderType
+            }
+
+            if (orderType === 'dine_in') {
+                // Save to BOOKINGS
+                await addDoc(collection(db, 'bookings'), {
+                    ...commonData,
+                    status: 'pending',
+                    date: formData.date,
+                    time: formData.time,
+                    guests: parseInt(formData.guests),
+                    specialRequests: formData.notes,
+                    items: formData.items, // String OK for bookings
+                    bookingDateTime: new Date(`${formData.date}T${formData.time}`).toISOString()
+                })
+            } else {
+                // Save to ORDERS (Delivery/Pickup)
+                // Normalize items for KDS (expects array)
+                const normalizedItems = formData.items.split(',').map(i => ({
+                    name: i.trim(),
+                    quantity: 1,
+                    price: 0
+                })).filter(i => i.name)
+
+                await addDoc(collection(db, 'orders'), {
+                    ...commonData,
+                    status: 'new', // KDS expects 'new'
+                    address: formData.address,
+                    items: normalizedItems.length > 0 ? normalizedItems : [{ name: 'Custom Order', quantity: 1 }],
+                    total: 0, // Manual orders might not have calculated total yet
+                    deliveryStatus: orderType === 'delivery' ? 'pending' : undefined
+                })
+            }
+
+            showToast("Order created successfully", "success")
             onSuccess?.()
             onClose()
             // Reset form
@@ -58,21 +95,10 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
             })
         } catch (error) {
             console.error("Error creating order:", error)
-            alert("Failed to create order")
+            showToast("Failed to create order", "error")
         } finally {
             setIsLoading(false)
         }
-
-        // Send Telegram Notification (Non-blocking)
-        fetch('/api/notifications/telegram', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...formData,
-                type: orderType,
-                source: 'manual'
-            })
-        }).catch(err => console.error("Failed to send telegram notification", err))
     }
 
     return (
@@ -91,24 +117,23 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Order Type Selector */}
                     <div className="grid grid-cols-3 gap-2">
-                        {[
-                            { id: 'dine_in', label: 'Dine In', icon: User },
-                            { id: 'delivery', label: 'Delivery', icon: Truck },
-                            { id: 'pickup', label: 'Pickup', icon: ShoppingBag }
-                        ].map((type) => (
-                            <button
-                                key={type.id}
-                                type="button"
-                                onClick={() => setOrderType(type.id as OrderType)}
-                                className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${orderType === type.id
-                                    ? 'bg-red-600 border-red-600 text-white'
-                                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
-                                    }`}
-                            >
-                                <type.icon size={20} />
-                                <span className="text-sm font-medium">{type.label}</span>
-                            </button>
-                        ))}
+                        {ORDER_TYPES.filter(t => t.value !== 'online_order').map((type) => {
+                            const Icon = type.value === 'dine_in' ? User : type.value === 'delivery' ? Truck : ShoppingBag
+                            return (
+                                <button
+                                    key={type.value}
+                                    type="button"
+                                    onClick={() => setOrderType(type.value as OrderType)}
+                                    className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all ${orderType === type.value
+                                        ? 'bg-red-600 border-red-600 text-white'
+                                        : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800'
+                                        }`}
+                                >
+                                    <Icon size={20} />
+                                    <span className="text-sm font-medium">{type.label}</span>
+                                </button>
+                            )
+                        })}
                     </div>
 
                     {/* Customer Info */}

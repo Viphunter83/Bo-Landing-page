@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { db } from '../../lib/firebase'
 import { collection, query, getDocs, where } from 'firebase/firestore'
 import { Mail, Send, CheckCircle, Users as UsersIcon, Flame } from 'lucide-react'
+import { useToast } from '../context/ToastContext'
 
 interface Lead {
     id: string
@@ -19,7 +20,7 @@ export default function MarketingPage() {
     const [leads, setLeads] = useState<Lead[]>([])
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
-    const [lastSent, setLastSent] = useState<string | null>(null)
+    const { showToast } = useToast()
 
     useEffect(() => {
         if (!db) return
@@ -53,12 +54,11 @@ export default function MarketingPage() {
             })
             const data = await res.json()
             if (data.success) {
-                setLastSent(`Sent directly to ${data.count} users in "${segment}" segment! 🚀`)
-                setTimeout(() => setLastSent(null), 5000)
+                showToast(`Sent directly to ${data.count} users in "${segment}" segment! 🚀`, 'success')
             }
         } catch (e) {
             console.error(e)
-            alert('Failed to send campaign')
+            showToast('Failed to send campaign', 'error')
         }
         setSending(false)
     }
@@ -193,7 +193,7 @@ export default function MarketingPage() {
                                             : 'N/A'}
                                     </td>
                                     <td className="p-4">
-                                        <button onClick={() => alert(`Sending individual offer to ${pref.email}...`)} className="text-blue-400 hover:text-blue-300 text-sm">
+                                        <button onClick={() => showToast(`Sending individual offer to ${pref.email}...`, 'info')} className="text-blue-400 hover:text-blue-300 text-sm">
                                             Send &quot;Personal&quot;
                                         </button>
                                     </td>
@@ -210,14 +210,6 @@ export default function MarketingPage() {
                     </table>
                 </div>
             </div>
-
-            {/* Toast Notification */}
-            {lastSent && (
-                <div className="fixed bottom-8 right-8 bg-green-500 text-black px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in font-bold">
-                    <CheckCircle size={24} />
-                    {lastSent}
-                </div>
-            )}
         </div>
     )
 }
