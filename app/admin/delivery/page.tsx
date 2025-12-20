@@ -62,6 +62,10 @@ export default function DeliveryAdminPage() {
             })
 
             if (initialLoad.current) initialLoad.current = false
+        }, (error) => {
+            console.error("Firestore snapshot error:", error)
+            showToast("Failed to load orders. Check console for missing index.", "error")
+            setLoading(false)
         })
 
         return () => unsubscribe()

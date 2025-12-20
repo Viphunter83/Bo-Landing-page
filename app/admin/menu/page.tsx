@@ -83,7 +83,7 @@ export default function MenuManager() {
             cell: (item: any) => (
                 <div className="w-12 h-12 relative rounded overflow-hidden bg-zinc-800">
                     {item.image ? (
-                        <Image src={item.image} alt={item.name} fill className="object-cover" />
+                        <Image src={item.image} alt={item.name} fill className="object-cover" sizes="48px" />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xs">No Img</div>
                     )}
