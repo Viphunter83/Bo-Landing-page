@@ -22,22 +22,22 @@ export default function Footer({ t, lang }: FooterProps) {
         <div>
           <h2 className="text-4xl font-black text-red-600 mb-6">BO</h2>
           <p className="text-gray-400 mb-6">
-            Vietnam Cuisine <br/>
-            Dubai Energy <br/>
+            Vietnam Cuisine <br />
+            Dubai Energy <br />
             Russian Roots
           </p>
           <div className="flex gap-4">
-            <a 
-              href="https://instagram.com/bo_dubai" 
-              target="_blank" 
+            <a
+              href="https://instagram.com/bo_dubai"
+              target="_blank"
               rel="noopener noreferrer"
               className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-red-600 transition-colors"
             >
               <Instagram size={20} />
             </a>
-            <a 
-              href="https://bo-dubai.com" 
-              target="_blank" 
+            <a
+              href="https://bo-dubai.com"
+              target="_blank"
               rel="noopener noreferrer"
               className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white hover:bg-red-600 transition-colors"
             >
@@ -86,7 +86,7 @@ export default function Footer({ t, lang }: FooterProps) {
         </div>
       </div>
 
-      <div className="border-t border-zinc-900 py-8 text-center text-gray-600 text-sm">
+      <div className="border-t border-zinc-900 py-8 text-center text-gray-400 text-sm">
         {t.footer.rights}
       </div>
     </footer>
