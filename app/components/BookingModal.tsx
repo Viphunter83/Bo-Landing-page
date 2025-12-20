@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { X, Calendar, Clock, Users, Phone, Mail, CheckCircle } from 'lucide-react'
 
 interface BookingModalProps {
@@ -24,6 +24,31 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
     specialRequests: ''
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [availableSlots, setAvailableSlots] = useState<{ time: string, available: boolean }[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
+
+  // Fetch slots when date or guests change
+  React.useEffect(() => {
+    if (!formData.date) return
+
+    const fetchSlots = async () => {
+      setIsLoadingSlots(true)
+      try {
+        const res = await fetch(`/api/bookings/availability?date=${formData.date}&guests=${formData.guests}`)
+        const data = await res.json()
+        if (data.success) {
+          setAvailableSlots(data.slots)
+        }
+      } catch (e) {
+        console.error("Failed to fetch slots", e)
+      } finally {
+        setIsLoadingSlots(false)
+      }
+    }
+
+    const timeout = setTimeout(fetchSlots, 500) // Debounce slightly
+    return () => clearTimeout(timeout)
+  }, [formData.date, formData.guests])
 
   if (!isOpen) return null
 
@@ -157,125 +182,138 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
                   className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
                 />
               </div>
-              <div>
-                <label className="flex items-center gap-2 text-gray-300 mb-2">
-                  <Clock size={18} className="text-yellow-500" />
-                  <span>{lang === 'en' ? 'Time' : lang === 'ru' ? 'Время' : 'الوقت'}</span>
-                </label>
-                <select
-                  required
-                  value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-                >
-                  <option value="">{lang === 'en' ? 'Select time' : lang === 'ru' ? 'Выберите время' : 'اختر الوقت'}</option>
-                  {['18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'].map(time => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </div>
             </div>
-
-            {/* Guests */}
             <div>
               <label className="flex items-center gap-2 text-gray-300 mb-2">
-                <Users size={18} className="text-yellow-500" />
-                <span>{lang === 'en' ? 'Number of Guests' : lang === 'ru' ? 'Количество гостей' : 'عدد الضيوف'}</span>
+                <Clock size={18} className="text-yellow-500" />
+                <span>{lang === 'en' ? 'Time' : lang === 'ru' ? 'Время' : 'الوقت'}</span>
               </label>
               <select
                 required
-                value={formData.guests}
-                onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
-                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                value={formData.time}
+                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                disabled={!formData.date || isLoadingSlots}
+                className={`w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 ${(!formData.date || isLoadingSlots) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
-                  <option key={num} value={num.toString()}>
-                    {num} {lang === 'en' ? 'guest' : lang === 'ru' ? 'гость' : 'ضيف'} {num > 1 && lang === 'en' ? 's' : ''}
+                <option value="">
+                  {isLoadingSlots
+                    ? (lang === 'ru' ? 'Загрузка слотов...' : 'Loading slots...')
+                    : (lang === 'en' ? 'Select time' : lang === 'ru' ? 'Выберите время' : 'اختر الوقت')}
+                </option>
+
+                {availableSlots.map(slot => (
+                  <option key={slot.time} value={slot.time} disabled={!slot.available}>
+                    {slot.time} {!slot.available && (lang === 'ru' ? '(Занято)' : '(Full)')}
                   </option>
                 ))}
+
+                {availableSlots.length === 0 && formData.date && !isLoadingSlots && (
+                  <option disabled>{lang === 'ru' ? 'Нет свободных мест' : 'No slots available'}</option>
+                )}
               </select>
             </div>
+          </div>
 
-            {/* Contact Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="flex items-center gap-2 text-gray-300 mb-2">
-                  <span>{lang === 'en' ? 'Full Name' : lang === 'ru' ? 'Полное имя' : 'الاسم الكامل'}</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-                  placeholder={lang === 'en' ? 'John Doe' : lang === 'ru' ? 'Иван Иванов' : 'أحمد محمد'}
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 text-gray-300 mb-2">
-                  <Phone size={18} className="text-yellow-500" />
-                  <span>{lang === 'en' ? 'Phone' : lang === 'ru' ? 'Телефон' : 'الهاتف'}</span>
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-                  placeholder="+971 50 123 4567"
-                />
-              </div>
-            </div>
+            {/* Guests */}
+        <div>
+          <label className="flex items-center gap-2 text-gray-300 mb-2">
+            <Users size={18} className="text-yellow-500" />
+            <span>{lang === 'en' ? 'Number of Guests' : lang === 'ru' ? 'Количество гостей' : 'عدد الضيوف'}</span>
+          </label>
+          <select
+            required
+            value={formData.guests}
+            onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
+            className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+              <option key={num} value={num.toString()}>
+                {num} {lang === 'en' ? 'guest' : lang === 'ru' ? 'гость' : 'ضيف'} {num > 1 && lang === 'en' ? 's' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            <div>
-              <label className="flex items-center gap-2 text-gray-300 mb-2">
-                <Mail size={18} className="text-yellow-500" />
-                <span>Email</span>
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-                placeholder="your@email.com"
-              />
-            </div>
+        {/* Contact Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="flex items-center gap-2 text-gray-300 mb-2">
+              <span>{lang === 'en' ? 'Full Name' : lang === 'ru' ? 'Полное имя' : 'الاسم الكامل'}</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+              placeholder={lang === 'en' ? 'John Doe' : lang === 'ru' ? 'Иван Иванов' : 'أحمد محمد'}
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-2 text-gray-300 mb-2">
+              <Phone size={18} className="text-yellow-500" />
+              <span>{lang === 'en' ? 'Phone' : lang === 'ru' ? 'Телефон' : 'الهاتف'}</span>
+            </label>
+            <input
+              type="tel"
+              required
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+              placeholder="+971 50 123 4567"
+            />
+          </div>
+        </div>
 
-            {/* Special Requests */}
-            <div>
-              <label className="text-gray-300 mb-2 block">
-                {lang === 'en' ? 'Special Requests' : lang === 'ru' ? 'Особые пожелания' : 'طلبات خاصة'}
-              </label>
-              <textarea
-                value={formData.specialRequests}
-                onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                rows={3}
-                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
-                placeholder={lang === 'en' ? 'Birthday celebration, dietary restrictions, etc.' : lang === 'ru' ? 'День рождения, диетические ограничения и т.д.' : 'احتفال عيد ميلاد، قيود غذائية، إلخ.'}
-              />
-            </div>
+        <div>
+          <label className="flex items-center gap-2 text-gray-300 mb-2">
+            <Mail size={18} className="text-yellow-500" />
+            <span>Email</span>
+          </label>
+          <input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+            placeholder="your@email.com"
+          />
+        </div>
 
-            {/* Submit Button */}
-            <div className="flex gap-4 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-full font-bold transition-colors"
-              >
-                {lang === 'en' ? 'Cancel' : lang === 'ru' ? 'Отмена' : 'إلغاء'}
-              </button>
-              <button
-                type="submit"
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-colors shadow-lg shadow-red-600/30"
-              >
-                {lang === 'en' ? 'Confirm Booking' : lang === 'ru' ? 'Подтвердить бронь' : 'تأكيد الحجز'}
-              </button>
-            </div>
-          </form>
+        {/* Special Requests */}
+        <div>
+          <label className="text-gray-300 mb-2 block">
+            {lang === 'en' ? 'Special Requests' : lang === 'ru' ? 'Особые пожелания' : 'طلبات خاصة'}
+          </label>
+          <textarea
+            value={formData.specialRequests}
+            onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
+            rows={3}
+            className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
+            placeholder={lang === 'en' ? 'Birthday celebration, dietary restrictions, etc.' : lang === 'ru' ? 'День рождения, диетические ограничения и т.д.' : 'احتفال عيد ميلاد، قيود غذائية، إلخ.'}
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex gap-4 pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-full font-bold transition-colors"
+          >
+            {lang === 'en' ? 'Cancel' : lang === 'ru' ? 'Отмена' : 'إلغاء'}
+          </button>
+          <button
+            type="submit"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-colors shadow-lg shadow-red-600/30"
+          >
+            {lang === 'en' ? 'Confirm Booking' : lang === 'ru' ? 'Подтвердить бронь' : 'تأكيد الحجز'}
+          </button>
+        </div>
+      </form>
         )}
-      </div>
     </div>
+    </div >
   )
 }
 
