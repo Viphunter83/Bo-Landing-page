@@ -44,6 +44,7 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
   const [availableSlots, setAvailableSlots] = useState<{ time: string, available: boolean }[]>([])
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
+
   // ... (Keep existing useEffect for fetching slots)
 
   // Calendar Logic
@@ -159,6 +160,8 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
   const { days: totalDays, firstDay } = getDaysInMonth(currentMonth)
   const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1)
   const emptyDays = Array.from({ length: firstDay }, (_, i) => i)
+
+  if (!isOpen) return null
 
   return (
     <div
