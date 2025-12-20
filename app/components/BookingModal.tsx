@@ -212,108 +212,107 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
                 )}
               </select>
             </div>
-          </div>
 
             {/* Guests */}
-        <div>
-          <label className="flex items-center gap-2 text-gray-300 mb-2">
-            <Users size={18} className="text-yellow-500" />
-            <span>{lang === 'en' ? 'Number of Guests' : lang === 'ru' ? 'Количество гостей' : 'عدد الضيوف'}</span>
-          </label>
-          <select
-            required
-            value={formData.guests}
-            onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
-            className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-          >
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
-              <option key={num} value={num.toString()}>
-                {num} {lang === 'en' ? 'guest' : lang === 'ru' ? 'гость' : 'ضيف'} {num > 1 && lang === 'en' ? 's' : ''}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div>
+              <label className="flex items-center gap-2 text-gray-300 mb-2">
+                <Users size={18} className="text-yellow-500" />
+                <span>{lang === 'en' ? 'Number of Guests' : lang === 'ru' ? 'Количество гостей' : 'عدد الضيوف'}</span>
+              </label>
+              <select
+                required
+                value={formData.guests}
+                onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
+                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                  <option key={num} value={num.toString()}>
+                    {num} {lang === 'en' ? 'guest' : lang === 'ru' ? 'гость' : 'ضيف'} {num > 1 && lang === 'en' ? 's' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Contact Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="flex items-center gap-2 text-gray-300 mb-2">
-              <span>{lang === 'en' ? 'Full Name' : lang === 'ru' ? 'Полное имя' : 'الاسم الكامل'}</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-              placeholder={lang === 'en' ? 'John Doe' : lang === 'ru' ? 'Иван Иванов' : 'أحمد محمد'}
-            />
-          </div>
-          <div>
-            <label className="flex items-center gap-2 text-gray-300 mb-2">
-              <Phone size={18} className="text-yellow-500" />
-              <span>{lang === 'en' ? 'Phone' : lang === 'ru' ? 'Телефон' : 'الهاتف'}</span>
-            </label>
-            <input
-              type="tel"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-              placeholder="+971 50 123 4567"
-            />
-          </div>
-        </div>
+            {/* Contact Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-gray-300 mb-2">
+                  <span>{lang === 'en' ? 'Full Name' : lang === 'ru' ? 'Полное имя' : 'الاسم الكامل'}</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                  placeholder={lang === 'en' ? 'John Doe' : lang === 'ru' ? 'Иван Иванов' : 'أحمد محمد'}
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-gray-300 mb-2">
+                  <Phone size={18} className="text-yellow-500" />
+                  <span>{lang === 'en' ? 'Phone' : lang === 'ru' ? 'Телефон' : 'الهاتف'}</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                  placeholder="+971 50 123 4567"
+                />
+              </div>
+            </div>
 
-        <div>
-          <label className="flex items-center gap-2 text-gray-300 mb-2">
-            <Mail size={18} className="text-yellow-500" />
-            <span>Email</span>
-          </label>
-          <input
-            type="email"
-            required
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
-            placeholder="your@email.com"
-          />
-        </div>
+            <div>
+              <label className="flex items-center gap-2 text-gray-300 mb-2">
+                <Mail size={18} className="text-yellow-500" />
+                <span>Email</span>
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                placeholder="your@email.com"
+              />
+            </div>
 
-        {/* Special Requests */}
-        <div>
-          <label className="text-gray-300 mb-2 block">
-            {lang === 'en' ? 'Special Requests' : lang === 'ru' ? 'Особые пожелания' : 'طلبات خاصة'}
-          </label>
-          <textarea
-            value={formData.specialRequests}
-            onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-            rows={3}
-            className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
-            placeholder={lang === 'en' ? 'Birthday celebration, dietary restrictions, etc.' : lang === 'ru' ? 'День рождения, диетические ограничения и т.д.' : 'احتفال عيد ميلاد، قيود غذائية، إلخ.'}
-          />
-        </div>
+            {/* Special Requests */}
+            <div>
+              <label className="text-gray-300 mb-2 block">
+                {lang === 'en' ? 'Special Requests' : lang === 'ru' ? 'Особые пожелания' : 'طلبات خاصة'}
+              </label>
+              <textarea
+                value={formData.specialRequests}
+                onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
+                rows={3}
+                className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none"
+                placeholder={lang === 'en' ? 'Birthday celebration, dietary restrictions, etc.' : lang === 'ru' ? 'День рождения, диетические ограничения и т.д.' : 'احتفال عيد ميلاد، قيود غذائية، إلخ.'}
+              />
+            </div>
 
-        {/* Submit Button */}
-        <div className="flex gap-4 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-full font-bold transition-colors"
-          >
-            {lang === 'en' ? 'Cancel' : lang === 'ru' ? 'Отмена' : 'إلغاء'}
-          </button>
-          <button
-            type="submit"
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-colors shadow-lg shadow-red-600/30"
-          >
-            {lang === 'en' ? 'Confirm Booking' : lang === 'ru' ? 'Подтвердить бронь' : 'تأكيد الحجز'}
-          </button>
-        </div>
-      </form>
+            {/* Submit Button */}
+            <div className="flex gap-4 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-full font-bold transition-colors"
+              >
+                {lang === 'en' ? 'Cancel' : lang === 'ru' ? 'Отмена' : 'إلغاء'}
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-colors shadow-lg shadow-red-600/30"
+              >
+                {lang === 'en' ? 'Confirm Booking' : lang === 'ru' ? 'Подтвердить бронь' : 'تأكيد الحجز'}
+              </button>
+            </div>
+          </form>
         )}
+      </div>
     </div>
-    </div >
   )
 }
 
