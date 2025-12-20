@@ -14,6 +14,7 @@ import BookingModal from '../components/BookingModal'
 import FullMenuModal from '../components/FullMenuModal'
 import DishModal from '../components/DishModal'
 import JsonLd from '../components/JsonLd'
+import DubaiPulseTicker from '../components/DubaiPulseTicker'
 import { content } from '../data/content'
 import { faqData } from '../data/faqData'
 import { getMenuItemById } from '../data/menuData'
@@ -71,6 +72,7 @@ export default function Home({
   return (
     <div className={`min-h-screen bg-black text-white font-sans selection:bg-red-600 selection:text-white`} dir={dir}>
       <JsonLd data={faqSchema} />
+      <DubaiPulseTicker lang={lang} />
       <Navbar
         lang={lang}
         t={content[lang as keyof typeof content]}

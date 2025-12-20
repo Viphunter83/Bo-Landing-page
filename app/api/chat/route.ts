@@ -3,7 +3,16 @@ import { getAIClient } from '../../lib/ai/client'
 
 export async function POST(req: Request) {
     try {
-        const { messages, context } = await req.json()
+        const body = await req.json()
+        const { messages, context } = body
+
+        if (!messages || !Array.isArray(messages)) {
+            console.error('Invalid messages format:', messages)
+            return NextResponse.json(
+                { error: 'Messages array is required' },
+                { status: 400 }
+            )
+        }
 
         // In the future, we can toggle this based on ENV
         const ai = getAIClient('proxy') // Using 'proxy' as default now
@@ -12,9 +21,9 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ role: 'assistant', content: response })
     } catch (error) {
-        console.error('AI Error:', error)
+        console.error('AI Route Error:', error)
         return NextResponse.json(
-            { error: 'Failed to process request' },
+            { error: error instanceof Error ? error.message : 'Failed to process request' },
             { status: 500 }
         )
     }

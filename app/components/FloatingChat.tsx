@@ -16,6 +16,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     // Load preferences
@@ -36,6 +37,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
         setIsLoading(true)
 
         try {
+            setError(null)
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -44,6 +46,11 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                     context: { activeVibe, preferences }
                 })
             })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || 'Failed to connect')
+            }
 
             const data = await response.json()
 
@@ -64,6 +71,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
             }
         } catch (error) {
             console.error('Failed to chat', error)
+            setError(lang === 'ru' ? 'Ошибка соединения. Попробуйте позже.' : 'Connection error. Please try again.')
         } finally {
             setIsLoading(false)
         }
@@ -216,6 +224,13 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                                 <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                                 <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                 <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                        </div>
+                    )}
+                    {error && (
+                        <div className="flex justify-center my-2">
+                            <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-xs px-3 py-1.5 rounded-full">
+                                {error}
                             </div>
                         </div>
                     )}

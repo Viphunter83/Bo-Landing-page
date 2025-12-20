@@ -82,7 +82,8 @@ export class ProxyAIProvider implements AIProvider {
             })
 
             if (!response.ok) {
-                throw new Error(`ProxyAPI Error: ${response.status} ${response.statusText}`)
+                const errorText = await response.text()
+                throw new Error(`ProxyAPI Error: ${response.status} ${response.statusText} - ${errorText}`)
             }
 
             const data = await response.json()

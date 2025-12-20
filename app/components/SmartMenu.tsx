@@ -16,6 +16,8 @@ interface SmartMenuProps {
 import { useEffect, useState } from 'react'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { getInitialTrends } from '../lib/trends'
+import { Flame } from 'lucide-react'
 
 export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activeVibe }: SmartMenuProps) {
   const [liveData, setLiveData] = useState<Record<string, any>>({})
@@ -79,8 +81,14 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
               >
                 <div className="aspect-[4/5] rounded-2xl overflow-hidden mb-6 relative">
                   {tag && (
-                    <div className="absolute top-4 left-4 bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full z-10">
+                    <div className="absolute top-4 left-4 bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full z-10 flex items-center gap-1">
                       {tag}
+                    </div>
+                  )}
+                  {/* Dynamic Trending Badge */}
+                  {!tag && ['pho-bo-special', 'nem-ran'].includes(dish.id) && (
+                    <div className="absolute top-4 left-4 bg-gradient-to-r from-orange-600 to-red-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 flex items-center gap-1 animate-pulse">
+                      <Flame size={12} fill="currentColor" /> {lang === 'ru' ? 'Популярное' : 'Trending'}
                     </div>
                   )}
                   {dish.stock === 'out_of_stock' && (
