@@ -45,7 +45,31 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
   const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
 
-  // ... (Keep existing useEffect for fetching slots)
+  // Fetch Slots
+  React.useEffect(() => {
+    const fetchSlots = async () => {
+      if (!formData.date) return
+
+      setIsLoadingSlots(true)
+      try {
+        const res = await fetch(`/api/bookings/availability?date=${formData.date}&guests=${formData.guests}`)
+        const data = await res.json()
+        if (data.success) {
+          setAvailableSlots(data.slots)
+        } else {
+          console.error("Failed to fetch slots:", data.error)
+          setAvailableSlots([])
+        }
+      } catch (error) {
+        console.error("Error fetching slots:", error)
+        setAvailableSlots([])
+      } finally {
+        setIsLoadingSlots(false)
+      }
+    }
+
+    fetchSlots()
+  }, [formData.date, formData.guests])
 
   // Calendar Logic
   const getDaysInMonth = (date: Date) => {
