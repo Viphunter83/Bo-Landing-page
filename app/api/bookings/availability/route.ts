@@ -28,12 +28,12 @@ export async function GET(req: Request) {
         const bookingsRef = collection(db, 'bookings');
         const q = query(
             bookingsRef,
-            where('date', '==', date),
-            where('status', '!=', 'cancelled')
+            where('date', '==', date)
         );
 
         const querySnapshot = await getDocs(q);
-        const bookings: Booking[] = querySnapshot.docs.map(doc => doc.data() as Booking);
+        const allBookings = querySnapshot.docs.map(doc => doc.data() as Booking);
+        const bookings = allBookings.filter(b => b.status !== 'cancelled');
 
         // 3. Generate all slots
         const slots = generateTimeSlots(config.openingTime, config.closingTime, config.intervalMinutes);
