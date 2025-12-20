@@ -39,8 +39,42 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 return
             }
 
-            // 1. Save to DB (Block only for essential data saving)
-            await createOrder({
+
+            // 1. Construct Message First (Synchronous & Fast)
+            const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join(platform === 'WhatsApp' ? '%0A' : '\n')
+
+            let locationText = ''
+            if (orderType === 'delivery') {
+                const addr = `📍 *Delivery to:* ${address} ${apartment ? `(Apt ${apartment})` : ''}`
+                locationText = platform === 'WhatsApp' ? `%0A${addr}` : `\n${addr}`
+            } else {
+                locationText = platform === 'WhatsApp' ? `%0A🛍️ *Pickup*` : `\n🛍️ *Pickup*`
+            }
+
+            const paymentText = platform === 'WhatsApp' ? `%0A💳 Payment: ${paymentMethod}` : `\n💳 Payment: ${paymentMethod}`
+
+            const totalText = `Total: ${total} AED`
+            const msgBody = orderItems + locationText + paymentText + (platform === 'WhatsApp' ? `%0A%0A${totalText}` : `\n\n${totalText}`)
+            const fullMsg = `Hi Bo! I would like to order:${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}${msgBody}${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}Please confirm! 🍜`
+
+            // 2. Open App IMMEDIATELY (Critical for INP & Popup Blockers)
+            if (platform === 'WhatsApp') {
+                window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${fullMsg}`, '_blank')
+            } else {
+                // Clipboard API is async but usually fast. 
+                // We chain the window.open to it to ensure flows work, but it might delay slightly suitable for Telegram.
+                navigator.clipboard.writeText(fullMsg.replace(/%0A/g, '\n')).then(() => {
+                    alert(lang === 'ru' ? 'Заказ скопирован! Вставьте его в чат.' : 'Order copied! Paste it in the chat.')
+                    window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
+                }).catch(() => {
+                    // Fallback if clipboard fails (rare)
+                    window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
+                })
+            }
+
+            // 3. Save to DB & Notify (Background / Fire-and-forget)
+            // We do NOT await this to keep the UI responsive.
+            createOrder({
                 items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
                 total: `${total} AED`,
                 platform,
@@ -51,12 +85,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 apartment,
                 paymentMethod,
                 email
-            })
+            }).catch(err => console.error("BG DB Save Error", err))
 
-            // 2. Notify Admin & Send Email (Non-blocking / Fire-and-forget)
-            // We do NOT await these because we want the user to get to WhatsApp/Telegram immediately.
-            // The browser will keep these requests alive since we open a new tab.
-
+            // 4. Notifications (Background)
             fetch('/api/notifications/telegram', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -91,33 +122,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                 }).catch(err => console.error("BG Email Error", err))
             }
 
-            // 3. Construct Message & Open App
-            const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join(platform === 'WhatsApp' ? '%0A' : '\n')
-
-            let locationText = ''
-            if (orderType === 'delivery') {
-                const addr = `📍 *Delivery to:* ${address} ${apartment ? `(Apt ${apartment})` : ''}`
-                locationText = platform === 'WhatsApp' ? `%0A${addr}` : `\n${addr}`
-            } else {
-                locationText = platform === 'WhatsApp' ? `%0A🛍️ *Pickup*` : `\n🛍️ *Pickup*`
-            }
-
-            const paymentText = platform === 'WhatsApp' ? `%0A💳 Payment: ${paymentMethod}` : `\n💳 Payment: ${paymentMethod}`
-
-            const totalText = `Total: ${total} AED`
-            const msgBody = orderItems + locationText + paymentText + (platform === 'WhatsApp' ? `%0A%0A${totalText}` : `\n\n${totalText}`)
-            const fullMsg = `Hi Bo! I would like to order:${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}${msgBody}${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}Please confirm! 🍜`
-
-            if (platform === 'WhatsApp') {
-                window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${fullMsg}`, '_blank')
-            } else {
-                navigator.clipboard.writeText(fullMsg.replace(/%0A/g, '\n')).then(() => {
-                    alert(lang === 'ru' ? 'Заказ скопирован! Вставьте его в чат.' : 'Order copied! Paste it in the chat.')
-                    window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
-                })
-            }
-
-            // Allow state to reset after a small delay to prevent double clicks immediately
+            // Reset UI state
             setTimeout(() => setIsSubmitting(false), 2000)
 
         } catch (e) {
