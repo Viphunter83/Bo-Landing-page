@@ -161,14 +161,24 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
   const emptyDays = Array.from({ length: firstDay }, (_, i) => i)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className={`bg-zinc-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-yellow-500/20 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className={`bg-zinc-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-yellow-500/20 shadow-2xl relative ${lang === 'ar' ? 'text-right' : 'text-left'}`}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-zinc-900/95 backdrop-blur border-b border-zinc-800 p-6 flex justify-between items-center z-10">
+        <div className="sticky top-0 bg-zinc-900/95 backdrop-blur border-b border-zinc-800 p-6 flex justify-between items-center z-20">
           <h2 className="text-2xl font-black text-white">
             {lang === 'en' ? 'Book a Table' : lang === 'ru' ? 'Бронь стола' : 'احجز طاولة'}
           </h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors p-2 hover:bg-zinc-800 rounded-full">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-zinc-400 hover:text-white transition-colors p-2 hover:bg-zinc-800 rounded-full active:scale-95 z-30"
+          >
             <X size={24} />
           </button>
         </div>
