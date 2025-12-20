@@ -6,7 +6,15 @@ export class ProxyAIProvider implements AIProvider {
     private baseUrl: string
 
     constructor() {
-        this.apiKey = (process.env.LLM_API_KEY || '').trim()
+        const key = process.env.LLM_API_KEY || process.env.PROXY_API_KEY || process.env.OPENAI_API_KEY || ''
+        this.apiKey = key.trim()
+
+        // Log which key source is being used (security: show first 3 chars only)
+        if (process.env.LLM_API_KEY) console.log('AI Provider: Using LLM_API_KEY')
+        else if (process.env.PROXY_API_KEY) console.log('AI Provider: Using PROXY_API_KEY')
+        else if (process.env.OPENAI_API_KEY) console.log('AI Provider: Using OPENAI_API_KEY')
+        else console.warn('AI Provider: No API Key found in env vars')
+
         // Ensure strictly no trailing slash for the base URL to consistency
         this.baseUrl = (process.env.LLM_BASE_URL || 'https://api.proxyapi.ru/openai/v1').replace(/\/+$/, '')
     }
