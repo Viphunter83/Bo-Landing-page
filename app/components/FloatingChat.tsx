@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { MessageSquare, X, Send, Sparkles, BrainCircuit } from 'lucide-react'
 import LunchQuizModal, { UserPreferences } from './LunchQuizModal'
+import { useCart } from '../context/CartContext'
+import { getMenuItemById } from '../data/menuData'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -10,6 +12,7 @@ interface Message {
 }
 
 export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang: string, activeVibe: string, onVibeChange?: (vibe: string) => void }) {
+    const { addToCart } = useCart()
     const [isOpen, setIsOpen] = useState(false)
     const [quizOpen, setQuizOpen] = useState(false)
     const [preferences, setPreferences] = useState<UserPreferences | null>(null)
@@ -64,6 +67,22 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                     if (['classic', 'spicy', 'vegan', 'seafood', 'sweet'].includes(newVibe)) {
                         onVibeChange?.(newVibe)
                         content = content.replace(/\[VIBE: \w+\]/, '').trim()
+                    }
+                }
+
+                // Agentic Ordering Check
+                const orderMatch = content.match(/\[ORDER: ({.*?})\]/)
+                if (orderMatch) {
+                    try {
+                        const orderData = JSON.parse(orderMatch[1])
+                        const dish = getMenuItemById(orderData.id)
+                        if (dish) {
+                            addToCart(dish, orderData.qty || 1)
+                            // Clean response
+                            content = content.replace(/\[ORDER: {.*?}\]/, '').trim()
+                        }
+                    } catch (e) {
+                        console.error('Failed to parse order', e)
                     }
                 }
 
