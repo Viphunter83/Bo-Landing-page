@@ -47,7 +47,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: [...messages, { role: 'user', content: text }],
-                    context: { activeVibe, preferences }
+                    context: { activeVibe, preferences, lang }
                 })
             })
 

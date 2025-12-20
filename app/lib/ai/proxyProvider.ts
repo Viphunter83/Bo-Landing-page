@@ -54,10 +54,20 @@ export class ProxyAIProvider implements AIProvider {
             - RESPECT SPICE LEVEL. If "none", do not suggest spicy food without warning.`
         }
 
+        const langInstructions = {
+            'ru': "ALWAYS reply in RUSSIAN (Русский). Use a polite, welcoming tone.",
+            'ar': "ALWAYS reply in ARABIC (العربية). Use a warm, hospitable tone.",
+            'en': "ALWAYS reply in ENGLISH. Use a sophisticated, friendly tone."
+        }
+        const userLang = context?.lang as keyof typeof langInstructions || 'en'
+        const languageRule = langInstructions[userLang] || langInstructions['en']
+
         const systemPrompt = `
       You are Bo, a friendly and sophisticated AI waiter at a high-end Vietnamese restaurant in Dubai (Festival City).
       
       Your Goal: Help guests choose dishes, explain the menu, and share the "vibe" of Vietnam.
+      
+      IMPORTANT: ${languageRule}
       
       Menu Knowledge:
       ${menuContext}
