@@ -26,12 +26,17 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
     if (!db) return // Skip if firebase not init
 
     // Listen to real-time menu updates
+    console.log("Subscribing to menu_items...")
     const unsubscribe = onSnapshot(collection(db, 'menu_items'), (snapshot) => {
+      console.log("Menu update received!", snapshot.size, "docs")
       const updates: Record<string, any> = {}
       snapshot.forEach((doc) => {
         updates[doc.id] = doc.data()
+        console.log("Updated item:", doc.id, doc.data().price)
       })
       setLiveData(updates)
+    }, (error) => {
+      console.error("Menu snapshot error:", error)
     })
     return () => unsubscribe()
   }, [])
@@ -63,6 +68,8 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {featuredDishes.map((staticDish, index) => {
             // Merge static data with live data (if available)
+            // Use ID from static as key to find update.
+            // If live data doesn't exist yet (first load), stick to static.
             const liveItem = liveData[staticDish.id]
             const dish = liveItem ? { ...staticDish, ...liveItem } : staticDish
 
@@ -74,10 +81,10 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
             const tag = dish.tag && (lang === 'en' ? dish.tag : lang === 'ru' ? dish.tagRu : dish.tagAr)
 
             return (
-              <Link
+              <button
                 key={dish.id}
-                href={`/${lang}/menu/${dish.id}`}
-                className="group relative text-left block"
+                onClick={() => onDishClick(dish.id)}
+                className="group relative text-left block w-full"
               >
                 <div className="aspect-[4/5] rounded-2xl overflow-hidden mb-6 relative">
                   {tag && (
@@ -118,7 +125,7 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
                     <p className="text-gray-300 text-sm">{desc}</p>
                   </div>
                 </div>
-              </Link>
+              </button>
             )
           })}
         </div>

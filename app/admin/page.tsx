@@ -26,14 +26,18 @@ export default function AdminDashboard() {
         // 2. Subscribe to Orders (New)
         const qOrders = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50))
         const unsubOrders = onSnapshot(qOrders, (snapshot) => {
-            const ordersData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                dataSource: 'order',
-                type: 'online_order', // Distinguish from 'dine_in' booking
-                date: doc.data().createdAt?.toDate().toLocaleDateString() || 'Today',
-                time: doc.data().createdAt?.toDate().toLocaleTimeString() || 'Now'
-            }))
+            const ordersData = snapshot.docs.map(doc => {
+                const data = doc.data()
+                return {
+                    id: doc.id,
+                    ...data,
+                    dataSource: 'order',
+                    type: data.type || 'online_order', // Dynamic Type
+                    date: data.createdAt?.toDate().toLocaleDateString() || 'Today',
+                    time: data.createdAt?.toDate().toLocaleTimeString() || 'Now',
+                    address: data.address ? `${data.address}${data.apartment ? ', ' + data.apartment : ''}` : null
+                }
+            })
             updateUnifiedList(null, ordersData)
         })
 
@@ -41,6 +45,7 @@ export default function AdminDashboard() {
             unsubBookings()
             unsubOrders()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // Merge helper
@@ -153,13 +158,18 @@ export default function AdminDashboard() {
                                         <div className="text-xs mt-1">{booking.guests} ppl</div>
                                     </td>
                                     <td className="p-3 max-w-xs">
-                                        <div className="truncate text-white">{booking.items || '-'}</div>
+                                        <div className="truncate text-white">
+                                            {Array.isArray(booking.items)
+                                                ? booking.items.map((i: any) => `${i.quantity}x ${i.name}`).join(', ')
+                                                : (booking.items || '-')
+                                            }
+                                        </div>
                                         <div className="text-xs text-zinc-500 truncate">{booking.specialRequests || booking.notes}</div>
                                     </td>
                                     <td className="p-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${(booking.status === 'confirmed' || booking.status === 'ready') ? 'bg-green-500/20 text-green-500' :
-                                                booking.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
-                                                    'bg-yellow-500/20 text-yellow-500'
+                                            booking.status === 'cancelled' ? 'bg-red-500/20 text-red-500' :
+                                                'bg-yellow-500/20 text-yellow-500'
                                             }`}>
                                             {booking.status ? booking.status.toUpperCase() : 'UNKNOWN'}
                                         </span>

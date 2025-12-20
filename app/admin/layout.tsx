@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from '../lib/firebase'
-import { LayoutDashboard, Menu, Users, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Menu, Users, Settings, LogOut, Megaphone } from 'lucide-react'
 
 export default function AdminLayout({
     children,
@@ -18,7 +18,12 @@ export default function AdminLayout({
     const pathname = usePathname()
 
     useEffect(() => {
-        if (!auth) return
+
+
+        if (!auth) {
+            setLoading(false)
+            return
+        }
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user)
             setLoading(false)
@@ -50,6 +55,15 @@ export default function AdminLayout({
     }
 
     // Protected Admin Layout
+    if (!auth && !loading) {
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-4">
+                <h1 className="text-xl font-bold text-red-500 mb-2">Configuration Error</h1>
+                <p className="text-zinc-400">Firebase is not initialized. Check your environment variables.</p>
+            </div>
+        )
+    }
+
     if (!user) return null // Should redirect in useEffect, but just in case
 
     return (
@@ -66,9 +80,10 @@ export default function AdminLayout({
                 <nav className="flex-1 space-y-2">
                     <NavLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
                     <NavLink href="/admin/analytics" icon={<Settings size={20} />} label="Analytics" />
+                    <NavLink href="/admin/menu" icon={<Menu size={20} />} label="Menu Manager" />
+                    <NavLink href="/admin/kitchen" icon={<Users size={20} />} label="Kitchen Display" />
                     <NavLink href="/admin/migration" icon={<Settings size={20} />} label="Migration" />
-                    {/* <NavLink href="/admin/menu" icon={<Menu size={20} />} label="Menu Manager" /> */}
-                    {/* <NavLink href="/admin/bookings" icon={<Users size={20} />} label="Bookings" /> */}
+                    <NavLink href="/admin/marketing" icon={<Megaphone size={20} />} label="Marketing" />
                 </nav>
 
                 <button

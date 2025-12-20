@@ -8,8 +8,13 @@ export async function POST(request: Request) {
             type = 'dine_in',
             address,
             items,
+            paymentMethod,
             source = 'web'
         } = await request.json();
+
+        // Defaults for immediate orders
+        const displayDate = date || new Date().toLocaleDateString('en-GB');
+        const displayTime = time || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
         const token = process.env.TELEGRAM_BOT_TOKEN;
         const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -37,6 +42,17 @@ export async function POST(request: Request) {
             itemsSection = `📦 *Order:* \n${items}\n`;
         }
 
+        // 4. Payment Method
+        let paymentSection = '';
+        if (paymentMethod) {
+            const methodMap: Record<string, string> = {
+                card: '💳 Card (on delivery)',
+                cash: '💵 Cash',
+                online: '🔗 Online Link Request'
+            };
+            paymentSection = `💰 *Payment:* ${methodMap[paymentMethod] || paymentMethod}\n`;
+        }
+
         // 4. Source Badge
         const sourceBadge = source === 'manual' ? '🛠️ *Admin Created*' : '🌐 *Web Booking*';
 
@@ -45,11 +61,12 @@ ${header}
 
 👤 *Name:* ${name}
 📞 *Phone:* ${phone}
-📅 *Date:* ${date}
-⏰ *Time:* ${time}
+📅 *Date:* ${displayDate}
+⏰ *Time:* ${displayTime}
 ${guests ? `👥 *Guests:* ${guests}` : ''}
 ${locationSection}
 ${itemsSection}
+${paymentSection}
 ${specialRequests ? `📝 *Note:* ${specialRequests}` : ''}
 
 ${sourceBadge}

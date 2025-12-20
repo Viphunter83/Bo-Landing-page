@@ -6,6 +6,7 @@ export interface QuizPreferences {
     diet: string; // 'clean' | 'comfort'
     spice: string; // 'spicy' | 'mild'
     mood: string; // 'solo' | 'social'
+    email?: string; // Captured in Step 4
 }
 
 export const saveQuizResult = async (prefs: QuizPreferences) => {

@@ -8,6 +8,7 @@ export interface UserPreferences {
     hunger: 'snack' | 'meal' | 'serving'
     spice: 'none' | 'mild' | 'spicy' | 'fire'
     mood: 'comfort' | 'healthy' | 'party' | 'adventurous'
+    email?: string
 }
 
 interface LunchQuizModalProps {
@@ -52,12 +53,18 @@ const QUESTIONS = [
 export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: LunchQuizModalProps) {
     const [step, setStep] = useState(0)
     const [answers, setAnswers] = useState<Partial<UserPreferences>>({})
+    const [email, setEmail] = useState('')
+    const [submitting, setSubmitting] = useState(false)
 
     // Reset state when opening
     useEffect(() => {
         if (isOpen) {
             setStep(0)
             setAnswers({})
+            setStep(0)
+            setAnswers({})
+            setEmail('')
+            setSubmitting(false)
         }
     }, [isOpen])
 
@@ -66,20 +73,37 @@ export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: Lu
         const newAnswers = { ...answers, [currentQuestionId]: value }
         setAnswers(newAnswers)
 
-        if (step < QUESTIONS.length - 1) {
-            setTimeout(() => setStep(step + 1), 200) // Slight delay for better UX
-        } else {
-            // Quiz Finished
-            setTimeout(() => {
-                onComplete(newAnswers as UserPreferences)
-                onClose()
-            }, 300)
+        // If we just answered the last question, go to Email Step (index = QUESTIONS.length)
+        // Otherwise, go to next question
+        setTimeout(() => {
+            setStep(s => s + 1)
+        }, 200)
+    }
+
+    const handleEmailSubmit = (skipped: boolean) => {
+        setSubmitting(true)
+        const finalAnswers = { ...answers }
+        if (!skipped && email) {
+            // @ts-ignore
+            finalAnswers.email = email
         }
+
+        // Slight delay to show "sending" state if needed, or just close
+        setTimeout(() => {
+            onComplete(finalAnswers as UserPreferences)
+            onClose()
+        }, 500)
     }
 
     if (!isOpen) return null
 
+    // Determine current view
+    const isEmailStep = step === QUESTIONS.length
     const currentQ = QUESTIONS[step]
+
+    // Progress logic: Questions + 1 Email step
+    const totalSteps = QUESTIONS.length + 1
+    const progress = ((step + 1) / totalSteps) * 100
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -94,7 +118,7 @@ export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: Lu
                     <motion.div
                         className="h-full bg-gradient-to-r from-red-500 to-yellow-500"
                         initial={{ width: 0 }}
-                        animate={{ width: `${((step + 1) / QUESTIONS.length) * 100}%` }}
+                        animate={{ width: `${progress}%` }}
                     />
                 </div>
 
@@ -108,40 +132,88 @@ export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: Lu
 
                 <div className="p-8 pt-12">
                     <AnimatePresence mode="wait">
-                        <motion.div
-                            key={step}
-                            initial={{ x: 50, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: -50, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <h2 className="text-2xl font-black text-white mb-8 text-center leading-tight">
-                                {lang === 'ru' ? currentQ.title.ru : currentQ.title.en}
-                            </h2>
+                        {isEmailStep ? (
+                            <motion.div
+                                key="email-step"
+                                initial={{ x: 50, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: -50, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex flex-col items-center text-center"
+                            >
+                                <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 text-3xl">
+                                    🎁
+                                </div>
+                                <h2 className="text-2xl font-black text-white mb-2 leading-tight">
+                                    {lang === 'ru' ? 'Почти готово!' : 'Almost done!'}
+                                </h2>
+                                <p className="text-zinc-400 mb-8">
+                                    {lang === 'ru'
+                                        ? 'Оставьте email, чтобы получить скидку 10%.'
+                                        : 'Leave your email to unlock a 10% discount code.'}
+                                </p>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                {currentQ.options.map((opt) => (
-                                    <button
-                                        key={opt.value}
-                                        onClick={() => handleOptionSelect(opt.value)}
-                                        className="flex flex-col items-center justify-center p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl hover:bg-zinc-800 hover:border-yellow-500/50 hover:scale-[1.02] transition-all group"
-                                    >
-                                        <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                                            {opt.icon}
-                                        </span>
-                                        <span className="text-sm font-bold text-zinc-300 group-hover:text-white text-center">
-                                            {lang === 'ru' ? (opt.label as any).ru : (opt.label as any).en}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        </motion.div>
+                                <input
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white mb-4 focus:outline-none focus:border-yellow-500 transition-colors"
+                                />
+
+                                <button
+                                    onClick={() => handleEmailSubmit(false)}
+                                    disabled={!email || submitting}
+                                    className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                                >
+                                    {submitting
+                                        ? (lang === 'ru' ? 'Сохраняем...' : 'Saving...')
+                                        : (lang === 'ru' ? 'Получить Купон' : 'Get Coupon')}
+                                </button>
+
+                                <button
+                                    onClick={() => handleEmailSubmit(true)}
+                                    className="text-sm text-zinc-500 hover:text-white transition-colors underline"
+                                >
+                                    {lang === 'ru' ? 'Пропустить' : 'Skip & See Results'}
+                                </button>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key={step}
+                                initial={{ x: 50, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                exit={{ x: -50, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <h2 className="text-2xl font-black text-white mb-8 text-center leading-tight">
+                                    {lang === 'ru' ? currentQ.title.ru : currentQ.title.en}
+                                </h2>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    {currentQ.options.map((opt) => (
+                                        <button
+                                            key={opt.value}
+                                            onClick={() => handleOptionSelect(opt.value)}
+                                            className="flex flex-col items-center justify-center p-6 bg-zinc-900/50 border border-zinc-800 rounded-2xl hover:bg-zinc-800 hover:border-yellow-500/50 hover:scale-[1.02] transition-all group"
+                                        >
+                                            <span className="text-4xl mb-3 group-hover:scale-110 transition-transform duration-300">
+                                                {opt.icon}
+                                            </span>
+                                            <span className="text-sm font-bold text-zinc-300 group-hover:text-white text-center">
+                                                {lang === 'ru' ? (opt.label as any).ru : (opt.label as any).en}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
                     </AnimatePresence>
                 </div>
 
                 {/* Footer/Context */}
                 <div className="p-4 text-center text-xs text-zinc-600 border-t border-zinc-800/50">
-                    Step {step + 1} of {QUESTIONS.length}
+                    Step {step + 1} of {totalSteps}
                 </div>
             </motion.div>
         </div>

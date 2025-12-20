@@ -1,6 +1,6 @@
-'use client'
-
-import { X, Clock, Flame, Leaf, Heart } from 'lucide-react'
+import { useCart } from '../context/CartContext'
+import { useState } from 'react'
+import { X, Clock, Flame, Leaf, Heart, Minus, Plus, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
 import { MenuItem } from '../data/menuData'
 import DeliveryServices from './DeliveryServices'
@@ -13,12 +13,21 @@ interface DishModalProps {
 }
 
 export default function DishModal({ isOpen, onClose, dish, lang }: DishModalProps) {
+  const { addToCart, toggleCart } = useCart()
+  const [quantity, setQuantity] = useState(1)
+
   if (!isOpen || !dish) return null
 
   const isRTL = lang === 'ar'
   const name = lang === 'en' ? dish.name : lang === 'ru' ? dish.nameRu : dish.nameAr
   const desc = lang === 'en' ? dish.desc : lang === 'ru' ? dish.descRu : dish.descAr
   const tag = dish.tag && (lang === 'en' ? dish.tag : lang === 'ru' ? dish.tagRu : dish.tagAr)
+
+  const handleAddToCart = () => {
+    addToCart(dish, quantity)
+    onClose()
+    toggleCart() // Open cart to show item
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm overflow-y-auto">
@@ -108,31 +117,21 @@ export default function DishModal({ isOpen, onClose, dish, lang }: DishModalProp
             </div>
           )}
 
-          {/* Delivery Services */}
-          <div className="mb-6">
-            <DeliveryServices lang={lang} />
-          </div>
-
           {/* Action Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-zinc-800">
+          <div className="flex flex-col md:flex-row gap-4 pt-4 border-t border-zinc-800 items-center">
+            {/* Quantity */}
+            <div className="flex items-center gap-3 bg-zinc-800 rounded-full p-2 h-14">
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 flex items-center justify-center text-white hover:bg-zinc-700 rounded-full transition"><Minus size={18} /></button>
+              <span className="w-8 text-center font-bold text-xl">{quantity}</span>
+              <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 flex items-center justify-center text-white hover:bg-zinc-700 rounded-full transition"><Plus size={18} /></button>
+            </div>
+
             <button
-              onClick={onClose}
-              className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white px-6 py-3 rounded-full font-bold transition-colors"
+              onClick={handleAddToCart}
+              className="flex-1 w-full bg-red-600 hover:bg-red-700 text-white px-6 py-4 rounded-full font-bold transition-colors shadow-lg shadow-red-600/30 flex items-center justify-center gap-2"
             >
-              {lang === 'en' ? 'Close' : lang === 'ru' ? 'Закрыть' : 'إغلاق'}
-            </button>
-            <button
-              onClick={() => {
-                // Scroll to booking section or open booking modal
-                const bookingBtn = document.querySelector('[data-booking-trigger]')
-                if (bookingBtn) {
-                  (bookingBtn as HTMLElement).click()
-                }
-                onClose()
-              }}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-colors shadow-lg shadow-red-600/30"
-            >
-              {lang === 'en' ? 'Book a Table' : lang === 'ru' ? 'Забронировать стол' : 'احجز طاولة'}
+              <ShoppingBag size={20} />
+              {lang === 'en' ? 'Add to Order' : lang === 'ru' ? 'Добавить в заказ' : 'أضف إلى الطلب'}
             </button>
           </div>
         </div>
