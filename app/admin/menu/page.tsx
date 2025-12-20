@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
@@ -115,8 +117,8 @@ export default function MenuManager() {
             sortable: true,
             cell: (item: any) => (
                 <span className={`px-2 py-1 rounded text-xs font-bold ${item.stock === 'out_of_stock'
-                        ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                        : 'bg-green-500/10 text-green-500 border border-green-500/20'
+                    ? 'bg-red-500/10 text-red-500 border border-red-500/20'
+                    : 'bg-green-500/10 text-green-500 border border-green-500/20'
                     }`}>
                     {item.stock === 'out_of_stock' ? 'SOLD OUT' : 'IN STOCK'}
                 </span>
