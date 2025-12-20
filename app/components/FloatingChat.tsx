@@ -108,7 +108,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
 
         // Trigger AI with new context immediately
         const prompt = `[SYSTEM: User just finished the quiz. Preferences: ${JSON.stringify(prefs)}]`
-        handleSend(prompt) // This might need a hidden flag to not show in UI? 
+        handleSend(prompt, true)
         // For now, let's just let the user see the "Vibe Check" result, or better:
         // We instruct AI to respond naturally.
     }

@@ -116,67 +116,67 @@ export default function CartDrawer({ lang }: { lang: string }) {
             if (platform === 'WhatsApp') {
                 window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${fullMsg}`, '_blank')
             } else {
-                // Telegram: Copy first, then open. 
-                // Removed blocking alert() for speed. User can paste if copy worked.
                 navigator.clipboard.writeText(fullMsg.replace(/%0A/g, '\n')).catch(() => { })
                 window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
             }
 
-            // 3. Background: Save to DB
-            createOrder({
-                items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-                total: `${finalTotal} AED`,
-                platform,
-                status: 'new',
-                type: orderType,
-                address,
-                apartment,
-                paymentMethod,
-                email,
-                deliveryZoneId: selectedZoneId,
-                deliveryFee
-            }).catch(err => console.error("BG DB Save Error", err))
-
-            // 4. Background: Notify Admin
-            fetch('/api/notifications/telegram', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: orderType,
-                    source: 'web',
-                    name: 'Online Customer',
-                    phone: platform,
-                    items: items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n'),
+            // 3. Defer Background Tasks to Next Tick to unblock UI
+            setTimeout(() => {
+                // Save to DB
+                createOrder({
+                    items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
                     total: `${finalTotal} AED`,
-                    address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address} ${apartment}` : undefined,
+                    platform,
+                    status: 'new',
+                    type: orderType,
+                    address,
+                    apartment,
                     paymentMethod,
+                    email,
+                    deliveryZoneId: selectedZoneId,
                     deliveryFee
-                })
-            }).catch(e => console.error('BG Telegram Error:', e))
+                }).catch(err => console.error("BG DB Save Error", err))
 
-            // 5. Background: Send Email
-            if (email) {
-                fetch('/api/email/send', {
+                // Notify Admin
+                fetch('/api/notifications/telegram', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        type: 'order',
-                        to: email,
-                        subject: lang === 'ru' ? 'Ваш заказ в Bo Dubai 🍜' : 'Your Order at Bo Dubai 🍜',
-                        data: {
-                            items: items.map(i => ({ name: lang === 'ru' ? i.nameRu : i.name, price: i.price, quantity: i.quantity })),
-                            total: `${finalTotal} AED`,
-                            type: orderType,
-                            address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address}` : '',
-                            apartment,
-                            deliveryFee
-                        }
+                        type: orderType,
+                        source: 'web',
+                        name: 'Online Customer',
+                        phone: platform,
+                        items: items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n'),
+                        total: `${finalTotal} AED`,
+                        address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address} ${apartment}` : undefined,
+                        paymentMethod,
+                        deliveryFee
                     })
-                }).catch(err => console.error("BG Email Error", err))
-            }
+                }).catch(e => console.error('BG Telegram Error:', e))
 
-            // Reset UI state
-            setTimeout(() => setIsSubmitting(false), 2000)
+                // Send Email
+                if (email) {
+                    fetch('/api/email/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'order',
+                            to: email,
+                            subject: lang === 'ru' ? 'Ваш заказ в Bo Dubai 🍜' : 'Your Order at Bo Dubai 🍜',
+                            data: {
+                                items: items.map(i => ({ name: lang === 'ru' ? i.nameRu : i.name, price: i.price, quantity: i.quantity })),
+                                total: `${finalTotal} AED`,
+                                type: orderType,
+                                address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address}` : '',
+                                apartment,
+                                deliveryFee
+                            }
+                        })
+                    }).catch(err => console.error("BG Email Error", err))
+                }
+
+                setIsSubmitting(false)
+            }, 0)
 
         } catch (e) {
             console.error('Failed to notify admin', e)
