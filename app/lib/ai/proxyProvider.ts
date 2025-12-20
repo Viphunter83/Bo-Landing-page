@@ -74,7 +74,7 @@ export class ProxyAIProvider implements AIProvider {
                     'Authorization': `Bearer ${this.apiKey}`
                 },
                 body: JSON.stringify({
-                    model: 'gpt-3.5-turbo', // Fallback to stable model
+                    model: process.env.LLM_MODEL || 'gpt-3.5-turbo', // Use env var or fallback
                     messages: apiMessages,
                     max_tokens: 300,
                     temperature: 0.7
