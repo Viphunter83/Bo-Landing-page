@@ -111,6 +111,21 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
         handleSend(prompt, true)
         // For now, let's just let the user see the "Vibe Check" result, or better:
         // We instruct AI to respond naturally.
+
+        if (prefs.email) {
+            fetch('/api/email/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'quiz_coupon',
+                    to: prefs.email,
+                    subject: lang === 'ru' ? 'Ваш Купон на Скидку 10% 🎁' : 'Your 10% Discount Code 🎁',
+                    data: {
+                        code: 'BOVIBE10'
+                    }
+                })
+            }).catch(e => console.error("Failed to send coupon", e))
+        }
     }
 
     // Trigger Surprise Me

@@ -230,14 +230,18 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                 </button>
                             </div>
 
+
+
                             {/* Email Input */}
                             <div className="mb-4">
+                                <label htmlFor="email-input" className="sr-only">{lang === 'ru' ? "Ваш Email" : "Your Email"}</label>
                                 <input
+                                    id="email-input"
                                     type="email"
                                     placeholder={lang === 'ru' ? "Ваш Email (для чека)" : "Your Email (for receipt)"}
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border"
+                                    className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border placeholder:text-zinc-500"
                                 />
                             </div>
 
@@ -279,29 +283,32 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                     </h3>
                                                     <span className="text-yellow-500 font-bold text-sm">{item.price}</span>
                                                 </div>
-                                                <p className="text-xs text-zinc-500 mb-3 line-clamp-1">
+                                                <p className="text-xs text-zinc-400 mb-3 line-clamp-1">
                                                     {item.ingredients?.join(', ')}
                                                 </p>
 
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center gap-3 bg-zinc-800 rounded-lg p-1">
                                                         <button
+                                                            aria-label="Decrease quantity"
                                                             onClick={() => updateQuantity(item.id, -1)}
-                                                            className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white bg-zinc-700/50 rounded hover:bg-zinc-700 transition"
+                                                            className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white bg-zinc-700 rounded hover:bg-zinc-600 transition"
                                                         >
                                                             <Minus size={14} />
                                                         </button>
-                                                        <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
+                                                        <span className="text-sm font-bold w-4 text-center text-white">{item.quantity}</span>
                                                         <button
+                                                            aria-label="Increase quantity"
                                                             onClick={() => updateQuantity(item.id, 1)}
-                                                            className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white bg-zinc-700/50 rounded hover:bg-zinc-700 transition"
+                                                            className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white bg-zinc-700 rounded hover:bg-zinc-600 transition"
                                                         >
                                                             <Plus size={14} />
                                                         </button>
                                                     </div>
                                                     <button
+                                                        aria-label="Remove item"
                                                         onClick={() => removeFromCart(item.id)}
-                                                        className="ml-auto text-red-500/50 hover:text-red-500 p-2 transition-colors"
+                                                        className="ml-auto text-red-500/80 hover:text-red-500 p-2 transition-colors"
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
@@ -316,7 +323,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                             <h3 className="font-bold text-white text-sm">
                                                 {lang === 'ru' ? 'Зона доставки' : 'Delivery Zone'}
                                             </h3>
+                                            <label htmlFor="delivery-zone" className="sr-only">Delivery Zone</label>
                                             <select
+                                                id="delivery-zone"
                                                 value={selectedZoneId}
                                                 onChange={e => setSelectedZoneId(e.target.value)}
                                                 className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border"
@@ -333,19 +342,23 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                             <h3 className="font-bold text-white text-sm">
                                                 {lang === 'ru' ? 'Адрес' : 'Address'}
                                             </h3>
+                                            <label htmlFor="address-input" className="sr-only">Address</label>
                                             <input
+                                                id="address-input"
                                                 type="text"
                                                 placeholder={lang === 'ru' ? "Улица, здание..." : "Street, Building..."}
                                                 value={address}
                                                 onChange={e => setAddress(e.target.value)}
-                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border"
+                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border placeholder:text-zinc-500"
                                             />
+                                            <label htmlFor="apartment-input" className="sr-only">Apartment</label>
                                             <input
+                                                id="apartment-input"
                                                 type="text"
                                                 placeholder={lang === 'ru' ? "Квартира / Офис" : "Apartment / Office"}
                                                 value={apartment}
                                                 onChange={e => setApartment(e.target.value)}
-                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border"
+                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border placeholder:text-zinc-500"
                                             />
                                         </div>
                                     )}
@@ -432,7 +445,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         )}
                     </motion.div>
                 </>
-            )}
-        </AnimatePresence>
+            )
+            }
+        </AnimatePresence >
     )
 }

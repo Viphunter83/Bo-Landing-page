@@ -29,6 +29,8 @@ export async function POST(req: Request) {
             html = EmailTemplates.bookingConfirmation(data)
         } else if (type === 'marketing') {
             html = EmailTemplates.marketingPromo(data.segment)
+        } else if (type === 'quiz_coupon') {
+            html = EmailTemplates.quizCoupon(data.code)
         } else {
             return NextResponse.json({ success: false, error: 'Invalid email type' }, { status: 400 })
         }
