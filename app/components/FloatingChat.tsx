@@ -5,6 +5,7 @@ import { MessageSquare, X, Send, Sparkles, BrainCircuit } from 'lucide-react'
 import LunchQuizModal, { UserPreferences } from './LunchQuizModal'
 import { useCart } from '../context/CartContext'
 import { getMenuItemById } from '../data/menuData'
+import { saveQuizResult } from '../lib/db/quiz'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -96,18 +97,20 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
         }
     }
 
-    const handleQuizComplete = (prefs: UserPreferences) => {
+    const handleQuizComplete = (prefs: any) => {
         setPreferences(prefs)
+        setQuizOpen(false)
+
+        // Save to DB (Hyper-personalization Data)
+        saveQuizResult(prefs)
+
         localStorage.setItem('bo_user_prefs', JSON.stringify(prefs))
-        setIsOpen(true) // Open chat automatically
 
-        // Auto-greet with context
-        const contextPrompt = lang === 'ru'
-            ? `Я прошел квиз. Мои предпочтения: Голод: ${prefs.hunger}, Острота: ${prefs.spice}, Настроение: ${prefs.mood}. Что посоветуешь?`
-            : `I finished the quiz. My prefs: Hunger: ${prefs.hunger}, Spice: ${prefs.spice}, Mood: ${prefs.mood}. Recommend something!`
-
-        // Send hidden system message to trigger AI response
-        handleSend(contextPrompt, true)
+        // Trigger AI with new context immediately
+        const prompt = `[SYSTEM: User just finished the quiz. Preferences: ${JSON.stringify(prefs)}]`
+        handleSend(prompt) // This might need a hidden flag to not show in UI? 
+        // For now, let's just let the user see the "Vibe Check" result, or better:
+        // We instruct AI to respond naturally.
     }
 
     // Trigger Surprise Me

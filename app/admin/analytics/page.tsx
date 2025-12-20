@@ -9,25 +9,24 @@ export default function AnalyticsPage() {
         totalRevenue: 0,
         ordersCount: 0,
         avgTicket: 0,
-        topItem: 'Loading...'
+        topItem: 'Loading...',
+        insight: 'Loading AI insights...'
     })
 
     useEffect(() => {
         if (!db) return
         const fetchStats = async () => {
-            const q = query(collection(db, 'orders'))
-            const snapshot = await getDocs(q)
+            // 1. Fetch Orders
+            const qOrders = query(collection(db!, 'orders'))
+            const snapOrders = await getDocs(qOrders)
 
             let revenue = 0
             const itemCounts: Record<string, number> = {}
 
-            snapshot.docs.forEach(doc => {
+            snapOrders.docs.forEach(doc => {
                 const data = doc.data()
-                // Parse "150 AED" -> 150
                 const amount = parseFloat((data.total || '0').replace(/[^0-9.]/g, ''))
                 revenue += amount
-
-                // Count items
                 if (data.items && Array.isArray(data.items)) {
                     data.items.forEach((i: any) => {
                         itemCounts[i.name] = (itemCounts[i.name] || 0) + (i.quantity || 1)
@@ -45,11 +44,22 @@ export default function AnalyticsPage() {
                 }
             })
 
+            // 2. Fetch Quiz Results (Target Audience Insight)
+            const qQuiz = query(collection(db!, 'quiz_results'))
+            const snapQuiz = await getDocs(qQuiz)
+            const totalQuiz = snapQuiz.size
+            const spicyFans = snapQuiz.docs.filter(d => d.data().spice === 'spicy').length
+            const spicyPct = totalQuiz ? Math.round((spicyFans / totalQuiz) * 100) : 0
+
             setStats({
                 totalRevenue: revenue,
-                ordersCount: snapshot.size,
-                avgTicket: snapshot.size ? Math.round(revenue / snapshot.size) : 0,
-                topItem: topName
+                ordersCount: snapOrders.size,
+                avgTicket: snapOrders.size ? Math.round(revenue / snapOrders.size) : 0,
+                topItem: topName,
+                // @ts-ignore
+                insight: totalQuiz > 0
+                    ? `${spicyPct}% of users prefer SPICY food. Consider adding more "Bun Bo Hue" variations.`
+                    : "Waiting for more Quiz data to generate insights..."
             })
         }
 
@@ -95,7 +105,7 @@ export default function AnalyticsPage() {
             </div>
 
             <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-400 text-sm">
-                💡 <strong>Tip for Investors:</strong> Use "Ideal Lunch Quiz" data to optimize weekly specials. Currently, Spicy dishes are converting 15% better than Classic.
+                💡 <strong>Tip for Investors:</strong> {stats.insight}
             </div>
         </div>
     )
