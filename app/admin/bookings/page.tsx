@@ -87,7 +87,7 @@ export default function BookingAdminPage() {
                     </div>
                     {item.specialRequests && (
                         <div className="text-xs text-yellow-500/80 italic mt-1 max-w-[200px] truncate">
-                            "{item.specialRequests}"
+                            &quot;{item.specialRequests}&quot;
                         </div>
                     )}
                 </div>

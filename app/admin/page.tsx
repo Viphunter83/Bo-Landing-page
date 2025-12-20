@@ -167,7 +167,7 @@ export default function AdminDashboard() {
                     )}
                     {(item.specialRequests || item.notes) && (
                         <div className="mt-1 text-yellow-500/80 truncate">
-                            "{item.specialRequests || item.notes}"
+                            &quot;{item.specialRequests || item.notes}&quot;
                         </div>
                     )}
                     {item.total && (
