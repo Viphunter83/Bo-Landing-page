@@ -16,6 +16,7 @@ import DishModal from '../components/DishModal'
 import JsonLd from '../components/JsonLd'
 import DubaiPulseTicker from '../components/DubaiPulseTicker'
 import CartDrawer from '../components/CartDrawer'
+import CartTrigger from '../components/CartTrigger'
 import { CartProvider } from '../context/CartContext'
 import { content } from '../data/content'
 import { faqData } from '../data/faqData'
@@ -75,6 +76,7 @@ export default function Home({
     <CartProvider>
       <div className={`min-h-screen bg-black text-white font-sans selection:bg-red-600 selection:text-white`} dir={dir}>
         <CartDrawer lang={lang} />
+        <CartTrigger />
         <JsonLd data={faqSchema} />
         <DubaiPulseTicker lang={lang} />
         <Navbar
