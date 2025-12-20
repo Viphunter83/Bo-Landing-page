@@ -1,9 +1,11 @@
 'use client'
 
 import { useCart } from '../context/CartContext'
-import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
+import { X, Minus, Plus, ShoppingBag, Trash2, Send } from 'lucide-react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
+import { CONTACT_INFO } from '../data/contact'
+import { useState } from 'react'
 
 export default function CartDrawer({ lang }: { lang: string }) {
     const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total } = useCart()
@@ -103,24 +105,45 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     <span>{lang === 'ru' ? 'Итого' : (lang === 'ar' ? 'المجموع' : 'Subtotal')}</span>
                                     <span className="text-white font-bold text-lg">{total} AED</span>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        // WhatsApp Checkout Strategy
-                                        const phone = '971500000000' // Replace with restaurant number
-                                        const orderText = items.map(i => `${i.quantity}x ${i.name} (${i.price})`).join('%0A')
-                                        const totalText = `Total: ${total} AED`
-                                        const customerMsg = `Hi Bo! I would like to order:%0A%0A${orderText}%0A%0A${totalText}%0A%0APlease confirm! 🍜`
-                                        window.open(`https://wa.me/${phone}?text=${customerMsg}`, '_blank')
-                                    }}
-                                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold py-4 rounded-xl hover:scale-[1.02] transition-transform active:scale-[0.98] shadow-lg shadow-yellow-500/20"
-                                >
-                                    {lang === 'ru' ? 'Оформить заказ (WhatsApp)' : (lang === 'ar' ? 'اطلب عبر واتساب' : 'Checkout via WhatsApp')}
-                                </button>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* WhatsApp Button */}
+                                    <button
+                                        onClick={() => {
+                                            const orderText = items.map(i => `${i.quantity}x ${i.name} (${i.price})`).join('%0A')
+                                            const totalText = `Total: ${total} AED`
+                                            const customerMsg = `Hi Bo! I would like to order:%0A%0A${orderText}%0A%0A${totalText}%0A%0APlease confirm! 🍜`
+                                            window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${customerMsg}`, '_blank')
+                                        }}
+                                        className="bg-green-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-500 transition-colors flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        <span>WhatsApp</span>
+                                    </button>
+
+                                    {/* Telegram Button */}
+                                    <button
+                                        onClick={() => {
+                                            const orderText = items.map(i => `${i.quantity}x ${i.name} (${i.price})`).join('\n')
+                                            const totalText = `Total: ${total} AED`
+                                            const fullMsg = `Hi Bo! I would like to order:\n\n${orderText}\n\n${totalText}\n\nPlease confirm! 🍜`
+
+                                            // Copy to clipboard first because TG ignores text param often
+                                            navigator.clipboard.writeText(fullMsg).then(() => {
+                                                alert(lang === 'ru' ? 'Заказ скопирован! Вставьте его в чат.' : 'Order copied! Paste it in the chat.')
+                                                window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
+                                            })
+                                        }}
+                                        className="bg-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-400 transition-colors flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        <span>Telegram</span>
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </motion.div>
                 </>
-            )}
-        </AnimatePresence>
+            )
+            }
+        </AnimatePresence >
     )
 }
