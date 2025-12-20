@@ -3,14 +3,17 @@ import { fullMenu } from '../../data/menuData'
 
 export class ProxyAIProvider implements AIProvider {
     private apiKey: string
+    private baseUrl: string
 
     constructor() {
-        this.apiKey = (process.env.PROXY_API_KEY || '').trim()
+        this.apiKey = (process.env.LLM_API_KEY || '').trim()
+        // Ensure strictly no trailing slash for the base URL to consistency
+        this.baseUrl = (process.env.LLM_BASE_URL || 'https://api.proxyapi.ru/openai/v1').replace(/\/+$/, '')
     }
 
     async generateResponse(messages: ChatMessage[], context?: any): Promise<string> {
         if (!this.apiKey) {
-            console.error('PROXY_API_KEY is missing')
+            console.error('LLM_API_KEY is missing')
             return "I'm having trouble connecting to my brain right now. Please tell the administrator to check my API key! 🤖"
         }
 
@@ -18,6 +21,23 @@ export class ProxyAIProvider implements AIProvider {
 
         // 1. Build System Prompt with Menu Context
         const menuContext = fullMenu.map(d => `${d.name} (${d.price}): ${d.desc}`).join('\n')
+
+        let userContext = `Context: User is currently browsing the "${context?.activeVibe || 'general'}" section.`
+
+        // Zero-Party Data Injection
+        if (context?.preferences) {
+            const p = context.preferences
+            userContext += `\nUSER PROFILE (Zero-Party Data):
+            - Hunger Level: ${p.hunger}
+            - Spice Tolerance: ${p.spice}
+            - Current Mood: ${p.mood}
+            
+            ADAPT YOUR PERSONA:
+            - If "hungry/starving", suggest hearty meals (Pho, Bun Cha).
+            - If "party", suggest drinks and shareable platters.
+            - If "healthy", focus on Fresh Rolls and Salads.
+            - RESPECT SPICE LEVEL. If "none", do not suggest spicy food without warning.`
+        }
 
         const systemPrompt = `
       You are Bo, a friendly and sophisticated AI waiter at a high-end Vietnamese restaurant in Dubai (Festival City).
@@ -28,7 +48,7 @@ export class ProxyAIProvider implements AIProvider {
       ${menuContext}
       
       Time: ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-      Context: User is currently browsing the "${context?.activeVibe || 'general'}" section.
+      ${userContext}
       
       Rules:
       1. Be polite, warm, and professional.
@@ -47,7 +67,7 @@ export class ProxyAIProvider implements AIProvider {
         ]
 
         try {
-            const response = await fetch('https://api.proxyapi.ru/openai/v1/chat/completions', {
+            const response = await fetch(`${this.baseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

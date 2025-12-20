@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { MessageSquare, X, Send, Sparkles } from 'lucide-react'
+import { MessageSquare, X, Send, Sparkles, BrainCircuit } from 'lucide-react'
+import LunchQuizModal, { UserPreferences } from './LunchQuizModal'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -10,81 +11,28 @@ interface Message {
 
 export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang: string, activeVibe: string, onVibeChange?: (vibe: string) => void }) {
     const [isOpen, setIsOpen] = useState(false)
+    const [quizOpen, setQuizOpen] = useState(false)
+    const [preferences, setPreferences] = useState<UserPreferences | null>(null)
     const [messages, setMessages] = useState<Message[]>([])
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
-    // Trigger Surprise Me
-    const handleSurpriseMe = async () => {
-        if (isLoading) return
-        setIsOpen(true)
-        const surprisePrompt = lang === 'ru'
-            ? `Посоветуй что-нибудь неожиданное из категории ${activeVibe}`
-            : `Surprise me with something ${activeVibe}`
-
-        // Add fake user message for UI
-        setMessages(prev => [...prev, { role: 'user', content: "✨ Surprise Me!" }])
-        setIsLoading(true)
-
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: [{ role: 'user', content: surprisePrompt }],
-                    context: { activeVibe }
-                })
-            })
-            const data = await response.json()
-            if (data.content) {
-                let content = data.content
-
-                // Agentic Vibe Check
-                const vibeMatch = content.match(/\[VIBE: (\w+)\]/)
-                if (vibeMatch) {
-                    const newVibe = vibeMatch[1].toLowerCase()
-                    if (['classic', 'spicy', 'vegan', 'seafood', 'sweet'].includes(newVibe)) {
-                        onVibeChange?.(newVibe)
-                        // Remove tag from display
-                        content = content.replace(/\[VIBE: \w+\]/, '').trim()
-                    }
-                }
-
-                setMessages(prev => [...prev, { role: 'assistant', content: content }])
-            }
-        } catch (e) { console.error(e) } finally { setIsLoading(false) }
-    }
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-
+    // Load preferences
     useEffect(() => {
-        scrollToBottom()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [messages.length])
-
-    // Initial greeting
-    useEffect(() => {
-        if (isOpen && messages.length === 0) {
-            const greeting = lang === 'ru'
-                ? 'Привет! Я Бо, ваш AI-официант. Что бы вы хотели попробовать сегодня? 🍜'
-                : lang === 'ar'
-                    ? 'مرحباً! أنا بو، النادل الذكي. ماذا تود أن تجرب اليوم؟ 🍜'
-                    : 'Hi! I\'m Bo, your AI waiter. What are you in the mood for today? 🍜'
-
-            setMessages([{ role: 'assistant', content: greeting }])
+        const saved = localStorage.getItem('bo_user_prefs')
+        if (saved) {
+            try { setPreferences(JSON.parse(saved)) } catch (e) { console.error('Failed to parse prefs', e) }
         }
-    }, [isOpen, lang])
+    }, [])
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!input.trim() || isLoading) return
+    const handleSend = async (text: string, isHidden: boolean = false) => {
+        if (!text.trim() || isLoading) return
 
-        const userMessage = input
-        setInput('')
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+        if (!isHidden) {
+            setMessages(prev => [...prev, { role: 'user', content: text }])
+            setInput('')
+        }
         setIsLoading(true)
 
         try {
@@ -92,8 +40,8 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    messages: [...messages, { role: 'user', content: userMessage }],
-                    context: { activeVibe }
+                    messages: [...messages, { role: 'user', content: text }],
+                    context: { activeVibe, preferences }
                 })
             })
 
@@ -121,8 +69,70 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
         }
     }
 
+    const handleQuizComplete = (prefs: UserPreferences) => {
+        setPreferences(prefs)
+        localStorage.setItem('bo_user_prefs', JSON.stringify(prefs))
+        setIsOpen(true) // Open chat automatically
+
+        // Auto-greet with context
+        const contextPrompt = lang === 'ru'
+            ? `Я прошел квиз. Мои предпочтения: Голод: ${prefs.hunger}, Острота: ${prefs.spice}, Настроение: ${prefs.mood}. Что посоветуешь?`
+            : `I finished the quiz. My prefs: Hunger: ${prefs.hunger}, Spice: ${prefs.spice}, Mood: ${prefs.mood}. Recommend something!`
+
+        // Send hidden system message to trigger AI response
+        handleSend(contextPrompt, true)
+    }
+
+    // Trigger Surprise Me
+    const handleSurpriseMe = async () => {
+        if (isLoading) return
+        setIsOpen(true)
+        const surprisePrompt = lang === 'ru'
+            ? `Посоветуй что-нибудь неожиданное из категории ${activeVibe}`
+            : `Surprise me with something ${activeVibe}`
+
+        // Add fake user message for UI
+        setMessages(prev => [...prev, { role: 'user', content: "✨ Surprise Me!" }])
+        // Send hidden system message to trigger AI response
+        handleSend(surprisePrompt, true)
+    }
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+
+    useEffect(() => {
+        scrollToBottom()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [messages.length])
+
+    // Initial greeting
+    useEffect(() => {
+        if (isOpen && messages.length === 0) {
+            const greeting = lang === 'ru'
+                ? 'Привет! Я Бо, ваш AI-официант. Что бы вы хотели попробовать сегодня? 🍜'
+                : lang === 'ar'
+                    ? 'مرحباً! أنا بو، النادل الذكي. ماذا تود أن تجرب اليوم؟ 🍜'
+                    : 'Hi! I\'m Bo, your AI waiter. What are you in the mood for today? 🍜'
+
+            setMessages([{ role: 'assistant', content: greeting }])
+        }
+    }, [isOpen, lang])
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        handleSend(input)
+    }
+
     return (
         <>
+            <LunchQuizModal
+                isOpen={quizOpen}
+                onClose={() => setQuizOpen(false)}
+                onComplete={handleQuizComplete}
+                lang={lang}
+            />
+
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(true)}
@@ -164,11 +174,19 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
 
                 {/* Quick Actions (only if empty) */}
                 {messages.length <= 1 && (
-                    <div className="px-4 pt-2 -mb-2">
+                    <div className="px-4 pt-2 -mb-2 flex gap-2">
+                        <button
+                            onClick={() => setQuizOpen(true)}
+                            disabled={isLoading}
+                            className="flex-1 bg-gradient-to-r from-green-600 to-teal-600 text-white text-xs py-2 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                        >
+                            <BrainCircuit size={12} />
+                            {lang === 'ru' ? 'Подобрать блюдо' : 'Find my Vibe'}
+                        </button>
                         <button
                             onClick={handleSurpriseMe}
                             disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs py-2 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+                            className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs py-2 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
                         >
                             <Sparkles size={12} />
                             {lang === 'ru' ? 'Удиви меня!' : 'Surprise Me!'}
