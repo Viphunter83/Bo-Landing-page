@@ -12,6 +12,11 @@ export default function BookingAdminPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        if (!db) {
+            setLoading(false)
+            return
+        }
+
         const q = query(collection(db, 'bookings'), orderBy('bookingDateTime', 'asc')) // Sort by date
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -25,6 +30,7 @@ export default function BookingAdminPage() {
     }, [])
 
     const updateStatus = async (id: string, status: 'confirmed' | 'cancelled') => {
+        if (!db) return
         if (!confirm(`Are you sure you want to change status to ${status}?`)) return
         try {
             await updateDoc(doc(db, 'bookings', id), { status })
@@ -35,6 +41,7 @@ export default function BookingAdminPage() {
     }
 
     const deleteBooking = async (id: string) => {
+        if (!db) return
         if (!confirm('Permanently delete this booking?')) return
         try {
             await deleteDoc(doc(db, 'bookings', id))
