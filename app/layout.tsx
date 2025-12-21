@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import SchemaScript from './components/SchemaScript'
+import ShakeToWin from './components/ShakeToWin'
 
 export const metadata: Metadata = {
   title: 'Bo Restaurant Dubai - Vietnamese Cuisine',
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <TelegramProvider>
+          <ShakeToWin />
           <SchemaScript />
           {/* Global Providers can go here */}
           {children}

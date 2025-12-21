@@ -30,6 +30,10 @@ declare global {
                 }
                 ready: () => void
                 expand: () => void
+                HapticFeedback: {
+                    notificationOccurred: (type: 'error' | 'success' | 'warning') => void
+                    impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void
+                }
                 MainButton: {
                     text: string
                     color: string
