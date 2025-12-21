@@ -18,7 +18,7 @@ interface Message {
 
 export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang: string, activeVibe: string, onVibeChange?: (vibe: string) => void }) {
     const { addToCart } = useCart()
-    const { isTelegram } = useTelegram()
+    const { isTelegram, user } = useTelegram()
     const [isOpen, setIsOpen] = useState(false)
     const [quizOpen, setQuizOpen] = useState(false)
     const [preferences, setPreferences] = useState<UserPreferences | null>(null)
@@ -107,7 +107,8 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
         setQuizOpen(false)
 
         // Save to DB (Hyper-personalization Data)
-        saveQuizResult(prefs)
+        const userId = user?.id ? `telegram:${user.id}` : undefined
+        saveQuizResult(prefs, userId)
 
         localStorage.setItem('bo_user_prefs', JSON.stringify(prefs))
 
