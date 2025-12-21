@@ -34,11 +34,19 @@ export default function DeliveryAdminPage() {
 
         const q = query(
             collection(db, 'orders'),
-            where('type', '==', 'delivery'),
+            where('type', 'in', ['delivery', 'pickup']), // Include Pickup
             orderBy('createdAt', 'desc')
         )
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            // ... existing snapshot logic ...
+            // (I will keep the snapshot logic implicit or use a smaller range if possible, but replace_file requires contiguous replacement. 
+            //  Since I need to change logic inside the render mapping too, I might need to target specific blocks or replace a larger chunk.
+            //  Let's replace the Query first, and then the Render logic in a separate chunk to be safe? 
+            //  No, replace_file needs to be efficient. I will do it in one go if I can frame it right, or just query first.)
+
+            // Actually, I'll do the Query change first.
+
             const data = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -159,11 +167,16 @@ export default function DeliveryAdminPage() {
                                             </span>
                                         </div>
 
-                                        <div className="mb-3">
-                                            <span className="text-lg font-bold text-white">#{order.id.slice(-4)}</span>
-                                            <div className="text-sm text-zinc-400 font-mono mt-1 text-yellow-500 font-bold">
-                                                {order.total} AED
+                                        <div className="mb-3 flex justify-between items-start">
+                                            <div>
+                                                <span className="text-lg font-bold text-white">#{order.id.slice(-4)}</span>
+                                                <div className="text-sm text-zinc-400 font-mono mt-1 text-yellow-500 font-bold">
+                                                    {order.total} AED
+                                                </div>
                                             </div>
+                                            <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold border ${order.type === 'pickup' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}>
+                                                {order.type === 'pickup' ? 'Pickup' : 'Delivery'}
+                                            </span>
                                         </div>
 
                                         <div className="space-y-2 mb-4">
@@ -208,25 +221,36 @@ export default function DeliveryAdminPage() {
 
                                         {col.id === 'ready' && (
                                             <div className="space-y-2">
-                                                <select
-                                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm text-white outline-none focus:border-red-600"
-                                                    onChange={(e) => {
-                                                        if (e.target.value) assignDriver(order.id, e.target.value)
-                                                    }}
-                                                    value={order.driverId || ""}
-                                                >
-                                                    <option value="" disabled>Assign Driver...</option>
-                                                    {DRIVERS.map(d => (
-                                                        <option key={d.id} value={d.id}>{d.name}</option>
-                                                    ))}
-                                                </select>
-                                                {order.driverId && (
+                                                {order.type === 'pickup' ? (
                                                     <button
-                                                        onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                                                        className="w-full py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold text-white transition-colors"
+                                                        onClick={() => updateOrderStatus(order.id, 'completed')}
+                                                        className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
                                                     >
-                                                        Dispatch
+                                                        Customer Picked Up <CheckCircle size={16} />
                                                     </button>
+                                                ) : (
+                                                    <>
+                                                        <select
+                                                            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm text-white outline-none focus:border-red-600"
+                                                            onChange={(e) => {
+                                                                if (e.target.value) assignDriver(order.id, e.target.value)
+                                                            }}
+                                                            value={order.driverId || ""}
+                                                        >
+                                                            <option value="" disabled>Assign Driver...</option>
+                                                            {DRIVERS.map(d => (
+                                                                <option key={d.id} value={d.id}>{d.name}</option>
+                                                            ))}
+                                                        </select>
+                                                        {order.driverId && (
+                                                            <button
+                                                                onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
+                                                                className="w-full py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold text-white transition-colors"
+                                                            >
+                                                                Dispatch
+                                                            </button>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         )}
