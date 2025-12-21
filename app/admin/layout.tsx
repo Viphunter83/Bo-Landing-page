@@ -1,5 +1,7 @@
 'use client'
 
+import '../globals.css'
+
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
