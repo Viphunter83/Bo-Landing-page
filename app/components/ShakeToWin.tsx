@@ -85,7 +85,7 @@ export default function ShakeToWin() {
 
                 const speed = Math.abs(x + y + z - lastX.current - lastY.current - lastZ.current) / diffTime * 10000
 
-                if (speed > 400) { // Shake Threshold
+                if (speed > 800) { // Shake Threshold Increased
                     setShakeCount(prev => {
                         const newCount = prev + 1
                         if (newCount >= 2) { // Require 2 rapid shakes
@@ -94,6 +94,8 @@ export default function ShakeToWin() {
                         }
                         return newCount
                     })
+                    // Reset if next shake takes too long
+                    setTimeout(() => setShakeCount(0), 1000)
                 }
 
                 lastX.current = x
@@ -138,13 +140,18 @@ export default function ShakeToWin() {
                 </motion.button>
             )}
 
-            {/* Hint if permission granted but not won yet */}
+            {/* Persistent Hint for better discovery */}
             {permissionGranted && !showPromo && (
-                <div className="fixed top-24 right-4 z-30 pointer-events-none opacity-0 animate-[fadeIn_1s_ease-in_2s_forwards]">
-                    <div className="bg-black/40 backdrop-blur text-xs text-white px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
-                        <Smartphone size={12} className="animate-shake" />
-                        Shake for Magic!
-                    </div>
+                <div className="fixed top-24 right-4 z-30 pointer-events-none">
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 2, duration: 0.5 }}
+                        className="bg-black/60 backdrop-blur-md text-xs text-white px-4 py-2 rounded-full border border-yellow-500/30 flex items-center gap-2 shadow-lg"
+                    >
+                        <Smartphone size={14} className="text-yellow-500 animate-shake" />
+                        <span className="font-bold">Shake for Magic!</span>
+                    </motion.div>
                 </div>
             )}
 
@@ -179,7 +186,7 @@ export default function ShakeToWin() {
                                 <div>
                                     <h2 className="text-2xl font-black text-white mb-2">YOU WON! 🎉</h2>
                                     <p className="text-zinc-400 text-sm">
-                                        Your secret shake unlocked a special discount.
+                                        Show this screen to your waiter to claim your reward.
                                     </p>
                                 </div>
 
@@ -192,12 +199,13 @@ export default function ShakeToWin() {
 
                                 <button
                                     onClick={() => {
-                                        setShowPromo(false)
-                                        // Optional: Auto-apply logic could go here
+                                        navigator.clipboard.writeText('SHAKE10')
+                                        // Simple alert for now, or use toast if available
+                                        alert('Code copied!')
                                     }}
-                                    className="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors"
+                                    className="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
                                 >
-                                    Use Now
+                                    <span>Copy Code</span>
                                 </button>
                             </div>
                         </motion.div>
