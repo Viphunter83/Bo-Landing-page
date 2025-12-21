@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
-import { Clock, CheckCircle, Flame, Bell, Utensils, Truck, Users, MapPin, Phone } from 'lucide-react'
+import { Clock, CheckCircle, Flame, Bell, Utensils, Truck, Users, MapPin, Phone, AlertCircle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,10 +23,14 @@ interface UnifiedOrder {
     address?: string // for delivery
     phone?: string
     platform?: string // for delivery
+    driverId?: string // for delivery
+    deliveryStatus?: string // for delivery
 }
 
 export default function KitchenDisplaySystem() {
     const [orders, setOrders] = useState<UnifiedOrder[]>([])
+    const [hallData, setHallData] = useState<UnifiedOrder[]>([])
+    const [deliveryData, setDeliveryData] = useState<UnifiedOrder[]>([])
     const [now, setNow] = useState(new Date())
 
     // Update relative time every minute
@@ -34,6 +38,12 @@ export default function KitchenDisplaySystem() {
         const timer = setInterval(() => setNow(new Date()), 60000)
         return () => clearInterval(timer)
     }, [])
+
+    useEffect(() => {
+        // Merge and Sort by Time (Oldest first)
+        const merged = [...hallData, ...deliveryData].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+        setOrders(merged)
+    }, [hallData, deliveryData])
 
     useEffect(() => {
         if (!db) return
@@ -44,53 +54,59 @@ export default function KitchenDisplaySystem() {
             where('status', 'in', ['pending', 'confirmed', 'preparing', 'ready'])
         )
 
-        // 2. Listen to Orders (Delivery)
-        const qOrders = query(
-            collection(db, 'orders'),
-            where('status', 'in', ['new', 'cooking', 'ready']) // Map 'cooking' to 'preparing' logic
-        )
-
         const unsubscribeBookings = onSnapshot(qBookings, (snap) => {
-            const hallOrders = snap.docs.map(d => {
-                const data = d.data()
+            const data = snap.docs.map(d => {
+                const docData = d.data()
                 return {
                     id: d.id,
                     firebaseId: d.id,
                     source: 'booking',
-                    name: data.name || 'Guest',
-                    items: data.items || 'Table Reservation',
-                    status: data.status,
+                    name: docData.name || 'Guest',
+                    items: docData.items || 'Table Reservation',
+                    status: docData.status,
                     type: 'dine_in',
-                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.bookingDateTime || Date.now()),
-                    bookingDateTime: data.bookingDateTime,
-                    notes: data.notes,
-                    guests: data.guests,
-                    phone: data.phone
+                    createdAt: docData.createdAt?.toDate ? docData.createdAt.toDate() : new Date(docData.bookingDateTime || Date.now()),
+                    bookingDateTime: docData.bookingDateTime,
+                    notes: docData.notes,
+                    guests: docData.guests,
+                    phone: docData.phone
                 } as UnifiedOrder
             })
-            mergeOrders(hallOrders, 'booking')
+            setHallData(data)
+        }, (error) => {
+            console.error("Error fetching bookings:", error)
         })
 
+        // 2. Listen to Orders (Delivery)
+        const qOrders = query(
+            collection(db, 'orders'),
+            where('status', 'in', ['new', 'cooking', 'ready'])
+        )
+
         const unsubscribeOrders = onSnapshot(qOrders, (snap) => {
-            const deliveryOrders = snap.docs.map(d => {
-                const data = d.data()
+            const data = snap.docs.map(d => {
+                const docData = d.data()
                 return {
                     id: d.id,
                     firebaseId: d.id,
                     source: 'order',
-                    name: data.userId || 'Customer', // improve if user name available
-                    items: data.items, // Array of items
+                    name: docData.userId || 'Online Customer',
+                    items: docData.items,
                     // Map delivery statuses to unified KDS statuses
-                    status: data.status === 'new' ? 'pending' : data.status === 'cooking' ? 'preparing' : data.status,
-                    type: data.type,
-                    createdAt: data.createdAt?.seconds ? new Date(data.createdAt.seconds * 1000) : new Date(),
-                    totalPrice: data.total,
-                    address: data.address,
-                    phone: data.phone,
-                    platform: data.platform
+                    status: docData.status === 'new' ? 'pending' : docData.status === 'cooking' ? 'preparing' : docData.status,
+                    type: docData.type || 'delivery',
+                    createdAt: docData.createdAt?.seconds ? new Date(docData.createdAt.seconds * 1000) : new Date(),
+                    totalPrice: docData.total,
+                    address: docData.address,
+                    phone: docData.phone,
+                    platform: docData.platform,
+                    driverId: docData.driverId,
+                    deliveryStatus: docData.deliveryStatus
                 } as UnifiedOrder
             })
-            mergeOrders(deliveryOrders, 'order')
+            setDeliveryData(data)
+        }, (error) => {
+            console.error("Error fetching orders:", error)
         })
 
         return () => {
@@ -99,19 +115,6 @@ export default function KitchenDisplaySystem() {
         }
     }, [])
 
-    // Helper to merge streams
-    // We keep raw arrays in a ref or separate state? 
-    // Easier: Just store all in one state variable, but we need to know which source updated.
-    // Actually, distinct Listeners calling setOrders might race or overwrite.
-    // Better: separate state for each, then use effect to combine.
-    const [hallData, setHallData] = useState<UnifiedOrder[]>([])
-    const [deliveryData, setDeliveryData] = useState<UnifiedOrder[]>([])
-
-    // Overwrite the Listeners above to set specific state
-    // ... wait, I can't change the useEffect body easily with 'replace_file' if I don't rewrite it all.
-    // I AM rewriting it all. So I will fix the logic below.
-
-    // ... (See implementation below)
 
     const updateStatus = async (order: UnifiedOrder, newStatus: string) => {
         if (!db) return
@@ -122,16 +125,20 @@ export default function KitchenDisplaySystem() {
         // Specific logic for Delivery mapping
         if (order.source === 'order') {
             if (newStatus === 'preparing') updatePayload.status = 'cooking' // Map back to DB schema
-            if (newStatus === 'completed') updatePayload.status = 'ready' // KDS Complete -> Ready for Dispatch
-            // If user clicks "Ready" on KDS, it effectively means "Ready for Dispatch"
+            if (newStatus === 'completed') updatePayload.status = 'ready' // KDS Complete -> Ready for Dispatch in Logistics
         }
 
-        await updateDoc(doc(db, collectionName, order.firebaseId), updatePayload)
+        try {
+            await updateDoc(doc(db, collectionName, order.firebaseId), updatePayload)
+        } catch (e) {
+            console.error("Error updating status:", e)
+        }
     }
 
     const getElapsedMinutes = (order: UnifiedOrder) => {
         const diff = now.getTime() - order.createdAt.getTime()
-        return Math.floor(diff / 60000)
+        const minutes = Math.floor(diff / 60000)
+        return minutes < 0 ? 0 : minutes // Prevent negative time
     }
 
     // Columns Definition
@@ -166,75 +173,6 @@ export default function KitchenDisplaySystem() {
     ]
 
     return (
-        <UniKDSLogic
-            setOrders={setOrders}
-            orders={orders}
-            columns={columns}
-            updateStatus={updateStatus}
-            getElapsedMinutes={getElapsedMinutes}
-            now={now}
-        />
-    )
-}
-
-// Breaking component to separate logic from View for cleaner code if possible, 
-// but for single file replacement, I'll inline the full logic properly.
-
-function UniKDSLogic({ setOrders, orders, columns, updateStatus, getElapsedMinutes, now }: any) {
-    const [hall, setHall] = useState<UnifiedOrder[]>([])
-    const [deliv, setDeliv] = useState<UnifiedOrder[]>([])
-
-    useEffect(() => {
-        if (!db) return
-
-        // 1. Hall
-        const unsubHall = onSnapshot(query(collection(db!, 'bookings'), where('status', 'in', ['pending', 'confirmed', 'preparing', 'ready'])), (snap) => {
-            const data = snap.docs.map(d => ({
-                id: d.id,
-                firebaseId: d.id,
-                source: 'booking',
-                name: d.data().name || 'Guest',
-                items: d.data().items,
-                status: d.data().status,
-                type: 'dine_in',
-                createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date(d.data().bookingDateTime || Date.now()),
-                bookingDateTime: d.data().bookingDateTime,
-                notes: d.data().notes,
-                guests: d.data().guests,
-                phone: d.data().phone
-            } as UnifiedOrder))
-            setHall(data)
-        })
-
-        // 2. Delivery
-        const unsubDeliv = onSnapshot(query(collection(db!, 'orders'), where('status', 'in', ['new', 'cooking', 'ready'])), (snap) => {
-            const data = snap.docs.map(d => ({
-                id: d.id,
-                firebaseId: d.id,
-                source: 'order',
-                name: d.data().userId || 'Online Customer',
-                items: d.data().items,
-                status: d.data().status === 'new' ? 'pending' : d.data().status === 'cooking' ? 'preparing' : d.data().status,
-                type: d.data().type || 'delivery',
-                createdAt: d.data().createdAt?.seconds ? new Date(d.data().createdAt.seconds * 1000) : new Date(),
-                totalPrice: d.data().total,
-                address: d.data().address,
-                phone: d.data().phone,
-                platform: d.data().platform
-            } as UnifiedOrder))
-            setDeliv(data)
-        })
-
-        return () => { unsubHall(); unsubDeliv() }
-    }, [setOrders])
-
-    useEffect(() => {
-        // Merge and Sort by Time (Oldest first)
-        const merged = [...hall, ...deliv].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-        setOrders(merged)
-    }, [hall, deliv, setOrders])
-
-    return (
         <div className="min-h-screen bg-black text-white p-4 overflow-x-auto selection:bg-orange-500/30">
             <header className="flex justify-between items-center mb-6 px-2 border-b border-zinc-800 pb-4">
                 <div className="flex items-center gap-4">
@@ -244,13 +182,13 @@ function UniKDSLogic({ setOrders, orders, columns, updateStatus, getElapsedMinut
                     <div>
                         <h1 className="text-3xl font-black tracking-tighter uppercase">Unified KDS</h1>
                         <div className="flex gap-4 text-xs font-bold uppercase tracking-wider mt-1">
-                            <span className="flex items-center gap-1 text-orange-400"><Users size={12} /> Hall ({hall.length})</span>
-                            <span className="flex items-center gap-1 text-blue-400"><Truck size={12} /> Delivery ({deliv.length})</span>
+                            <span className="flex items-center gap-1 text-orange-400"><Users size={12} /> Hall ({hallData.length})</span>
+                            <span className="flex items-center gap-1 text-blue-400"><Truck size={12} /> Delivery ({deliveryData.length})</span>
                         </div>
                     </div>
                 </div>
                 <div className="text-right">
-                    <div className="text-3xl font-mono font-bold">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div className="text-3xl font-mono font-bold animate-pulse">{now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
                     <div className="text-zinc-500 text-xs font-bold uppercase">{now.toLocaleDateString()}</div>
                 </div>
             </header>
@@ -270,14 +208,16 @@ function UniKDSLogic({ setOrders, orders, columns, updateStatus, getElapsedMinut
 
                         <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
                             {col.orders.length === 0 && (
-                                <div className="text-center text-zinc-600 italic mt-10 opacity-50">No active {col.title.toLowerCase()}</div>
+                                <div className="text-center text-zinc-600 italic mt-10 opacity-50 flex flex-col items-center gap-2">
+                                    <div className="p-3 bg-zinc-800/50 rounded-full">{col.icon && <col.icon size={24} className="opacity-50" />}</div>
+                                    No active orders
+                                </div>
                             )}
 
                             {col.orders.map((order: UnifiedOrder) => {
                                 const elapsed = getElapsedMinutes(order)
                                 const isLate = elapsed > 20
                                 const isDelivery = order.source === 'order'
-                                const typeColor = isDelivery ? 'text-blue-400' : 'text-orange-400'
                                 const borderColor = isDelivery ? 'border-blue-500/30 hover:border-blue-500' : 'border-orange-500/30 hover:border-orange-500'
 
                                 return (
@@ -344,8 +284,8 @@ function UniKDSLogic({ setOrders, orders, columns, updateStatus, getElapsedMinut
                                         <button
                                             onClick={() => updateStatus(order, col.action.status)}
                                             className={`mt-2 w-full py-3 rounded-lg font-black uppercase text-xs flex items-center justify-center gap-2 transition-all active:scale-95 ${col.id === 'ready'
-                                                    ? 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-white' // Complete button specific style
-                                                    : isDelivery ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
+                                                ? 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 hover:text-white' // Complete button specific style
+                                                : isDelivery ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-900/20' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
                                                 }`}
                                         >
                                             <col.action.icon size={14} />
