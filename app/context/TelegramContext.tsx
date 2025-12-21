@@ -68,41 +68,41 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
         // Double check availability
         if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp
-            setIsTelegram(true)
+            // Only initialize if we are actually in Telegram (have initData)
+            if (tg.initData) {
+                setIsTelegram(true)
+                tg.expand()
+                tg.ready()
 
-            // Expand to full height
-            tg.expand()
-            tg.ready()
+                if (tg.initDataUnsafe?.user) {
+                    setUser(tg.initDataUnsafe.user)
 
-            if (tg.initDataUnsafe?.user) {
-                setUser(tg.initDataUnsafe.user)
+                    // Magic Login Logic
+                    const login = async () => {
+                        try {
+                            // 1. Send initData to backend
+                            const res = await fetch('/api/auth/telegram', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ initData: tg.initData })
+                            })
 
-                // Magic Login Logic
-                const login = async () => {
-                    try {
-                        // 1. Send initData to backend
-                        const res = await fetch('/api/auth/telegram', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ initData: tg.initData })
-                        })
+                            if (!res.ok) throw new Error('Auth failed')
 
-                        if (!res.ok) throw new Error('Auth failed')
+                            const { token } = await res.json()
 
-                        const { token } = await res.json()
-
-                        if (!auth) throw new Error('Firebase Auth not initialized')
-                        // 2. Sign in with Firebase
-                        await signInWithCustomToken(auth, token)
-                        console.log('🔮 Magic Login Success')
-                    } catch (e) {
-                        console.error('Magic Login Error', e)
+                            if (!auth) throw new Error('Firebase Auth not initialized')
+                            // 2. Sign in with Firebase
+                            await signInWithCustomToken(auth, token)
+                            console.log('🔮 Magic Login Success')
+                        } catch (e) {
+                            console.error('Magic Login Error', e)
+                        }
                     }
+
+                    login()
                 }
-
-                if (tg.initData) login()
             }
-
             setReady(true)
         }
     }, [])
@@ -114,7 +114,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
                 strategy="beforeInteractive"
                 onLoad={() => {
                     // Trigger retry if script loads late
-                    if (window.Telegram?.WebApp) {
+                    if (window.Telegram?.WebApp?.initData) {
                         setIsTelegram(true)
                         window.Telegram.WebApp.expand()
                     }
