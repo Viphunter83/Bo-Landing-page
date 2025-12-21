@@ -3,5 +3,5 @@ export const CONTACT_INFO = {
     whatsapp: '971501234567',
 
     // Telegram Username (without @)
-    telegram: 'BoRestaurantDubai'
+    telegram: 'Bo_FCC_bot'
 }

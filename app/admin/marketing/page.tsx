@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { db } from '../../lib/firebase'
 import { collection, query, getDocs, where } from 'firebase/firestore'
-import { Mail, Send, CheckCircle, Users as UsersIcon, Flame } from 'lucide-react'
+import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
+import { fullMenu } from '../../data/menuData'
 
 interface Lead {
     id: string
@@ -21,6 +22,13 @@ export default function MarketingPage() {
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
     const { showToast } = useToast()
+
+    // Generator State
+    const [genPlatform, setGenPlatform] = useState('Instagram')
+    const [genTopic, setGenTopic] = useState(fullMenu[0]?.id || 'general')
+    const [genTone, setGenTone] = useState('Excited')
+    const [genResult, setGenResult] = useState('')
+    const [generating, setGenerating] = useState(false)
 
     useEffect(() => {
         if (!db) return
@@ -63,6 +71,37 @@ export default function MarketingPage() {
         setSending(false)
     }
 
+    const handleGenerate = async () => {
+        setGenerating(true)
+        setGenResult('')
+        try {
+            const res = await fetch('/api/marketing/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    platform: genPlatform,
+                    topic: genTopic,
+                    tone: genTone,
+                    lang: 'ru' // Defaulting to RU for this user based on history, or make selectable
+                })
+            })
+            const data = await res.json()
+            if (data.success) {
+                setGenResult(data.content)
+            } else {
+                showToast('Failed to generate', 'error')
+            }
+        } catch (e) {
+            showToast('Generation error', 'error')
+        }
+        setGenerating(false)
+    }
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(genResult)
+        showToast('Copied to clipboard!', 'success')
+    }
+
     // Stats
     const spicyLovers = leads.filter(l => l.spice === 'spicy' || l.spice === 'fire').length
     const healthyVibe = leads.filter(l => l.mood === 'healthy').length
@@ -85,6 +124,101 @@ export default function MarketingPage() {
                     </div>
                 </div>
             </header>
+
+            {/* AI Generator Section */}
+            <div className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border border-indigo-500/30 rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-32 bg-indigo-500/10 blur-[100px] rounded-full" />
+
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-indigo-500 rounded-lg text-white">
+                            <Sparkles size={24} />
+                        </div>
+                        <h2 className="text-xl font-bold text-white">AI Social Media Agent</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Controls */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs text-indigo-300 uppercase font-bold mb-2">Platform</label>
+                                <div className="flex gap-2">
+                                    {['Instagram', 'Stories', 'Telegram'].map(p => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setGenPlatform(p)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${genPlatform === p ? 'bg-indigo-500 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs text-indigo-300 uppercase font-bold mb-2">Topic / Dish</label>
+                                    <select
+                                        value={genTopic}
+                                        onChange={(e) => setGenTopic(e.target.value)}
+                                        className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                                    >
+                                        {fullMenu.map(item => (
+                                            <option key={item.id} value={item.id}>{item.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-indigo-300 uppercase font-bold mb-2">Tone</label>
+                                    <select
+                                        value={genTone}
+                                        onChange={(e) => setGenTone(e.target.value)}
+                                        className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                                    >
+                                        <option value="Excited">🤩 Excited / Hype</option>
+                                        <option value="Elegant">✨ Elegant / Luxury</option>
+                                        <option value="Storytelling">📖 Storytelling</option>
+                                        <option value="Funny">😂 Funny / Meme</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleGenerate}
+                                disabled={generating}
+                                className="w-full bg-white text-indigo-900 font-black py-4 rounded-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {generating ? <div className="animate-spin h-5 w-5 border-2 border-indigo-900 border-t-transparent rounded-full" /> : <Sparkles size={20} />}
+                                GENERATE MAGIC
+                            </button>
+                        </div>
+
+                        {/* Result */}
+                        <div className="bg-black/30 rounded-xl p-4 border border-indigo-500/20 relative min-h-[200px]">
+                            {genResult ? (
+                                <>
+                                    <textarea
+                                        value={genResult}
+                                        readOnly
+                                        className="w-full h-full bg-transparent text-zinc-200 text-sm resize-none focus:outline-none min-h-[160px]"
+                                    />
+                                    <button
+                                        onClick={copyToClipboard}
+                                        className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-lg transition-colors"
+                                    >
+                                        <Copy size={16} />
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-zinc-600 gap-2">
+                                    <Sparkles size={32} className="opacity-20" />
+                                    <p className="text-sm">Ready to create viral content...</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* Segments Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
