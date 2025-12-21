@@ -49,7 +49,6 @@ export default function Home({
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
 
   // Listen for global booking events (from ShakeToWin)
-  // Listen for global booking events (from ShakeToWin)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const handleOpenBooking = (e: CustomEvent) => {
@@ -65,143 +64,142 @@ export default function Home({
       // @ts-ignore
       return () => window.removeEventListener('open-booking', handleOpenBooking)
     }
-  }
   }, [])
 
-// Fetch Site Settings
-useEffect(() => {
-  if (!db) return
-  const fetchSettings = async () => {
-    try {
-      const docRef = doc(db, 'site_settings', 'general')
-      const snap = await getDoc(docRef)
-      if (snap.exists()) {
-        setSiteSettings(snap.data())
+  // Fetch Site Settings
+  useEffect(() => {
+    if (!db) return
+    const fetchSettings = async () => {
+      try {
+        const docRef = doc(db, 'site_settings', 'general')
+        const snap = await getDoc(docRef)
+        if (snap.exists()) {
+          setSiteSettings(snap.data())
+        }
+      } catch (e) {
+        console.error('Failed to load site settings', e)
       }
-    } catch (e) {
-      console.error('Failed to load site settings', e)
     }
+    fetchSettings()
+  }, [])
+
+  const handleDishClick = (dishId: string) => {
+    setSelectedDish(dishId)
   }
-  fetchSettings()
-}, [])
 
-const handleDishClick = (dishId: string) => {
-  setSelectedDish(dishId)
-}
+  const handleBookClick = () => {
+    setBookingInitialValues(undefined)
+    setIsBookingOpen(true)
+  }
 
-const handleBookClick = () => {
-  setBookingInitialValues(undefined)
-  setIsBookingOpen(true)
-}
+  const handleMenuClick = () => {
+    setIsFullMenuOpen(true)
+  }
 
-const handleMenuClick = () => {
-  setIsFullMenuOpen(true)
-}
+  // Sync URL when vibe changes
+  const handleVibeChange = (vibe: string) => {
+    setActiveVibe(vibe)
+    // Update URL without reload
+    const url = new URL(window.location.href)
+    url.searchParams.set('vibe', vibe)
+    window.history.pushState({}, '', url)
+  }
 
-// Sync URL when vibe changes
-const handleVibeChange = (vibe: string) => {
-  setActiveVibe(vibe)
-  // Update URL without reload
-  const url = new URL(window.location.href)
-  url.searchParams.set('vibe', vibe)
-  window.history.pushState({}, '', url)
-}
+  // Generate FAQ Schema
+  const currentFaq = faqData[lang as keyof typeof faqData] || faqData.en
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": currentFaq.map(item => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer
+      }
+    }))
+  }
 
-// Generate FAQ Schema
-const currentFaq = faqData[lang as keyof typeof faqData] || faqData.en
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": currentFaq.map(item => ({
-    "@type": "Question",
-    "name": item.question,
-    "acceptedAnswer": {
-      "@type": "Answer",
-      "text": item.answer
-    }
-  }))
-}
-
-return (
-  <CartProvider>
-    <>
-      <div className={`min-h-screen bg-black text-white font-sans selection:bg-red-600 selection:text-white`} dir={dir}>
-        <CartDrawer lang={lang} />
-        <CartTrigger />
-        <JsonLd data={faqSchema} />
-        <DubaiPulseTicker lang={lang} />
-        <Navbar
-          lang={lang}
-          t={content[lang as keyof typeof content]}
-          onBookClick={handleBookClick}
-        />
-
-        <main>
-          <Hero
+  return (
+    <CartProvider>
+      <>
+        <div className={`min-h-screen bg-black text-white font-sans selection:bg-red-600 selection:text-white`} dir={dir}>
+          <CartDrawer lang={lang} />
+          <CartTrigger />
+          <JsonLd data={faqSchema} />
+          <DubaiPulseTicker lang={lang} />
+          <Navbar
             lang={lang}
             t={content[lang as keyof typeof content]}
             onBookClick={handleBookClick}
-            onMenuClick={handleMenuClick}
-            heroImage={siteSettings.heroImage}
-            heroTitle={siteSettings.heroTitle}
-            heroSub={siteSettings.heroSub}
           />
-          <VibeCheck
-            lang={lang}
-            t={content[lang as keyof typeof content]}
-            activeVibe={activeVibe}
-            setActiveVibe={handleVibeChange}
-          />
-          <SmartMenu
-            lang={lang}
-            t={content[lang as keyof typeof content]}
-            onDishClick={handleDishClick}
-            onFullMenuClick={handleMenuClick}
-            activeVibe={activeVibe}
-          />
-          <SocialProof
-            t={content[lang as keyof typeof content]}
-            images={siteSettings.socialImages}
-          />
-          <FAQ lang={lang} />
-          <FloatingChat lang={lang} activeVibe={activeVibe} onVibeChange={handleVibeChange} />
-        </main>
 
-        <Footer lang={lang} t={content[lang as keyof typeof content]} />
+          <main>
+            <Hero
+              lang={lang}
+              t={content[lang as keyof typeof content]}
+              onBookClick={handleBookClick}
+              onMenuClick={handleMenuClick}
+              heroImage={siteSettings.heroImage}
+              heroTitle={siteSettings.heroTitle}
+              heroSub={siteSettings.heroSub}
+            />
+            <VibeCheck
+              lang={lang}
+              t={content[lang as keyof typeof content]}
+              activeVibe={activeVibe}
+              setActiveVibe={handleVibeChange}
+            />
+            <SmartMenu
+              lang={lang}
+              t={content[lang as keyof typeof content]}
+              onDishClick={handleDishClick}
+              onFullMenuClick={handleMenuClick}
+              activeVibe={activeVibe}
+            />
+            <SocialProof
+              t={content[lang as keyof typeof content]}
+              images={siteSettings.socialImages}
+            />
+            <FAQ lang={lang} />
+            <FloatingChat lang={lang} activeVibe={activeVibe} onVibeChange={handleVibeChange} />
+          </main>
 
-        {/* Sticky Mobile CTA */}
-        <div className="fixed bottom-6 left-6 right-6 z-40 md:hidden">
-          <button
-            onClick={handleBookClick}
-            data-booking-trigger
-            className="w-full bg-red-600 text-white py-4 rounded-full font-bold shadow-2xl shadow-red-900/50 flex items-center justify-center gap-2"
-          >
-            <Utensils size={18} /> {content[lang as keyof typeof content].nav.book}
-          </button>
+          <Footer lang={lang} t={content[lang as keyof typeof content]} />
+
+          {/* Sticky Mobile CTA */}
+          <div className="fixed bottom-6 left-6 right-6 z-40 md:hidden">
+            <button
+              onClick={handleBookClick}
+              data-booking-trigger
+              className="w-full bg-red-600 text-white py-4 rounded-full font-bold shadow-2xl shadow-red-900/50 flex items-center justify-center gap-2"
+            >
+              <Utensils size={18} /> {content[lang as keyof typeof content].nav.book}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Modals outside main container */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        lang={lang}
-        t={content[lang as keyof typeof content]}
-        initialValues={bookingInitialValues}
-      />
-      <FullMenuModal
-        isOpen={isFullMenuOpen}
-        onClose={() => setIsFullMenuOpen(false)}
-        lang={lang}
-        activeVibe={activeVibe}
-      />
-      <DishModal
-        isOpen={selectedDish !== null}
-        onClose={() => setSelectedDish(null)}
-        dish={selectedDish ? getMenuItemById(selectedDish) || null : null}
-        lang={lang}
-      />
-    </>
-  </CartProvider>
-)
+        {/* Modals outside main container */}
+        <BookingModal
+          isOpen={isBookingOpen}
+          onClose={() => setIsBookingOpen(false)}
+          lang={lang}
+          t={content[lang as keyof typeof content]}
+          initialValues={bookingInitialValues}
+        />
+        <FullMenuModal
+          isOpen={isFullMenuOpen}
+          onClose={() => setIsFullMenuOpen(false)}
+          lang={lang}
+          activeVibe={activeVibe}
+        />
+        <DishModal
+          isOpen={selectedDish !== null}
+          onClose={() => setSelectedDish(null)}
+          dish={selectedDish ? getMenuItemById(selectedDish) || null : null}
+          lang={lang}
+        />
+      </>
+    </CartProvider>
+  )
 }
