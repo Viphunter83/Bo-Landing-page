@@ -53,6 +53,7 @@ export default function CustomersPage() {
             cell: (item: Customer) => (
                 <div className="flex items-center gap-3">
                     {item.photoUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={item.photoUrl} alt="Avatar" className="w-10 h-10 rounded-full border border-zinc-700" />
                     ) : (
                         <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 font-bold">
