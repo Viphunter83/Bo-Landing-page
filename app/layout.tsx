@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   keywords: 'Vietnamese restaurant, Dubai, Festival City, Pho, Asian cuisine',
 }
 
+import { TelegramProvider } from './context/TelegramContext'
+
 export default function RootLayout({
   children,
 }: {
@@ -16,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <SchemaScript />
-        {/* Global Providers can go here */}
-        {children}
+        <TelegramProvider>
+          <SchemaScript />
+          {/* Global Providers can go here */}
+          {children}
+        </TelegramProvider>
       </body>
     </html>
   )

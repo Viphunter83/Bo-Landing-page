@@ -3,6 +3,7 @@
 import { MapPin, Phone, Instagram, Globe, Clock, Utensils } from 'lucide-react'
 import Image from 'next/image'
 import DeliveryServices from './DeliveryServices'
+import { useTelegram } from '../context/TelegramContext'
 
 interface FooterProps {
   t: any
@@ -10,6 +11,10 @@ interface FooterProps {
 }
 
 export default function Footer({ t, lang }: FooterProps) {
+  const { isTelegram } = useTelegram()
+
+  if (isTelegram) return null
+
   return (
     <footer id="location" className="bg-black pt-20 border-t border-zinc-800">
       {/* Delivery Services Section */}
