@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from '../../lib/firebase'
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore'
-import { Truck, ChefHat, CheckCircle, MapPin, Phone, Clock, AlertCircle, Flame } from 'lucide-react'
+import { Truck, ChefHat, CheckCircle, MapPin, Phone, Clock, AlertCircle, Flame, Users } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 
 // Simple notification sound (Base64 short beep)
@@ -62,7 +62,7 @@ export default function DeliveryAdminPage() {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'added' && !initialLoad.current) {
                     const newOrder = change.doc.data()
-                    if (newOrder.status === 'new') {
+                    if (newOrder.status === 'new' && newOrder.deliveryStatus !== 'assigned') {
                         audioRef.current?.play().catch(e => console.log("Audio play blocked", e))
                         showToast(`New Order #${change.doc.id.slice(-4)}!`, 'success')
                     }
@@ -111,9 +111,12 @@ export default function DeliveryAdminPage() {
     }
 
     const columns = [
-        { id: 'new', label: 'New Orders', icon: <AlertCircle size={18} />, color: 'text-red-500', bg: 'bg-red-500/10' },
-        { id: 'cooking', label: 'Kitchen', icon: <ChefHat size={18} />, color: 'text-orange-500', bg: 'bg-orange-500/10' },
-        { id: 'ready', label: 'Ready', icon: <CheckCircle size={18} />, color: 'text-green-500', bg: 'bg-green-500/10' },
+        // Monitor Phases (Read Only)
+        { id: 'new', label: 'Processing', icon: <AlertCircle size={18} />, color: 'text-zinc-500', bg: 'bg-zinc-900', readOnly: true },
+        { id: 'cooking', label: 'Cooking (In Kitchen)', icon: <ChefHat size={18} />, color: 'text-orange-500', bg: 'bg-zinc-900', readOnly: true },
+
+        // Action Phases
+        { id: 'ready', label: 'Ready for Dispatch', icon: <CheckCircle size={18} />, color: 'text-green-500', bg: 'bg-green-500/10' },
         { id: 'out_for_delivery', label: 'Out for Delivery', icon: <Truck size={18} />, color: 'text-blue-500', bg: 'bg-blue-500/10' }
     ]
 
@@ -158,36 +161,54 @@ export default function DeliveryAdminPage() {
 
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col">
-            <header className="mb-6 flex justify-between items-center">
+            <header className="mb-6 flex justify-between items-center bg-black/50 p-4 rounded-xl border border-zinc-800 backdrop-blur-sm">
                 <div>
                     <h1 className="text-2xl font-black text-white flex items-center gap-2">
-                        <Truck className="text-yellow-500" />
-                        KDS (Kitchen Display System)
+                        <Truck className="text-blue-500" />
+                        LOGISTICS & DISPATCH
                     </h1>
-                    <p className="text-zinc-400 text-sm">Real-time delivery fulfillment board</p>
+                    <p className="text-zinc-400 text-sm">Real-time driver assignment & tracking</p>
                 </div>
 
-                <button
-                    onClick={toggleRushMode}
-                    className={`px-6 py-3 rounded-xl font-black flex items-center gap-3 transition-all ${rushMode
-                        ? 'bg-red-600 text-white animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]'
-                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                        }`}
-                >
-                    <Flame size={20} className={rushMode ? 'fill-yellow-300 text-yellow-300' : ''} />
-                    {rushMode ? 'RUSH MODE ACTIVE' : 'RUSH MODE OFF'}
-                </button>
+                <div className="flex items-center gap-4">
+                    {/* Stats */}
+                    <div className="flex gap-4 mr-6">
+                        <div className="text-center">
+                            <div className="text-xs text-zinc-500 uppercase font-bold">Pending</div>
+                            <div className="text-xl font-mono font-bold text-white">{orders.filter((o: any) => o.status === 'new' || o.status === 'cooking').length}</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-xs text-zinc-500 uppercase font-bold">Ready</div>
+                            <div className="text-xl font-mono font-bold text-green-500">{orders.filter((o: any) => o.status === 'ready').length}</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="text-xs text-zinc-500 uppercase font-bold">En Route</div>
+                            <div className="text-xl font-mono font-bold text-blue-500">{orders.filter((o: any) => o.status === 'out_for_delivery').length}</div>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={toggleRushMode}
+                        className={`px-6 py-3 rounded-xl font-black flex items-center gap-3 transition-all ${rushMode
+                            ? 'bg-red-600 text-white animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]'
+                            : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                            }`}
+                    >
+                        <Flame size={20} className={rushMode ? 'fill-yellow-300 text-yellow-300' : ''} />
+                        {rushMode ? 'RUSH MODE ACTIVE' : 'RUSH MODE OFF'}
+                    </button>
+                </div>
             </header>
 
             <div className="flex-1 grid grid-cols-4 gap-4 overflow-hidden min-w-[1024px]">
                 {columns.map(col => (
-                    <div key={col.id} className="bg-zinc-900 border border-zinc-800 rounded-xl flex flex-col h-full overflow-hidden">
+                    <div key={col.id} className={`border border-zinc-800 rounded-xl flex flex-col h-full overflow-hidden ${col.readOnly ? 'bg-zinc-950/50' : 'bg-zinc-900'}`}>
                         {/* Column Header */}
                         <div className={`p-4 border-b border-zinc-800 flex items-center justify-between ${col.bg}`}>
-                            <h3 className={`font-bold text-lg flex items-center gap-2 ${col.color}`}>
+                            <h3 className={`font-bold text-md flex items-center gap-2 ${col.color}`}>
                                 {col.icon} {col.label}
                             </h3>
-                            <span className="bg-black/40 text-white text-xs font-bold px-2 py-1 rounded-full">
+                            <span className="bg-white/10 text-white text-xs font-bold px-2 py-1 rounded-full">
                                 {orders.filter((o: any) =>
                                     (col.id === 'out_for_delivery' ? o.deliveryStatus === 'out_for_delivery' : o.status === col.id)
                                 ).length}
@@ -195,7 +216,7 @@ export default function DeliveryAdminPage() {
                         </div>
 
                         {/* Drop Zone / List */}
-                        <div className="p-3 flex-1 overflow-y-auto space-y-3 bg-zinc-900/50">
+                        <div className={`p-3 flex-1 overflow-y-auto space-y-3 ${col.readOnly ? 'opacity-80' : ''}`}>
                             {orders
                                 .filter((o: any) => {
                                     if (col.id === 'out_for_delivery') return o.deliveryStatus === 'out_for_delivery'
@@ -203,7 +224,7 @@ export default function DeliveryAdminPage() {
                                     return o.status === col.id
                                 })
                                 .map((order: any) => (
-                                    <div key={order.id} className="bg-black border border-zinc-800 p-4 rounded-xl shadow-lg relative group hover:border-zinc-600 transition-all">
+                                    <div key={order.id} className="bg-black border border-zinc-800 p-4 rounded-xl shadow-lg relative group hover:border-zinc-700 transition-all">
                                         {/* Timer / Badge */}
                                         <div className="absolute top-3 right-3 flex gap-2">
                                             <span className="text-xs font-mono text-zinc-500 bg-zinc-900 px-2 rounded border border-zinc-800">
@@ -229,59 +250,43 @@ export default function DeliveryAdminPage() {
                                             </span>
                                         </div>
 
-                                        <div className="space-y-2 mb-4">
-                                            {order.items.map((item: any, i: number) => (
-                                                <div key={i} className="flex justify-between items-center text-sm border-b border-zinc-800/50 pb-1 last:border-0 last:pb-0">
-                                                    <span className="text-zinc-300 font-medium">
-                                                        <span className="text-red-500 mr-2">{item.quantity}x</span>
+                                        {/* Simplified Item List for Logistics */}
+                                        <div className="space-y-1 mb-4 text-xs">
+                                            {order.items.slice(0, 3).map((item: any, i: number) => (
+                                                <div key={i} className="flex justify-between items-center text-zinc-400">
+                                                    <span>
+                                                        <span className="text-zinc-500 mr-1">{item.quantity}x</span>
                                                         {item.name}
                                                     </span>
                                                 </div>
                                             ))}
+                                            {order.items.length > 3 && <div className="text-zinc-600 italic">+{order.items.length - 3} more items...</div>}
                                         </div>
 
                                         {/* Address Info */}
                                         <div className="bg-zinc-900/50 p-2 rounded mb-3 text-xs text-zinc-400 space-y-1">
                                             <div className="flex items-center gap-2">
-                                                <MapPin size={12} /> <span className="truncate">{order.address}</span>
+                                                <MapPin size={12} className="text-blue-500" /> <span className="truncate">{order.address}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Phone size={12} /> <span>{order.platform}</span>
                                             </div>
                                         </div>
 
-                                        {/* Actions */}
-                                        {col.id === 'new' && (
-                                            <button
-                                                onClick={() => updateOrderStatus(order.id, 'cooking')}
-                                                className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
-                                            >
-                                                Start Cooking <ChefHat size={16} />
-                                            </button>
-                                        )}
-
-                                        {col.id === 'cooking' && (
-                                            <button
-                                                onClick={() => updateOrderStatus(order.id, 'ready')}
-                                                className="w-full py-3 bg-orange-600 hover:bg-orange-500 rounded-lg text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
-                                            >
-                                                Mark Ready <CheckCircle size={16} />
-                                            </button>
-                                        )}
-
+                                        {/* Actions - Only for Active Logistics Columns */}
                                         {col.id === 'ready' && (
                                             <div className="space-y-2">
                                                 {order.type === 'pickup' ? (
                                                     <button
                                                         onClick={() => updateOrderStatus(order.id, 'completed')}
-                                                        className="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold text-white transition-colors flex items-center justify-center gap-2"
+                                                        className="w-full py-2 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold text-white transition-colors flex items-center justify-center gap-2"
                                                     >
-                                                        Customer Picked Up <CheckCircle size={16} />
+                                                        Customer Picked Up <CheckCircle size={14} />
                                                     </button>
                                                 ) : (
                                                     <>
                                                         <select
-                                                            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-sm text-white outline-none focus:border-red-600"
+                                                            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2 text-xs text-white outline-none focus:border-blue-600"
                                                             onChange={(e) => {
                                                                 if (e.target.value) assignDriver(order.id, e.target.value)
                                                             }}
@@ -295,9 +300,9 @@ export default function DeliveryAdminPage() {
                                                         {order.driverId && (
                                                             <button
                                                                 onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                                                                className="w-full py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold text-white transition-colors"
+                                                                className="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold text-white transition-colors flex items-center justify-center gap-2"
                                                             >
-                                                                Dispatch
+                                                                Dispatch <Truck size={14} />
                                                             </button>
                                                         )}
                                                     </>
@@ -307,15 +312,21 @@ export default function DeliveryAdminPage() {
 
                                         {col.id === 'out_for_delivery' && (
                                             <div className="space-y-2">
-                                                <div className="text-xs text-center text-zinc-500 uppercase tracking-widest">
+                                                <div className="text-xs text-center text-zinc-500 uppercase tracking-widest bg-zinc-900 py-1 rounded">
                                                     Driver: {DRIVERS.find(d => d.id === order.driverId)?.name || 'Unknown'}
                                                 </div>
                                                 <button
                                                     onClick={() => updateOrderStatus(order.id, 'completed')}
-                                                    className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-bold text-white transition-colors"
+                                                    className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs font-bold text-white transition-colors"
                                                 >
-                                                    Complete Order
+                                                    Mark Delivered
                                                 </button>
+                                            </div>
+                                        )}
+
+                                        {col.readOnly && (
+                                            <div className="text-[10px] text-center text-zinc-600 uppercase font-black tracking-widest mt-2 border-t border-zinc-800 pt-2">
+                                                Kitchen Handling
                                             </div>
                                         )}
                                     </div>
