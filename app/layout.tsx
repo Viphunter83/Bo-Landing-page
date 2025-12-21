@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import JsonLd from './components/JsonLd'
-import { getRestaurantSchema } from './lib/schema'
+import SchemaScript from './components/SchemaScript'
 
 export const metadata: Metadata = {
   title: 'Bo Restaurant Dubai - Vietnamese Cuisine',
@@ -17,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <JsonLd data={getRestaurantSchema()} />
+        <SchemaScript />
         {/* Global Providers can go here */}
         {children}
       </body>
