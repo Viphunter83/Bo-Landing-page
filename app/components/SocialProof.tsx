@@ -5,22 +5,25 @@ import Image from 'next/image'
 
 interface SocialProofProps {
   t: any
+  images?: string[]
 }
 
-export default function SocialProof({ t }: SocialProofProps) {
-  const socialImages = [
+export default function SocialProof({ t, images }: SocialProofProps) {
+  const defaultImages = [
     '1559339352-11d035aa65de',
     '1514933651103-005eec06c04b',
     '1559339352-11d035aa65de',
     '1514933651103-005eec06c04b'
   ]
 
+  const socialImages = (images && images.length > 0 && images.some(i => i)) ? images.filter(i => i) : defaultImages
+
   return (
     <section className="py-20 bg-zinc-900 overflow-hidden">
       <div className="container mx-auto px-6 text-center mb-12">
         <h3 className="text-white text-xl uppercase tracking-widest mb-2 font-bold">{t.social.title}</h3>
         <div className="flex justify-center gap-1 text-yellow-500 mb-4">
-          {[1,2,3,4,5].map(i => <Star key={i} fill="currentColor" size={20} />)}
+          {[1, 2, 3, 4, 5].map(i => <Star key={i} fill="currentColor" size={20} />)}
         </div>
       </div>
 
@@ -34,7 +37,7 @@ export default function SocialProof({ t }: SocialProofProps) {
             className="min-w-[280px] md:min-w-[350px] aspect-[9/16] bg-black rounded-xl overflow-hidden relative shrink-0 snap-center border border-zinc-800 hover:border-yellow-500 transition-all group cursor-pointer"
           >
             <Image
-              src={`https://images.unsplash.com/photo-${imgId}?w=600&q=80`}
+              src={imgId.startsWith('http') ? imgId : `https://images.unsplash.com/photo-${imgId}?w=600&q=80`}
               alt={`Social proof ${i + 1}`}
               fill
               className="object-cover opacity-60 group-hover:opacity-100 transition-opacity duration-500"

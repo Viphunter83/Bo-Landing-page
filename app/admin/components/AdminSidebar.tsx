@@ -12,7 +12,8 @@ import {
     BarChart3,
     Database,
     LogOut,
-    X
+    X,
+    Sliders
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -69,6 +70,7 @@ export default function AdminSidebar({ isOpen, onClose, onSignOut }: AdminSideba
 
                         <hr className="border-zinc-800 my-2" />
                         <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 pl-3">System</div>
+                        <NavLink href="/admin/settings" icon={<Sliders size={20} />} label="Site Content" />
                         <NavLink href="/admin/migration" icon={<Database size={20} />} label="Migration" />
                     </nav>
 

@@ -8,15 +8,18 @@ interface HeroProps {
   lang: string
   onBookClick: () => void
   onMenuClick: () => void
+  heroImage?: string
+  heroTitle?: string
+  heroSub?: string
 }
 
-export default function Hero({ t, lang, onBookClick, onMenuClick }: HeroProps) {
+export default function Hero({ t, lang, onBookClick, onMenuClick, heroImage, heroTitle, heroSub }: HeroProps) {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-black">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=2600&q=80"
+          src={heroImage || "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=2600&q=80"}
           alt="Dark Moody Vietnamese Food"
           fill
           className="object-cover opacity-60"
@@ -42,14 +45,14 @@ export default function Hero({ t, lang, onBookClick, onMenuClick }: HeroProps) {
         </p>
 
         <div className={`flex flex-col sm:flex-row gap-4 ${lang === 'ar' ? 'flex-row-reverse' : ''}`}>
-          <button 
+          <button
             onClick={onBookClick}
             data-booking-trigger
             className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] flex items-center justify-center gap-2"
           >
             {t.hero.cta} <ChevronRight size={20} className={lang === 'ar' ? 'rotate-180' : ''} />
           </button>
-          <button 
+          <button
             onClick={onMenuClick}
             className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-full font-bold text-lg transition-all flex items-center justify-center gap-2"
           >
