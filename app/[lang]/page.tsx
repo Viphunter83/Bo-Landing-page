@@ -71,7 +71,7 @@ export default function Home({
     if (!db) return
     const fetchSettings = async () => {
       try {
-        const docRef = doc(db, 'site_settings', 'general')
+        const docRef = doc(db!, 'site_settings', 'general')
         const snap = await getDoc(docRef)
         if (snap.exists()) {
           setSiteSettings(snap.data())
