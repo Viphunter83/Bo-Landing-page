@@ -17,6 +17,9 @@ interface Order {
     type: 'dine_in' | 'delivery' | 'pickup'
     createdAt: any
     bookingDateTime: string
+    date?: string
+    time?: string
+    phone?: string
 }
 
 export default function KitchenDisplaySystem() {
@@ -144,15 +147,47 @@ export default function KitchenDisplaySystem() {
                                                 </span>
                                                 <span className="text-zinc-500 text-xs">#{order.id.slice(-4)}</span>
                                             </div>
-                                            <h3 className="text-lg font-bold leading-tight">{order.items || 'Table Reservation'}</h3>
-                                            {(order.guests) && <div className="text-xs text-zinc-400 mt-1">Guests: {order.guests}</div>}
+
+                                            {/* Logic split: Reservation vs Food Order */}
+                                            {order.items === 'Table Reservation' || !order.items ? (
+                                                <div className="mb-2">
+                                                    <h3 className="text-xl font-bold leading-tight text-white mb-1">
+                                                        {order.name || 'Guest'}
+                                                    </h3>
+                                                    <div className="flex flex-col gap-1 text-sm text-zinc-300">
+                                                        {(order.date && order.time) ? (
+                                                            <div className="flex items-center gap-2 text-yellow-500 font-bold">
+                                                                <Clock size={14} />
+                                                                <span>{order.date} at {order.time}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-red-400 text-xs">Missing Date/Time</div>
+                                                        )}
+                                                        {order.phone && (
+                                                            <div className="flex items-center gap-2 text-zinc-400 text-xs">
+                                                                <span>📞 {order.phone}</span>
+                                                            </div>
+                                                        )}
+                                                        {order.guests && (
+                                                            <div className="text-zinc-400 text-xs">
+                                                                👥 {order.guests} Guests
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <h3 className="text-lg font-bold leading-tight">{order.items}</h3>
+                                                    {(order.guests) && <div className="text-xs text-zinc-400 mt-1">Guests: {order.guests}</div>}
+                                                </>
+                                            )}
                                         </div>
 
                                         {/* Notes */}
-                                        {(order.notes || order.name) && (
+                                        {(order.notes) && (
                                             <div className="text-sm text-zinc-300 bg-black/20 p-2 rounded border border-zinc-700/50">
-                                                <span className="text-zinc-500 block text-xs mb-0.5">Note from {order.name}:</span>
-                                                {order.notes || "No special notes"}
+                                                <span className="text-zinc-500 block text-xs mb-0.5">Note:</span>
+                                                {order.notes}
                                             </div>
                                         )}
 
