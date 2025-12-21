@@ -93,7 +93,7 @@ export default function ShakeToWin() {
 
                 const speed = Math.abs(x + y + z - lastX.current - lastY.current - lastZ.current) / diffTime * 10000
 
-                if (speed > 500) { // INCREASED: Harder threshold (was 300)
+                if (speed > 1000) { // EXTREME: Harder threshold (was 500)
                     // Add progress based on speed/intensity
                     const bonus = Math.min(speed / 150, 10) // HARDER: Less bonus per shake (was /100, max 15)
 
