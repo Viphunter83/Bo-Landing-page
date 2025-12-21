@@ -30,7 +30,7 @@ export default function SettingsPage() {
         if (!db) return
         const fetchSettings = async () => {
             try {
-                const docRef = doc(db, 'site_settings', 'general')
+                const docRef = doc(db!, 'site_settings', 'general')
                 const snap = await getDoc(docRef)
                 if (snap.exists()) {
                     setSettings(prev => ({ ...prev, ...snap.data() }))
@@ -62,7 +62,7 @@ export default function SettingsPage() {
         if (!db) return
         setSaving(true)
         try {
-            await updateDoc(doc(db, 'site_settings', 'general'), { ...settings })
+            await updateDoc(doc(db!, 'site_settings', 'general'), { ...settings })
             showToast('Settings saved successfully! 💾', 'success')
         } catch (e) {
             console.error('Error saving:', e)
