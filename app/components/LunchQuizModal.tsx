@@ -50,21 +50,85 @@ const QUESTIONS = [
     }
 ]
 
+// Isolated component for Email step to prevent parent re-renders on every keystroke (INP fix)
+function EmailStep({
+    lang,
+    onSubmit,
+    onClose
+}: {
+    lang: string,
+    onSubmit: (email?: string) => void,
+    onClose: () => void
+}) {
+    const [email, setEmail] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+
+    const handleSubmit = (skipped: boolean) => {
+        setSubmitting(true)
+        // Slight delay to show "sending" state if needed
+        setTimeout(() => {
+            onSubmit(skipped ? undefined : email)
+        }, 500)
+    }
+
+    return (
+        <motion.div
+            key="email-step"
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -50, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col items-center text-center"
+        >
+            <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 text-3xl">
+                🎁
+            </div>
+            <h2 className="text-2xl font-black text-white mb-2 leading-tight">
+                {lang === 'ru' ? 'Почти готово!' : 'Almost done!'}
+            </h2>
+            <p className="text-zinc-400 mb-8">
+                {lang === 'ru'
+                    ? 'Оставьте email, чтобы получить скидку 10%.'
+                    : 'Leave your email to unlock a 10% discount code.'}
+            </p>
+
+            <input
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white mb-4 focus:outline-none focus:border-yellow-500 transition-colors"
+            />
+
+            <button
+                onClick={() => handleSubmit(false)}
+                disabled={!email || submitting}
+                className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+            >
+                {submitting
+                    ? (lang === 'ru' ? 'Сохраняем...' : 'Saving...')
+                    : (lang === 'ru' ? 'Получить Купон' : 'Get Coupon')}
+            </button>
+
+            <button
+                onClick={() => handleSubmit(true)}
+                className="text-sm text-zinc-500 hover:text-white transition-colors underline"
+            >
+                {lang === 'ru' ? 'Пропустить' : 'Skip & See Results'}
+            </button>
+        </motion.div>
+    )
+}
+
 export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: LunchQuizModalProps) {
     const [step, setStep] = useState(0)
     const [answers, setAnswers] = useState<Partial<UserPreferences>>({})
-    const [email, setEmail] = useState('')
-    const [submitting, setSubmitting] = useState(false)
 
     // Reset state when opening
     useEffect(() => {
         if (isOpen) {
             setStep(0)
             setAnswers({})
-            setStep(0)
-            setAnswers({})
-            setEmail('')
-            setSubmitting(false)
         }
     }, [isOpen])
 
@@ -80,24 +144,18 @@ export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: Lu
         }, 200)
     }
 
-    const handleEmailSubmit = (skipped: boolean) => {
-        setSubmitting(true)
+    const handleEmailSubmit = (email?: string) => {
         const finalAnswers = { ...answers }
-        if (!skipped && email) {
+        if (email) {
             // @ts-ignore
             finalAnswers.email = email
         }
-
-        // Slight delay to show "sending" state if needed, or just close
-        setTimeout(() => {
-            onComplete(finalAnswers as UserPreferences)
-            onClose()
-        }, 500)
+        onComplete(finalAnswers as UserPreferences)
+        onClose()
     }
 
     if (!isOpen) return null
 
-    // Determine current view
     const isEmailStep = step === QUESTIONS.length
     const currentQ = QUESTIONS[step]
 
@@ -133,51 +191,11 @@ export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: Lu
                 <div className="p-8 pt-12">
                     <AnimatePresence mode="wait">
                         {isEmailStep ? (
-                            <motion.div
-                                key="email-step"
-                                initial={{ x: 50, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                exit={{ x: -50, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="flex flex-col items-center text-center"
-                            >
-                                <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mb-6 text-3xl">
-                                    🎁
-                                </div>
-                                <h2 className="text-2xl font-black text-white mb-2 leading-tight">
-                                    {lang === 'ru' ? 'Почти готово!' : 'Almost done!'}
-                                </h2>
-                                <p className="text-zinc-400 mb-8">
-                                    {lang === 'ru'
-                                        ? 'Оставьте email, чтобы получить скидку 10%.'
-                                        : 'Leave your email to unlock a 10% discount code.'}
-                                </p>
-
-                                <input
-                                    type="email"
-                                    placeholder="your@email.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white mb-4 focus:outline-none focus:border-yellow-500 transition-colors"
-                                />
-
-                                <button
-                                    onClick={() => handleEmailSubmit(false)}
-                                    disabled={!email || submitting}
-                                    className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-3 rounded-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-3"
-                                >
-                                    {submitting
-                                        ? (lang === 'ru' ? 'Сохраняем...' : 'Saving...')
-                                        : (lang === 'ru' ? 'Получить Купон' : 'Get Coupon')}
-                                </button>
-
-                                <button
-                                    onClick={() => handleEmailSubmit(true)}
-                                    className="text-sm text-zinc-500 hover:text-white transition-colors underline"
-                                >
-                                    {lang === 'ru' ? 'Пропустить' : 'Skip & See Results'}
-                                </button>
-                            </motion.div>
+                            <EmailStep
+                                lang={lang}
+                                onSubmit={handleEmailSubmit}
+                                onClose={onClose}
+                            />
                         ) : (
                             <motion.div
                                 key={step}
