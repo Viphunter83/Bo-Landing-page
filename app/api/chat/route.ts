@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAIClient } from '../../lib/ai/client'
+import { buildSystemPrompt } from '../../lib/ai/prompt_builder'
 
 export async function POST(req: Request) {
     try {
@@ -17,7 +18,14 @@ export async function POST(req: Request) {
         // In the future, we can toggle this based on ENV
         const ai = getAIClient('proxy') // Using 'proxy' as default now
 
-        const response = await ai.generateResponse(messages, context)
+        // Agentic AI: Inject System Prompt
+        const systemPrompt = buildSystemPrompt(context || {})
+        const fullMessages = [
+            { role: 'system', content: systemPrompt },
+            ...messages
+        ]
+
+        const response = await ai.generateResponse(fullMessages, context)
 
         return NextResponse.json({ role: 'assistant', content: response })
     } catch (error) {

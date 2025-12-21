@@ -154,15 +154,29 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
     // Initial greeting
     useEffect(() => {
         if (isOpen && messages.length === 0) {
-            const greeting = lang === 'ru'
+            let greeting = lang === 'ru'
                 ? 'Привет! Я Бо, ваш AI-официант. Что бы вы хотели попробовать сегодня? 🍜'
                 : lang === 'ar'
                     ? 'مرحباً! أنا بو، النادل الذكي. ماذا تود أن تجرب اليوم؟ 🍜'
                     : 'Hi! I\'m Bo, your AI waiter. What are you in the mood for today? 🍜'
 
+            // Personalization
+            if (preferences) {
+                const mood = preferences.mood || 'comfort';
+                const spice = preferences.spice || 'none';
+
+                if (lang === 'ru') {
+                    // Logic: If spice is high, mention it. Else mention vibe.
+                    const isSpicyFan = spice === 'spicy' || spice === 'fire';
+                    greeting = `Привет! Вижу, вы любите ${isSpicyFan ? 'поострее 🔥' : 'вкусно поесть'}. Предложить что-то ${mood === 'healthy' ? 'легкое' : 'особенное'}? 🍜`;
+                } else {
+                    greeting = `Welcome back! I see you like it ${preferences.spice === 'fire' ? 'HOT 🔥' : 'tasty'}. Shall I recommend something ${preferences.mood}?`;
+                }
+            }
+
             setMessages([{ role: 'assistant', content: greeting }])
         }
-    }, [isOpen, lang, messages.length])
+    }, [isOpen, lang, messages.length, preferences])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()

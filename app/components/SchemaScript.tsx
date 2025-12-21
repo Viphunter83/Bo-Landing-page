@@ -1,3 +1,5 @@
+'use client'
+
 import { CONTACT_INFO } from '../data/contact'
 
 const SchemaScript = () => {

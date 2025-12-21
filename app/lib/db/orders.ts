@@ -43,6 +43,22 @@ export const createOrder = async (order: OrderData) => {
             source: 'web_checkout'
         });
         console.log('Order saved with ID:', docRef.id);
+
+        // --- Strategic Phase 2: Hyper-personalization ---
+        // Fire-and-forget customer profile update
+        const identifier = order.customerPhone || order.email;
+        if (identifier) {
+            import('./customers').then(({ upsertCustomer }) => {
+                const totalVal = parseFloat(order.total.replace(/[^0-9.]/g, '')) || 0;
+                upsertCustomer({
+                    phone: identifier,
+                    email: order.email,
+                    name: order.name,
+                    orderTotal: totalVal,
+                });
+            });
+        }
+
         return docRef.id;
     } catch (e) {
         console.error('Error adding document: ', e);
