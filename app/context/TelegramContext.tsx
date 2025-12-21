@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import Script from 'next/script'
+import { auth } from '../lib/firebase'
+import { signInWithCustomToken } from 'firebase/auth'
 
 interface TelegramContextType {
     isTelegram: boolean
@@ -70,6 +72,31 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
             if (tg.initDataUnsafe?.user) {
                 setUser(tg.initDataUnsafe.user)
+
+                // Magic Login Logic
+                const login = async () => {
+                    try {
+                        // 1. Send initData to backend
+                        const res = await fetch('/api/auth/telegram', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ initData: tg.initData })
+                        })
+
+                        if (!res.ok) throw new Error('Auth failed')
+
+                        const { token } = await res.json()
+
+                        if (!auth) throw new Error('Firebase Auth not initialized')
+                        // 2. Sign in with Firebase
+                        await signInWithCustomToken(auth, token)
+                        console.log('🔮 Magic Login Success')
+                    } catch (e) {
+                        console.error('Magic Login Error', e)
+                    }
+                }
+
+                if (tg.initData) login()
             }
 
             setReady(true)

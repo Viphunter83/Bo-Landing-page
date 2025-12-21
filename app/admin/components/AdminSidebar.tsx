@@ -59,6 +59,7 @@ export default function AdminSidebar({ isOpen, onClose, onSignOut }: AdminSideba
                         <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 pl-3">Operations</div>
                         <NavLink href="/admin/menu" icon={<Menu size={20} />} label="Menu Manager" />
                         <NavLink href="/admin/kitchen" icon={<Users size={20} />} label="Kitchen Display" />
+                        <NavLink href="/admin/customers" icon={<Users size={20} />} label="CRM / Guests" />
                         <NavLink href="/admin/delivery" icon={<Truck size={20} />} label="Delivery" />
 
                         <hr className="border-zinc-800 my-2" />
