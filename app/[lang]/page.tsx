@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Utensils } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Hero from '../components/Hero'
@@ -32,15 +32,36 @@ export default function Home({
   // const [lang, setLang] = useState('en') // Handled by URL now
   const [activeVibe, setActiveVibe] = useState(searchParams?.vibe || 'classic')
   const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [bookingInitialValues, setBookingInitialValues] = useState<{ promoCode?: string } | undefined>(undefined)
   const [isFullMenuOpen, setIsFullMenuOpen] = useState(false)
   const [selectedDish, setSelectedDish] = useState<string | null>(null)
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
+
+  // Listen for global booking events (from ShakeToWin)
+  // Listen for global booking events (from ShakeToWin)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleOpenBooking = (e: CustomEvent) => {
+        if (e.detail?.promoCode) {
+          setBookingInitialValues({ promoCode: e.detail.promoCode })
+        } else {
+          setBookingInitialValues(undefined)
+        }
+        setIsBookingOpen(true)
+      }
+      // @ts-ignore
+      window.addEventListener('open-booking', handleOpenBooking)
+      // @ts-ignore
+      return () => window.removeEventListener('open-booking', handleOpenBooking)
+    }
+  }, [])
 
   const handleDishClick = (dishId: string) => {
     setSelectedDish(dishId)
   }
 
   const handleBookClick = () => {
+    setBookingInitialValues(undefined)
     setIsBookingOpen(true)
   }
 
@@ -131,6 +152,7 @@ export default function Home({
           onClose={() => setIsBookingOpen(false)}
           lang={lang}
           t={content[lang as keyof typeof content]}
+          initialValues={bookingInitialValues}
         />
         <FullMenuModal
           isOpen={isFullMenuOpen}

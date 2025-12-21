@@ -197,16 +197,30 @@ export default function ShakeToWin() {
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText('SHAKE10')
-                                        // Simple alert for now, or use toast if available
-                                        alert('Code copied!')
-                                    }}
-                                    className="w-full bg-yellow-500 text-black font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <span>Copy Code</span>
-                                </button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText('SHAKE10')
+                                            // Simple alert for now, or use toast if available
+                                            alert('Code copied!')
+                                        }}
+                                        className="bg-zinc-800 text-white font-bold py-3 rounded-xl hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <span>Copy Code</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowPromo(false)
+                                            // Dispatch event to open booking modal with code
+                                            window.dispatchEvent(new CustomEvent('open-booking', {
+                                                detail: { promoCode: 'SHAKE10' }
+                                            }))
+                                        }}
+                                        className="bg-yellow-500 text-black font-bold py-3 rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <span>Book Table</span>
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Calendar, Clock, Users, Phone, Mail, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Calendar, Clock, Users, Phone, Mail, CheckCircle, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -11,6 +11,7 @@ interface BookingModalProps {
   onClose: () => void
   lang: string
   t: any
+  initialValues?: { promoCode?: string }
 }
 
 // Localization Helpers
@@ -26,7 +27,7 @@ const MONTHS = {
   ar: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 }
 
-export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalProps) {
+export default function BookingModal({ isOpen, onClose, lang, t, initialValues }: BookingModalProps) {
   const [formData, setFormData] = useState({
     date: '', // ISO YYYY-MM-DD
     time: '',
@@ -34,8 +35,16 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
     name: '',
     phone: '',
     email: '',
-    specialRequests: ''
+    specialRequests: '',
+    promoCode: ''
   })
+
+  // Sync initialValues when modal opens
+  React.useEffect(() => {
+    if (isOpen && initialValues?.promoCode) {
+      setFormData(prev => ({ ...prev, promoCode: initialValues.promoCode || '' }))
+    }
+  }, [isOpen, initialValues])
 
   // Calendar State
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -143,7 +152,8 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
           name: '',
           phone: '',
           email: '',
-          specialRequests: ''
+          specialRequests: '',
+          promoCode: ''
         })
       }, 3000)
 
@@ -384,6 +394,20 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
                 className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none placeholder:text-zinc-600"
                 placeholder={lang === 'en' ? 'Special Requests...' : lang === 'ru' ? 'Пожелания...' : 'طلبات خاصة...'}
               />
+
+              {/* Promo Code Field */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Sparkles size={16} className="text-yellow-500" />
+                </div>
+                <input
+                  type="text"
+                  value={formData.promoCode}
+                  onChange={(e) => setFormData({ ...formData, promoCode: e.target.value })}
+                  className="w-full bg-zinc-900 border border-yellow-500/30 rounded-lg pl-10 pr-4 py-3 text-yellow-500 placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500 font-mono tracking-wider"
+                  placeholder={lang === 'ru' ? 'Промокод (если есть)' : 'Promo Code (Optional)'}
+                />
+              </div>
             </div>
 
 
@@ -407,7 +431,7 @@ export default function BookingModal({ isOpen, onClose, lang, t }: BookingModalP
           </form>
         )}
       </div>
-    </div>
+    </div >
   )
 }
 
