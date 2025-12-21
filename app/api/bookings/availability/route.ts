@@ -4,6 +4,8 @@ import { db } from '../../../lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { DEFAULT_CONFIG, RestaurantConfig, Booking } from '../../../lib/types/booking';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
