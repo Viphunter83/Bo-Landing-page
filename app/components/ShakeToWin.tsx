@@ -61,7 +61,7 @@ export default function ShakeToWin() {
 
         decayInterval.current = setInterval(() => {
             setProgress(prev => {
-                const decayAmount = 1.5 // Speed of decay
+                const decayAmount = 2.5 // INCREASED: Harder decay (was 1.5)
                 const newProgress = Math.max(0, prev - decayAmount)
                 progressRef.current = newProgress
                 return newProgress
@@ -93,9 +93,9 @@ export default function ShakeToWin() {
 
                 const speed = Math.abs(x + y + z - lastX.current - lastY.current - lastZ.current) / diffTime * 10000
 
-                if (speed > 300) { // Shake detected
+                if (speed > 500) { // INCREASED: Harder threshold (was 300)
                     // Add progress based on speed/intensity
-                    const bonus = Math.min(speed / 100, 15) // Cap max add per tick
+                    const bonus = Math.min(speed / 150, 10) // HARDER: Less bonus per shake (was /100, max 15)
 
                     setProgress(prev => {
                         const newProgress = Math.min(100, prev + bonus)
