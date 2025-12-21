@@ -173,6 +173,12 @@ export default function DeliveryAdminPage() {
                                                 <div className="text-sm text-zinc-400 font-mono mt-1 text-yellow-500 font-bold">
                                                     {order.total} AED
                                                 </div>
+                                                {/* Show Scheduled Time for Bookings/Pickups if available */}
+                                                {order.bookingDateTime && (
+                                                    <div className="mt-1 text-xs text-blue-300 font-semibold bg-blue-500/10 px-2 py-1 rounded w-fit">
+                                                        📅 {new Date(order.bookingDateTime).toLocaleDateString()} at {new Date(order.bookingDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                )}
                                             </div>
                                             <span className={`px-2 py-1 rounded text-[10px] uppercase font-bold border ${order.type === 'pickup' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-orange-500/10 text-orange-400 border-orange-500/20'}`}>
                                                 {order.type === 'pickup' ? 'Pickup' : 'Delivery'}
