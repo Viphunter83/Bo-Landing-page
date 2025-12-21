@@ -11,7 +11,7 @@ import { createOrder } from '../lib/db/orders'
 import { DeliveryZone } from '../lib/types/delivery'
 
 export default function CartDrawer({ lang }: { lang: string }) {
-    const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total, isSurge } = useCart()
+    const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total, isSurge, clearCart } = useCart()
 
     // Phase 9.6 & 12: Delivery UI State
     const [orderType, setOrderType] = useState<'delivery' | 'pickup' | 'dine_in'>('delivery')
@@ -181,11 +181,14 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
                 Promise.allSettled(bgTasks).then(() => {
                     console.log("Background tasks complete")
+                    // Clear cart for better UX
+                    clearCart()
+                    toggleCart() // Close drawer
                 })
 
                 // Always reset UI state
                 setIsSubmitting(false)
-            }, 50)
+            }, 1000)
 
         } catch (e) {
             console.error('Critical Error in Order Flow', e)

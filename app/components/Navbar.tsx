@@ -22,7 +22,18 @@ export default function Navbar({ lang, t, onBookClick }: NavbarProps) {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  if (isTelegram) return null
+  if (isTelegram) {
+    return (
+      <nav className="fixed w-full z-50 bg-black/90 backdrop-blur-lg border-b border-white/10 py-3">
+        <div className="container mx-auto px-4 flex justify-between items-center">
+          <div className="text-xl font-black tracking-tighter text-red-600 flex items-center gap-1">
+            BO <span className="text-yellow-500 text-xs font-normal tracking-widest mt-1 ml-1">MINI</span>
+          </div>
+          <LanguageSwitcher current={lang} />
+        </div>
+      </nav>
+    )
+  }
 
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-black/90 backdrop-blur-lg border-b border-white/10 py-3' : 'bg-transparent py-6'}`}>
