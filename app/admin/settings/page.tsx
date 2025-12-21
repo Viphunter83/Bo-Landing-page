@@ -55,6 +55,7 @@ export default function SettingsPage() {
             setLoading(false)
         }
         fetchSettings()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const handleSave = async () => {
@@ -112,6 +113,7 @@ export default function SettingsPage() {
                         </div>
                         {settings.heroImage && (
                             <div className="mt-4 relative h-48 w-full rounded-lg overflow-hidden border border-zinc-800">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={settings.heroImage} alt="Preview" className="w-full h-full object-cover opacity-60" />
                                 <div className="absolute inset-0 flex items-center justify-center text-zinc-500 font-mono text-xs bg-black/50">
                                     Preview
@@ -156,7 +158,7 @@ export default function SettingsPage() {
 
                 <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-2">Image URLs (Unsplash ID or Full URL)</label>
-                    <p className="text-xs text-zinc-500 mb-4">Enter Unsplash Photo IDs (e.g., '1559339352...') OR full image URLs.</p>
+                    <p className="text-xs text-zinc-500 mb-4">Enter Unsplash Photo IDs (e.g., &apos;1559339352...&apos;) OR full image URLs.</p>
 
                     <div className="space-y-3">
                         {settings.socialImages.map((img, idx) => (
