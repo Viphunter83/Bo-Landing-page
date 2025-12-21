@@ -198,7 +198,7 @@ export default function ShakeToWin() {
             {/* Teaser Button (Always visible if not detecting game yet) */}
             {!showGame && !won && (
                 <motion.div
-                    className="fixed bottom-24 right-4 z-40"
+                    className="fixed bottom-24 left-4 z-40"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     whileHover={{ scale: 1.1 }}
