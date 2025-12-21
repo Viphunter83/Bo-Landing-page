@@ -1,7 +1,7 @@
 'use client'
 
 import { useCart } from '../context/CartContext'
-import { X, Minus, Plus, ShoppingBag, Trash2, Send } from 'lucide-react'
+import { X, Minus, Plus, ShoppingBag, Trash2, Send, Flame } from 'lucide-react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CONTACT_INFO } from '../data/contact'
@@ -11,7 +11,7 @@ import { createOrder } from '../lib/db/orders'
 import { DeliveryZone } from '../lib/types/delivery'
 
 export default function CartDrawer({ lang }: { lang: string }) {
-    const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total } = useCart()
+    const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total, isSurge } = useCart()
 
     // Phase 9.6 & 12: Delivery UI State
     const [orderType, setOrderType] = useState<'delivery' | 'pickup' | 'dine_in'>('delivery')
@@ -27,15 +27,16 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    // Load Delivery Config
+    // Load Delivery Config (Reload when isSurge changes to get updated fees)
     useEffect(() => {
+        if (!isOpen) return
         fetch('/api/delivery/config')
             .then(res => res.json())
             .then(data => {
                 if (data.success) setZones(data.zones)
             })
             .catch(console.error)
-    }, [])
+    }, [isOpen, isSurge])
 
     // Calculate Delivery Fee
     useEffect(() => {
@@ -229,6 +230,16 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     <X size={24} />
                                 </button>
                             </div>
+
+                            {isSurge && (
+                                <div className="mb-4 bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-3 animate-pulse">
+                                    <Flame className="text-red-500" size={20} />
+                                    <div>
+                                        <div className="text-red-500 font-bold text-sm uppercase tracking-wider">High Demand</div>
+                                        <div className="text-red-400 text-xs">Delivery fees slightly increased</div>
+                                    </div>
+                                </div>
+                            )}
 
 
 

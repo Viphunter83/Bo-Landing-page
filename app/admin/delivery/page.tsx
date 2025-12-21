@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { db } from '../../lib/firebase'
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore'
-import { Truck, ChefHat, CheckCircle, MapPin, Phone, Clock, AlertCircle } from 'lucide-react'
+import { Truck, ChefHat, CheckCircle, MapPin, Phone, Clock, AlertCircle, Flame } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 
 // Simple notification sound (Base64 short beep)
@@ -117,6 +117,39 @@ export default function DeliveryAdminPage() {
         { id: 'out_for_delivery', label: 'Out for Delivery', icon: <Truck size={18} />, color: 'text-blue-500', bg: 'bg-blue-500/10' }
     ]
 
+    const [rushMode, setRushMode] = useState(false)
+
+    // ... existing useEffect
+
+    useEffect(() => {
+        // Fetch initial config
+        fetch('/api/delivery/config')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) setRushMode(data.isRushMode)
+            })
+            .catch(err => console.error("Failed to fetch config", err))
+    }, [])
+
+    const toggleRushMode = async () => {
+        const newState = !rushMode
+        setRushMode(newState)
+        try {
+            await fetch('/api/delivery/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rushMode: newState })
+            })
+            showToast(newState ? "🔥 Rush Mode ACTIVATED!" : "Rush Mode Deactivated", newState ? "success" : "info")
+            if (newState) audioRef.current?.play()
+        } catch (e) {
+            setRushMode(!newState) // Revert
+            showToast("Failed to toggle Rush Mode", "error")
+        }
+    }
+
+    // ... existing handlers
+
     if (loading) return (
         <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -133,6 +166,17 @@ export default function DeliveryAdminPage() {
                     </h1>
                     <p className="text-zinc-400 text-sm">Real-time delivery fulfillment board</p>
                 </div>
+
+                <button
+                    onClick={toggleRushMode}
+                    className={`px-6 py-3 rounded-xl font-black flex items-center gap-3 transition-all ${rushMode
+                        ? 'bg-red-600 text-white animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]'
+                        : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                        }`}
+                >
+                    <Flame size={20} className={rushMode ? 'fill-yellow-300 text-yellow-300' : ''} />
+                    {rushMode ? 'RUSH MODE ACTIVE' : 'RUSH MODE OFF'}
+                </button>
             </header>
 
             <div className="flex-1 grid grid-cols-4 gap-4 overflow-hidden min-w-[1024px]">

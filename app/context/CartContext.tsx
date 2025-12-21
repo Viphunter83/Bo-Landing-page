@@ -16,6 +16,7 @@ interface CartContextType {
     clearCart: () => void
     toggleCart: () => void
     total: number
+    isSurge: boolean
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -23,6 +24,26 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([])
     const [isOpen, setIsOpen] = useState(false)
+    const [isSurge, setIsSurge] = useState(false)
+
+    // Check for Rush Mode
+    useEffect(() => {
+        const checkSurge = () => {
+            fetch('/api/delivery/config')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) setIsSurge(data.isRushMode)
+                })
+                .catch(err => console.error("Surge check failed", err))
+        }
+
+        checkSurge()
+        // Poll every minute? Or just on mount/open. For MVP just mount + every 30s
+        const interval = setInterval(checkSurge, 30000)
+        return () => clearInterval(interval)
+    }, [])
+
+    // Load from local storage
 
     // Load from local storage
     useEffect(() => {
@@ -71,7 +92,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, 0)
 
     return (
-        <CartContext.Provider value={{ items, isOpen, addToCart, removeFromCart, updateQuantity, clearCart, toggleCart, total }}>
+        <CartContext.Provider value={{ items, isOpen, addToCart, removeFromCart, updateQuantity, clearCart, toggleCart, total, isSurge }}>
             {children}
         </CartContext.Provider>
     )
