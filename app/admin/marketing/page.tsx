@@ -18,6 +18,9 @@ interface Lead {
     last_quiz_date?: any
     userId?: string // Telegram ID usually
     url_param_id?: string // To store the original paramLeadId for ad-hoc leads
+    name?: string
+    photoUrl?: string
+    username?: string
 }
 
 function MarketingContent() {
@@ -140,6 +143,8 @@ function MarketingContent() {
 
                 if (!userSnap.empty) {
                     const userDoc = userSnap.docs[0].data()
+                    const fullName = [userDoc.firstName, userDoc.lastName].filter(Boolean).join(' ')
+
                     const newLead: Lead = {
                         id: 'adhoc_' + (userDoc.email || userDoc.telegramId),
                         email: userDoc.email || `tg_${userDoc.telegramId}@placeholder.com`,
@@ -148,7 +153,10 @@ function MarketingContent() {
                         createdAt: new Date(),
                         marketing_segments: ['Ad-Hoc', 'CRM Import'],
                         userId: userDoc.telegramId ? String(userDoc.telegramId) : undefined,
-                        url_param_id: paramLeadId // Store the original param for future checks
+                        url_param_id: paramLeadId, // Store the original param for future checks
+                        name: fullName || userDoc.username || 'Guest',
+                        photoUrl: userDoc.photoUrl,
+                        username: userDoc.username
                     }
 
                     // Add to adhoc leads if not exists
@@ -671,7 +679,7 @@ function MarketingContent() {
                     <table className="w-full text-left text-sm text-zinc-400">
                         <thead className="bg-zinc-950 sticky top-0">
                             <tr>
-                                <th className="p-4 font-medium">Email</th>
+                                <th className="p-4 font-medium">User</th>
                                 <th className="p-4 font-medium">Spice</th>
                                 <th className="p-4 font-medium">Mood</th>
                                 <th className="p-4 font-medium">Date</th>
@@ -683,7 +691,28 @@ function MarketingContent() {
                         <tbody>
                             {leads.slice(0, 10).map((pref) => (
                                 <tr key={pref.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-                                    <td className="p-4 text-white">{pref.email}</td>
+                                    <td className="p-4 text-white">
+                                        <div className="flex items-center gap-3">
+                                            {pref.photoUrl ? (
+                                                /* eslint-disable-next-line @next/next/no-img-element */
+                                                <img src={pref.photoUrl} alt="Avatar" className="w-8 h-8 rounded-full border border-zinc-700" />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 font-bold text-xs">
+                                                    {(pref.name?.[0] || pref.email?.[0] || 'U').toUpperCase()}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div className="font-bold text-sm w-36 truncate" title={pref.name}>
+                                                    {pref.name || 'Anonymous'}
+                                                </div>
+                                                <div className="text-xs text-zinc-500 w-32 truncate" title={pref.email}>
+                                                    {pref.email.includes('@placeholder') ? (
+                                                        <span className="text-blue-400">@{pref.username || 'telegram'}</span>
+                                                    ) : pref.email}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
                                     <td className="p-4 capitalize">{pref.spice}</td>
                                     <td className="p-4 capitalize">{pref.mood}</td>
                                     <td className="p-4">
