@@ -310,18 +310,37 @@ export default function MarketingPage() {
                                         <Copy size={16} />
                                     </button>
 
-                                    {/* Attach Coupon Toggle */}
-                                    <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/50 p-2 rounded-lg backdrop-blur-sm border border-zinc-700">
-                                        <input
-                                            type="checkbox"
-                                            checked={attachCoupon}
-                                            onChange={(e) => setAttachCoupon(e.target.checked)}
-                                            className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500"
-                                            id="attachCoupon"
-                                        />
-                                        <label htmlFor="attachCoupon" className="text-xs text-zinc-300 font-medium cursor-pointer select-none">
-                                            Attach 20% Coupon
-                                        </label>
+                                    {/* Attach Coupon Controls */}
+                                    <div className="absolute bottom-4 left-4 flex items-center gap-3 bg-black/60 p-2.5 rounded-xl backdrop-blur-md border border-zinc-700/50 shadow-lg transition-all hover:bg-black/70">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={attachCoupon}
+                                                onChange={(e) => setAttachCoupon(e.target.checked)}
+                                                className="w-4 h-4 rounded border-zinc-500 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 cursor-pointer"
+                                                id="attachCoupon"
+                                            />
+                                            <label htmlFor="attachCoupon" className="text-xs text-zinc-200 font-bold cursor-pointer select-none">
+                                                Attach Coupon
+                                            </label>
+                                        </div>
+
+                                        {attachCoupon && (
+                                            <div className="flex items-center gap-1.5 pl-3 border-l border-zinc-600/50 animate-in fade-in slide-in-from-left-2 duration-200">
+                                                <span className="text-xs text-zinc-400 font-medium">Value:</span>
+                                                <div className="relative group">
+                                                    <input
+                                                        type="number"
+                                                        value={couponValue}
+                                                        onChange={(e) => setCouponValue(Number(e.target.value))}
+                                                        className="w-16 bg-zinc-800/80 border border-zinc-600 text-white text-xs font-mono font-bold py-1 px-2 rounded-lg text-center focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                                                        min="0"
+                                                        max="100"
+                                                    />
+                                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 font-bold pointer-events-none">%</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Send via Telegram Button */}
