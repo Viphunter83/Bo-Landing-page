@@ -17,8 +17,30 @@ export default function AdminLogin() {
         }
         try {
             const provider = new GoogleAuthProvider()
-            await signInWithPopup(auth, provider)
-            router.push('/admin')
+            const result = await signInWithPopup(auth, provider)
+            const user = result.user
+
+            // Get ID token
+            const idToken = await user.getIdToken()
+
+            // Call API to set cookie
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    idToken,
+                    email: user.email
+                })
+            })
+
+            const data = await res.json()
+            if (data.success) {
+                router.push('/admin')
+                router.refresh() // Ensure middleware sees new cookie
+            } else {
+                throw new Error(data.error || 'Login API failed')
+            }
+
         } catch (e: any) {
             setError('Login failed: ' + e.message)
         }
