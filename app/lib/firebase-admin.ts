@@ -6,17 +6,24 @@ function formatPrivateKey(key: string) {
 
 export function initAdmin() {
     if (!admin.apps.length) {
-        if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+        const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY
+
+        if (projectId && clientEmail && privateKey) {
             admin.initializeApp({
                 credential: admin.credential.cert({
-                    projectId: process.env.FIREBASE_PROJECT_ID,
-                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                    privateKey: formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
+                    projectId,
+                    clientEmail,
+                    privateKey: formatPrivateKey(privateKey),
                 }),
             })
         } else {
-            console.warn("Firebase Admin: Missing environment variables. Skipping initialization.")
-            // Potential Mock for Build Time if absolutely needed, or let it fail at runtime
+            console.error("Firebase Admin Validation Failed. Missing keys:", {
+                projectId: !!projectId,
+                clientEmail: !!clientEmail,
+                privateKey: !!privateKey
+            })
         }
     }
 }
