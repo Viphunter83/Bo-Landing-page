@@ -96,7 +96,10 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
                                 body: JSON.stringify({ initData: tg.initData })
                             })
 
-                            if (!res.ok) throw new Error('Auth failed')
+                            if (!res.ok) {
+                                const errorData = await res.json().catch(() => ({}));
+                                throw new Error(errorData.error || `Server Error: ${res.status}`)
+                            }
 
                             const { token } = await res.json()
 
