@@ -35,9 +35,19 @@ export async function middleware(request: NextRequest) {
 
     // If session exists, we let them through. 
     // Fine-grained role checks happen on the page or via a second verification if needed.
+    // 3. Root redirect for i18n
+    if (path === '/') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/en'
+        return NextResponse.redirect(url)
+    }
+
     return NextResponse.next()
 }
 
 export const config = {
-    matcher: '/admin/:path*',
+    matcher: [
+        '/admin/:path*',
+        '/' // Match root to enable redirect
+    ],
 }
