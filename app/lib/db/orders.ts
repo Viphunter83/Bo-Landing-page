@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 
 export interface OrderItem {
     id: string;
@@ -65,4 +65,23 @@ export const createOrder = async (order: OrderData) => {
         // We don't block the user flow if DB fails, just log it
         return null;
     }
+}
+
+export async function getOrders(startDate: Date, endDate: Date) {
+    if (!db) return []
+
+    const q = query(
+        collection(db, 'orders'),
+        where('createdAt', '>=', Timestamp.fromDate(startDate)),
+        where('createdAt', '<=', Timestamp.fromDate(endDate)),
+        orderBy('createdAt', 'desc')
+    )
+
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        // Handle potentially missing createdAt in old data
+        createdAt: doc.data().createdAt?.toDate() || new Date()
+    })) as (OrderData & { id: string, createdAt: Date })[]
 }

@@ -1,121 +1,276 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, query, getDocs } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
+import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CalendarIcon, TrendingUp, TrendingDown, DollarSign, Users, ShoppingBag, ArrowRight } from 'lucide-react'
+import { format, subDays, startOfMonth, type Interval } from 'date-fns'
+import { getOrders } from '../../lib/db/orders'
+import { getExpenses, type Expense } from '../../lib/db/expenses'
+
+// Types
+interface FinancialMetrics {
+    revenue: number
+    cogs: number
+    labor: number
+    opex: number // Rent + Utilities + Marketing + Other
+    grossProfit: number
+    netProfit: number
+    orderCount: number
+    avgTicket: number
+}
 
 export default function AnalyticsPage() {
-    const [stats, setStats] = useState({
-        totalRevenue: 0,
-        ordersCount: 0,
-        avgTicket: 0,
-        topItem: 'Loading...',
-        insight: 'Loading AI insights...'
+    const [dateRange, setDateRange] = useState<{ from: Date, to: Date }>({
+        from: startOfMonth(new Date()),
+        to: new Date()
     })
+    const [loading, setLoading] = useState(true)
+    const [metrics, setMetrics] = useState<FinancialMetrics>({
+        revenue: 0, cogs: 0, labor: 0, opex: 0, grossProfit: 0, netProfit: 0, orderCount: 0, avgTicket: 0
+    })
+    const [topItems, setTopItems] = useState<{ name: string, count: number, sales: number }[]>([])
 
     useEffect(() => {
-        if (!db) return
-        const fetchStats = async () => {
-            // 1. Fetch Orders
-            const qOrders = query(collection(db!, 'orders'))
-            const snapOrders = await getDocs(qOrders)
+        fetchData()
+    }, [dateRange])
 
-            let revenue = 0
-            const itemCounts: Record<string, number> = {}
+    const fetchData = async () => {
+        setLoading(true)
+        try {
+            const [orders, expenses] = await Promise.all([
+                getOrders(dateRange.from, dateRange.to),
+                getExpenses(dateRange.from, dateRange.to)
+            ])
 
-            snapOrders.docs.forEach(doc => {
-                const data = doc.data()
-                const amount = parseFloat((data.total || '0').replace(/[^0-9.]/g, ''))
-                revenue += amount
-                if (data.items && Array.isArray(data.items)) {
-                    data.items.forEach((i: any) => {
-                        itemCounts[i.name] = (itemCounts[i.name] || 0) + (i.quantity || 1)
-                    })
-                }
+            // Calculate Revenue
+            let totalRevenue = 0
+            const itemMap: Record<string, { count: number, sales: number }> = {}
+
+            orders.forEach(o => {
+                const amount = parseFloat((o.total || '0').replace(/[^0-9.]/g, ''))
+                totalRevenue += amount
+
+                o.items?.forEach(i => {
+                    const iPrice = parseFloat((i.price || '0').replace(/[^0-9.]/g, ''))
+                    if (!itemMap[i.name]) itemMap[i.name] = { count: 0, sales: 0 }
+                    itemMap[i.name].count += (i.quantity || 1)
+                    itemMap[i.name].sales += (iPrice * (i.quantity || 1))
+                })
             })
 
-            // Find top item
-            let maxCount = 0
-            let topName = 'No orders yet'
-            Object.entries(itemCounts).forEach(([name, count]) => {
-                if (count > maxCount) {
-                    maxCount = count
-                    topName = name
-                }
+            // Calculate Expenses
+            let cogs = 0
+            let labor = 0
+            let opex = 0
+
+            expenses.forEach(e => {
+                if (e.category === 'COGS') cogs += e.amount
+                else if (e.category === 'Labor') labor += e.amount
+                else opex += e.amount
             })
 
-            // 2. Fetch Quiz Results (Target Audience Insight)
-            const qQuiz = query(collection(db!, 'quiz_results'))
-            const snapQuiz = await getDocs(qQuiz)
-            const totalQuiz = snapQuiz.size
-            const spicyFans = snapQuiz.docs.filter(d => d.data().spice === 'spicy').length
-            const spicyPct = totalQuiz ? Math.round((spicyFans / totalQuiz) * 100) : 0
-
-            setStats({
-                totalRevenue: revenue,
-                ordersCount: snapOrders.size,
-                avgTicket: snapOrders.size ? Math.round(revenue / snapOrders.size) : 0,
-                topItem: topName,
-                // @ts-ignore
-                insight: totalQuiz > 0
-                    ? `${spicyPct}% of users prefer SPICY food. Consider adding more "Bun Bo Hue" variations.`
-                    : "Waiting for more Quiz data to generate insights..."
+            setMetrics({
+                revenue: totalRevenue,
+                cogs,
+                labor,
+                opex,
+                grossProfit: totalRevenue - cogs,
+                netProfit: totalRevenue - cogs - labor - opex,
+                orderCount: orders.length,
+                avgTicket: orders.length ? totalRevenue / orders.length : 0
             })
+
+            // Top Items
+            const sortedItems = Object.entries(itemMap)
+                .map(([name, data]) => ({ name, ...data }))
+                .sort((a, b) => b.sales - a.sales)
+                .slice(0, 5)
+            setTopItems(sortedItems)
+
+        } catch (error) {
+            console.error(error)
         }
+        setLoading(false)
+    }
 
-        fetchStats()
-    }, [])
+    const setPresetRange = (value: string) => {
+        const today = new Date()
+        const yesterday = subDays(today, 1) // Ensures 'from' is strictly before 'to' if range is 1 day, or handles logic correctly
+
+        switch (value) {
+            case 'today':
+                const startToday = new Date(today); startToday.setHours(0, 0, 0, 0);
+                setDateRange({ from: startToday, to: today })
+                break
+            case 'week':
+                setDateRange({ from: subDays(today, 7), to: today })
+                break
+            case 'month':
+                setDateRange({ from: startOfMonth(today), to: today })
+                break
+            case '90days':
+                setDateRange({ from: subDays(today, 90), to: today })
+                break
+        }
+    }
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h2 className="text-3xl font-bold mb-2 text-white">Investor Analytics</h2>
-                <p className="text-zinc-400">Real-time performance metrics.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <MetricCard title="Total Revenue" value={`${stats.totalRevenue} AED`} color="text-green-500" />
-                <MetricCard title="Total Orders" value={stats.ordersCount.toString()} />
-                <MetricCard title="Avg. Ticket" value={`${stats.avgTicket} AED`} />
-                <MetricCard title="Bestseller" value={stats.topItem} color="text-yellow-500" />
-            </div>
-
-            {/* Simulated Chart */}
-            <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-                <h3 className="text-white font-bold mb-6">Revenue Trend (Projected)</h3>
-                <div className="h-64 flex items-end justify-between gap-2">
-                    {[30, 45, 35, 60, 50, 75, 90].map((h, i) => (
-                        <div key={i} className="w-full bg-zinc-800 rounded-t-sm relative group hover:bg-yellow-500/20 transition-colors">
-                            <div
-                                style={{ height: `${h}%` }}
-                                className="bg-gradient-to-t from-yellow-600 to-yellow-400 rounded-t-sm w-full absolute bottom-0 transition-all duration-500 group-hover:from-yellow-500 group-hover:to-yellow-300"
-                            ></div>
-                        </div>
-                    ))}
+        <div className="space-y-6">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-white mb-2">Financial Overview</h1>
+                    <p className="text-zinc-400">Profit & Loss Statement and KPIs</p>
                 </div>
-                <div className="flex justify-between mt-2 text-xs text-zinc-500">
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                    <span>Sat</span>
-                    <span>Sun</span>
+                <div className="flex items-center gap-2">
+                    <Select onValueChange={setPresetRange} defaultValue="month">
+                        <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800 text-white">
+                            <SelectValue placeholder="Select period" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">Last 7 Days</SelectItem>
+                            <SelectItem value="month">This Month</SelectItem>
+                            <SelectItem value="90days">Last 3 Months</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Link href="/admin/analytics/expenses">
+                        <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white">
+                            Manage Expenses <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </Link>
                 </div>
+            </header>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <KPICard
+                    title="Total Revenue"
+                    value={`${metrics.revenue.toLocaleString()} AED`}
+                    icon={DollarSign}
+                    trend={metrics.revenue > 0 ? "+0%" : "0%"} // To implement real trend needs prev period
+                    color="text-white"
+                />
+                <KPICard
+                    title="Net Profit"
+                    value={`${metrics.netProfit.toLocaleString()} AED`}
+                    icon={TrendingUp}
+                    color={metrics.netProfit >= 0 ? "text-green-500" : "text-red-500"}
+                />
+                <KPICard
+                    title="Total Orders"
+                    value={metrics.orderCount.toString()}
+                    icon={ShoppingBag}
+                />
+                <KPICard
+                    title="Avg Ticket"
+                    value={`${Math.round(metrics.avgTicket).toLocaleString()} AED`}
+                    icon={Users}
+                />
             </div>
 
-            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-blue-400 text-sm">
-                💡 <strong>Tip for Investors:</strong> {stats.insight}
-            </div>
+            <Tabs defaultValue="pnl" className="w-full">
+                <TabsList className="bg-zinc-900 border border-zinc-800">
+                    <TabsTrigger value="pnl">Profit & Loss</TabsTrigger>
+                    <TabsTrigger value="charts">Charts</TabsTrigger>
+                    <TabsTrigger value="menu">Menu Matrix</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="pnl" className="mt-4 space-y-4">
+                    <Card className="bg-zinc-900 border-zinc-800 text-white">
+                        <CardHeader>
+                            <CardTitle>P&L Statement</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <PnlRow label="Revenue" value={metrics.revenue} isHeader />
+                            <PnlRow label="Cost of Goods Sold (COGS)" value={-metrics.cogs} color="text-red-400" indent />
+                            <div className="border-t border-zinc-800 my-2" />
+                            <PnlRow label="Gross Profit" value={metrics.grossProfit} isTotal />
+
+                            <div className="h-4" />
+
+                            <PnlRow label="Operating Expenses" value={0} isHeader />
+                            <PnlRow label="Labor Cost" value={-metrics.labor} color="text-red-400" indent />
+                            <PnlRow label="Rent & Utilities etc." value={-metrics.opex} color="text-red-400" indent />
+                            <div className="border-t border-zinc-800 my-2" />
+                            <PnlRow label="Net Profit (EBITDA)" value={metrics.netProfit} isTotal
+                                color={metrics.netProfit >= 0 ? "text-green-500" : "text-red-500"} />
+                        </CardContent>
+                    </Card>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <KPICard title="Food Cost %" value={`${metrics.revenue ? Math.round((metrics.cogs / metrics.revenue) * 100) : 0}%`} sub="(Target: <30%)" />
+                        <KPICard title="Labor Cost %" value={`${metrics.revenue ? Math.round((metrics.labor / metrics.revenue) * 100) : 0}%`} sub="(Target: <25%)" />
+                        <KPICard title="Profit Margin" value={`${metrics.revenue ? Math.round((metrics.netProfit / metrics.revenue) * 100) : 0}%`} color="text-green-500" />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="charts" className="mt-4">
+                    <Card className="bg-zinc-900 border-zinc-800 text-white">
+                        <CardHeader><CardTitle>Distribution</CardTitle></CardHeader>
+                        <CardContent className="h-64 flex items-center justify-center text-zinc-500">
+                            Chart visualization coming in next update
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="menu" className="mt-4">
+                    <Card className="bg-zinc-900 border-zinc-800 text-white">
+                        <CardHeader><CardTitle>Top Performing Items</CardTitle></CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {topItems.map((item, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-zinc-500 font-mono">#{i + 1}</span>
+                                            <span className="font-bold">{item.name}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-bold">{item.sales.toLocaleString()} AED</div>
+                                            <div className="text-xs text-zinc-500">{item.count} orders</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }
 
-function MetricCard({ title, value, color }: { title: string, value: string, color?: string }) {
+function PnlRow({ label, value, color, isHeader, isTotal, indent }: any) {
     return (
-        <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800">
-            <h3 className="text-zinc-500 text-xs uppercase font-bold mb-2">{title}</h3>
-            <p className={`text-2xl font-bold ${color || 'text-white'}`}>{value}</p>
+        <div className={`flex justify-between items-center ${isHeader ? 'font-bold text-lg mb-2' : ''} ${isTotal ? 'font-bold text-xl py-2' : 'text-sm'} ${indent ? 'pl-6' : ''}`}>
+            <span className={`${isHeader || isTotal ? 'text-white' : 'text-zinc-400'}`}>{label}</span>
+            <span className={`${color || 'text-white'}`}>{value.toLocaleString()} AED</span>
         </div>
+    )
+}
+
+function KPICard({ title, value, icon: Icon, trend, sub, color }: any) {
+    return (
+        <Card className="bg-zinc-900 border-zinc-800 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-zinc-400">{title}</CardTitle>
+                {Icon && <Icon className="h-4 w-4 text-zinc-500" />}
+            </CardHeader>
+            <CardContent>
+                <div className={`text-2xl font-bold ${color}`}>{value}</div>
+                {(trend || sub) && (
+                    <p className="text-xs text-zinc-500 mt-1">
+                        {trend && <span className={trend.includes('+') ? 'text-green-500' : 'text-red-500'}>{trend} </span>}
+                        {sub}
+                    </p>
+                )}
+            </CardContent>
+        </Card>
     )
 }
