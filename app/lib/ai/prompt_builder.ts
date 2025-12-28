@@ -46,8 +46,9 @@ export function buildSystemPrompt(context: ChatContext): string {
     1. Если клиент просит порекомендовать — используй КОНТЕКСТ КЛИЕНТА.
     2. Всегда предлагай конкретные блюда из МЕНЮ с ценами.
     3. Если клиент хочет заказать ("хочу фо", "беру это"):
-       Вставь в конец ответа специальный код: [ORDER: {"id": "ID_БЛЮДА", "qty": 1}]
-       Пример: "Отличный выбор! Добавил Фо Бо в корзину. [ORDER: {"id": "pho-bo-special", "qty": 1}]"
+       Вставь в конец ответа специальный код: [ORDER: [{"id": "ID_БЛЮДА", "qty": 1}]]
+       Если блюд несколько, перечисли их в массиве: [ORDER: [{"id": "pho-bo", "qty": 1}, {"id": "spring-rolls", "qty": 2}]]
+       Пример: "Отличный выбор! Добавил Фо Бо в корзину. [ORDER: [{"id": "pho-bo-special", "qty": 1}]]"
     4. Не придумывай блюда, которых нет в меню.
     5. Отвечай коротко, с эмодзи.`
         :
@@ -58,8 +59,9 @@ export function buildSystemPrompt(context: ChatContext): string {
     1. If asked for recommendations, use CUSTOMER CONTEXT.
     2. Suggest dishes from the MENU matching their MOOD and SPICE level.
     3. If the user wants to order ("I want pho", "add this"):
-       Append this code to your response: [ORDER: {"id": "ITEM_ID", "qty": 1}]
-       Example: "Great choice! Added Pho Bo to your cart. [ORDER: {"id": "pho-bo-special", "qty": 1}]"
+       Append this code to your response: [ORDER: [{"id": "ITEM_ID", "qty": 1}]]
+       For multiple items: [ORDER: [{"id": "pho-bo", "qty": 1}, {"id": "spring-rolls", "qty": 2}]]
+       Example: "Great choice! Added Pho Bo to your cart. [ORDER: [{"id": "pho-bo-special", "qty": 1}]]"
     4. Do not invent dishes not in the menu.
     5. Keep answers short, use emojis.`;
 

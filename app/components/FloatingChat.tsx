@@ -77,15 +77,31 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                 }
 
                 // Agentic Ordering Check
-                const orderMatch = content.match(/\[ORDER: ({.*?})\]/)
+                const orderMatch = content.match(/\[ORDER: ({.*?}|\[.*?\])\]/) // Match object OR array
                 if (orderMatch) {
                     try {
-                        const orderData = JSON.parse(orderMatch[1])
-                        const dish = getMenuItemById(orderData.id)
-                        if (dish) {
-                            addToCart(dish, orderData.qty || 1)
+                        const rawJson = orderMatch[1]
+                        const orderData = JSON.parse(rawJson)
+
+                        // Normalize to array
+                        const itemsToOrder = Array.isArray(orderData) ? orderData : [orderData]
+
+                        let addedCount = 0
+                        itemsToOrder.forEach((item: any) => {
+                            const dish = getMenuItemById(item.id)
+                            if (dish) {
+                                addToCart(dish, item.qty || 1)
+                                addedCount++
+                            }
+                        })
+
+                        if (addedCount > 0) {
                             // Clean response
-                            content = content.replace(/\[ORDER: {.*?}\]/, '').trim()
+                            content = content.replace(/\[ORDER: .*?\]/, '').trim()
+
+                            // Optional: Trigger Cart Open or Checkout Suggestion could be handled by UI state if we had access to setIsCartOpen.
+                            // For now, we rely on the toast/notification from addToCart. 
+                            // To fix "no redirect", we can add a special message or button.
                         }
                     } catch (e) {
                         console.error('Failed to parse order', e)
@@ -272,6 +288,22 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                                             }`}
                                     >
                                         {msg.content}
+                                        {(msg as any).isAction && (
+                                            <div className="mt-3 pt-3 border-t border-zinc-700">
+                                                <a
+                                                    href={`/${lang}/cart`}
+                                                    onClick={(e) => {
+                                                        // If we could open drawer programmatically that would be better, 
+                                                        // but navigation works too.
+                                                        // e.preventDefault(); 
+                                                        // setIsCartOpen(true); 
+                                                    }}
+                                                    className="block w-full text-center bg-green-600 hover:bg-green-500 text-white py-2 rounded-lg font-bold transition-colors"
+                                                >
+                                                    {lang === 'ru' ? 'Оформить заказ 💳' : 'Checkout & Pay 💳'}
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
