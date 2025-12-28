@@ -11,19 +11,12 @@ export default function DeliveryServices({ lang }: DeliveryServicesProps) {
 
   const deliveryServices = [
     {
-      name: 'Zomato',
-      nameRu: 'Zomato',
-      nameAr: 'زوماتو',
-      url: 'https://www.zomato.com/dubai/bo-dubai-festival-city',
-      color: 'bg-red-600 hover:bg-red-700',
-      icon: '🍽️'
-    },
-    {
       name: 'Talabat',
       nameRu: 'Talabat',
       nameAr: 'طلبات',
       url: 'https://www.talabat.com/uae/restaurant/bo-dubai',
-      color: 'bg-green-600 hover:bg-green-700',
+      // Orange Brand
+      style: 'bg-orange-500/10 border-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white hover:border-orange-500 hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]',
       icon: '🚴'
     },
     {
@@ -31,7 +24,8 @@ export default function DeliveryServices({ lang }: DeliveryServicesProps) {
       nameRu: 'Deliveroo',
       nameAr: 'دليفرو',
       url: 'https://deliveroo.ae/restaurants/dubai/bo-dubai',
-      color: 'bg-blue-600 hover:bg-blue-700',
+      // Teal Brand
+      style: 'bg-teal-500/10 border-teal-500/20 text-teal-400 hover:bg-teal-500 hover:text-white hover:border-teal-500 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)]',
       icon: '🛵'
     },
     {
@@ -39,48 +33,63 @@ export default function DeliveryServices({ lang }: DeliveryServicesProps) {
       nameRu: 'Careem',
       nameAr: 'كريم',
       url: 'https://www.careem.com/en-ae/food/restaurant/bo-dubai',
-      color: 'bg-purple-600 hover:bg-purple-700',
+      // Green Brand
+      style: 'bg-green-500/10 border-green-500/20 text-green-500 hover:bg-green-600 hover:text-white hover:border-green-600 hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]',
       icon: '🚗'
+    },
+    {
+      name: 'Zomato',
+      nameRu: 'Zomato',
+      nameAr: 'زوماتو',
+      url: 'https://www.zomato.com/dubai/bo-dubai-festival-city',
+      // Red Brand
+      style: 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-600 hover:text-white hover:border-red-600 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]',
+      icon: '🍽️'
     }
   ]
 
-  const title = lang === 'en' 
-    ? 'Order Online' 
-    : lang === 'ru' 
-    ? 'Заказать онлайн' 
-    : 'اطلب عبر الإنترنت'
+  const title = lang === 'en'
+    ? 'Order Online'
+    : lang === 'ru'
+      ? 'Заказать онлайн'
+      : 'اطلب عبر الإنترنت'
 
   return (
-    <div className={`bg-zinc-800 rounded-xl p-6 border border-zinc-700 ${isRTL ? 'text-right' : 'text-left'}`}>
-      <div className="flex items-center gap-3 mb-4">
-        <ShoppingBag className="text-yellow-500" size={24} />
-        <h3 className="text-xl font-bold text-white">{title}</h3>
-      </div>
-      
-      <p className="text-gray-400 text-sm mb-6">
-        {lang === 'en' 
-          ? 'Order your favorite Vietnamese dishes through our delivery partners'
-          : lang === 'ru'
-          ? 'Закажите ваши любимые вьетнамские блюда через наших партнеров по доставке'
-          : 'اطلب أطباقك الفيتنامية المفضلة من خلال شركائنا في التوصيل'}
-      </p>
+    <div className={`relative overflow-hidden bg-zinc-900/50 backdrop-blur-xl rounded-2xl p-6 border border-zinc-800 shadow-2xl ${isRTL ? 'text-right' : 'text-left'}`}>
+      {/* Background Glow */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-3xl -z-10" />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg border border-yellow-500/10">
+          <ShoppingBag className="text-yellow-500" size={20} />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-white tracking-tight">{title}</h3>
+          <p className="text-zinc-500 text-xs">
+            {lang === 'en' ? 'Fast delivery to your door' : (lang === 'ru' ? 'Быстрая доставка до двери' : 'توصيل سريع لبابك')}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-2 gap-3">
         {deliveryServices.map((service) => (
           <a
             key={service.name}
             href={service.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${service.color} text-white px-4 py-3 rounded-lg font-bold transition-all hover:scale-105 flex items-center justify-between gap-2 shadow-lg`}
+            className={`
+                group relative flex items-center justify-between px-4 py-3.5 rounded-xl border transition-all duration-300
+                ${service.style}
+            `}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{service.icon}</span>
-              <span className="text-sm">
+            <div className="flex items-center gap-3">
+              <span className="text-xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">{service.icon}</span>
+              <span className="text-sm font-bold tracking-wide">
                 {lang === 'en' ? service.name : lang === 'ru' ? service.nameRu : service.nameAr}
               </span>
             </div>
-            <ExternalLink size={16} />
+            <ExternalLink size={16} className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" />
           </a>
         ))}
       </div>
