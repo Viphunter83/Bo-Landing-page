@@ -448,11 +448,73 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     </button>
 
                                     <button
-                                        onClick={() => sendOrderToAdmin('Telegram')}
+                                        onClick={async () => {
+                                            if (paymentMethod === 'online') {
+                                                // Stripe Payment Flow
+                                                const error = validateOrder()
+                                                if (error) {
+                                                    setValidationError(error)
+                                                    setTimeout(() => setValidationError(null), 3000)
+                                                    return
+                                                }
+                                                setIsSubmitting(true)
+
+                                                try {
+                                                    // 1. Create Pending Order
+                                                    const orderId = await createOrder({
+                                                        items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
+                                                        total: `${finalTotal} AED`,
+                                                        platform: 'Web',
+                                                        status: 'new',
+                                                        paymentStatus: 'pending',
+                                                        type: orderType,
+                                                        address,
+                                                        apartment,
+                                                        paymentMethod: 'online',
+                                                        email,
+                                                        deliveryZoneId: selectedZoneId,
+                                                        deliveryFee
+                                                    })
+
+                                                    if (!orderId) throw new Error("Order creation failed")
+
+                                                    // 2. Initiate Checkout
+                                                    const res = await fetch('/api/checkout', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            items: items.map(i => ({
+                                                                name: lang === 'ru' ? i.nameRu : i.name,
+                                                                price: i.price,
+                                                                quantity: i.quantity
+                                                            })),
+                                                            deliveryFee,
+                                                            zoneName: zones.find(z => z.id === selectedZoneId)?.name,
+                                                            orderId,
+                                                            email
+                                                        })
+                                                    })
+
+                                                    const data = await res.json()
+                                                    if (data.url) {
+                                                        window.location.href = data.url
+                                                    } else {
+                                                        throw new Error('No payment URL')
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e)
+                                                    setValidationError('Payment System Error')
+                                                    setIsSubmitting(false)
+                                                }
+                                            } else {
+                                                // Telegram Flow
+                                                sendOrderToAdmin('Telegram')
+                                            }
+                                        }}
                                         disabled={isSubmitting}
                                         className={`bg-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-400 transition-colors flex items-center justify-center gap-2 text-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
-                                        <span>Telegram</span>
+                                        <span>{paymentMethod === 'online' ? (lang === 'ru' ? 'Оплатить Онлайн' : 'Pay Now') : 'Telegram'}</span>
                                     </button>
                                 </div>
                             </div>

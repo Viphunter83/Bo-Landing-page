@@ -27,6 +27,10 @@ export interface OrderData {
     deliveryFee?: number;
     deliveryStatus?: 'pending' | 'assigned' | 'out_for_delivery' | 'delivered';
     driverId?: string;
+
+    // Phase 13: Online Payments
+    paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
+    stripeSessionId?: string;
 }
 
 export const createOrder = async (order: OrderData) => {

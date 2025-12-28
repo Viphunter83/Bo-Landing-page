@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-import { adminAuth, adminDb } from '@/app/lib/firebase-admin'
+import { getAdminAuth, getAdminDb } from '@/app/lib/firebase-admin'
 
 export async function POST(request: Request) {
     try {
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         const uid = `telegram:${telegramUser.id}`
 
         // 3. Sync to Firestore (CRM)
-        const userRef = adminDb.collection('users').doc(uid)
+        const userRef = getAdminDb().collection('users').doc(uid)
         await userRef.set({
             telegramId: telegramUser.id,
             firstName: telegramUser.first_name || '',
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         }, { merge: true })
 
         // 4. Update Custom Token
-        const customToken = await adminAuth.createCustomToken(uid, {
+        const customToken = await getAdminAuth().createCustomToken(uid, {
             telegram: true,
             username: telegramUser.username
         })
