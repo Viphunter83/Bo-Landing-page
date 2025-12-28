@@ -5,12 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Gift, X, Wine, Smartphone, Trophy, Zap } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { useTelegram } from '../context/TelegramContext'
-import { usePathname } from 'next/navigation'
+import { useCart } from '../context/CartContext'
 
 export default function ShakeToWin() {
     const { isTelegram } = useTelegram()
-    const pathname = usePathname()
-    const isCart = pathname?.includes('/cart')
+    const { isOpen: isCartOpen } = useCart()
 
     const [permissionGranted, setPermissionGranted] = useState(false)
     const [showGame, setShowGame] = useState(false)
@@ -210,7 +209,7 @@ export default function ShakeToWin() {
             {/* Teaser Button (Always visible if not detecting game yet) */}
             {!showGame && !won && (
                 <motion.div
-                    className={`fixed left-4 z-[9999] ${isCart ? 'bottom-48' : 'bottom-24'}`}
+                    className={`fixed left-4 z-[9999] ${isCartOpen ? 'bottom-48' : 'bottom-24'}`}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     whileHover={{ scale: 1.1 }}
