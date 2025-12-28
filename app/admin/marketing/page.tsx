@@ -110,7 +110,11 @@ export default function MarketingPage() {
                     const origin = window.location.origin
                     const magicLink = `${origin}/offer/${couponData.coupon.code}`
 
-                    finalMessage += `\n\n🎁 Activate your offer here:\n${magicLink}`
+                    // Update the text to match the selected coupon value
+                    // This replaces "20%" or "10%" in the AI text with the actual value
+                    finalMessage = finalMessage.replace(/\b\d+%\b/g, `${couponValue}%`)
+
+                    finalMessage += `\n\n🎁 Activate your ${couponValue}% offer here:\n${magicLink}`
                     showToast('Coupon created & attached!', 'success')
                 } else {
                     throw new Error('Coupon creation failed')
