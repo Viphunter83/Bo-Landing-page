@@ -64,6 +64,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <TelegramProvider>
+          <DebugOverlay />
           <ShakeToWin />
           <SchemaScript />
           {/* Global Providers can go here */}
