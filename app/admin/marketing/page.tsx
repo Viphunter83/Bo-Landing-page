@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { db } from '../../lib/firebase'
 import { collection, query, getDocs, where } from 'firebase/firestore'
-import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon } from 'lucide-react'
+import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon, Clock } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import { fullMenu } from '../../data/menuData'
 
@@ -69,6 +69,39 @@ export default function MarketingPage() {
             showToast('Failed to send campaign', 'error')
         }
         setSending(false)
+    }
+
+    const handlePersonalize = async (email: string) => {
+        setGenerating(true)
+        showToast('Analyzing customer profile...', 'info')
+        try {
+            // 1. Get Profile
+            const profileRes = await fetch(`/api/marketing/customer-profile?email=${email}`)
+            const profileData = await profileRes.json()
+
+            if (!profileData.success) throw new Error('Profile fetch failed')
+
+            // 2. Generate Offer
+            const offerRes = await fetch('/api/marketing/smart-offer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile: profileData.profile })
+            })
+            const offerData = await offerRes.json()
+
+            if (offerData.success) {
+                setGenResult(offerData.offer)
+                showToast('Personalized offer generated! Check the AI Input box.', 'success')
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+            } else {
+                throw new Error('Generation failed')
+            }
+        } catch (e) {
+            console.error(e)
+            showToast('Failed to personalize', 'error')
+        }
+        setGenerating(false)
     }
 
     const handleGenerate = async () => {
@@ -284,7 +317,41 @@ export default function MarketingPage() {
                 </div>
             </div>
 
-            {/* Campaign Tester / Recent Lead Table (Simplified) */}
+            {/* Triggers Control Panel */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-yellow-500/20 text-yellow-500 rounded-lg">
+                        <Clock size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white">Periodic Triggers</h2>
+                        <p className="text-zinc-400 text-sm">Manually fire scheduled automation jobs.</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <TriggerButton
+                        title="Review Requests"
+                        desc="Completed orders > 2h ago"
+                        endpoint="/api/marketing/triggers/reviews"
+                        icon={<CheckCircle size={18} />}
+                    />
+                    <TriggerButton
+                        title="Birthday Bonus"
+                        desc="Users with birthday today"
+                        endpoint="/api/marketing/triggers/birthday"
+                        icon={<Flame size={18} />}
+                    />
+                    <TriggerButton
+                        title="Win-Back"
+                        desc="Inactive > 30 days"
+                        endpoint="/api/marketing/triggers/winback"
+                        icon={<UsersIcon size={18} />}
+                    />
+                </div>
+            </div>
+
+            {/* Recent Leads Table (Simplified) */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
                 <div className="p-6 border-b border-zinc-800">
                     <h3 className="text-lg font-bold text-white">Recent Leads</h3>
@@ -327,8 +394,12 @@ export default function MarketingPage() {
                                             : 'N/A'}
                                     </td>
                                     <td className="p-4">
-                                        <button onClick={() => showToast(`Sending individual offer to ${pref.email}...`, 'info')} className="text-blue-400 hover:text-blue-300 text-sm">
-                                            Send &quot;Personal&quot;
+                                        <button
+                                            onClick={() => handlePersonalize(pref.email)}
+                                            disabled={generating}
+                                            className="text-blue-400 hover:text-blue-300 text-sm disabled:opacity-50"
+                                        >
+                                            {generating ? 'Start AI...' : 'Smart Offer ✨'}
                                         </button>
                                     </td>
                                 </tr>
@@ -347,3 +418,39 @@ export default function MarketingPage() {
         </div>
     )
 }
+
+function TriggerButton({ title, desc, endpoint, icon }: { title: string, desc: string, endpoint: string, icon: any }) {
+    const [loading, setLoading] = useState(false)
+    const { showToast } = useToast()
+
+    const runTrigger = async () => {
+        setLoading(true)
+        try {
+            const res = await fetch(endpoint, { method: 'POST' })
+            const data = await res.json()
+            if (data.success) {
+                showToast(data.message, 'success')
+            } else {
+                showToast('Trigger failed', 'error')
+            }
+        } catch (e) {
+            showToast('Network error', 'error')
+        }
+        setLoading(false)
+    }
+
+    return (
+        <button
+            onClick={runTrigger}
+            disabled={loading}
+            className="flex flex-col items-center justify-center p-4 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl transition-all disabled:opacity-50 active:scale-95 text-center"
+        >
+            <div className="mb-2 text-zinc-400">
+                {loading ? <div className="animate-spin h-5 w-5 border-2 border-zinc-500 border-t-transparent rounded-full" /> : icon}
+            </div>
+            <div className="font-bold text-white text-sm">{title}</div>
+            <div className="text-xs text-zinc-500 mt-1">{desc}</div>
+        </button>
+    )
+}
+

@@ -14,15 +14,19 @@ export default function DubaiPulseTicker({ lang }: { lang: string }) {
         setActivities(getInitialTrends())
     }, [])
 
-    // Add new activity every few seconds
+    // Subscribe to Realtime Data
     useEffect(() => {
-        const interval = setInterval(() => {
-            const newActivity = generateMockActivity()
-            setActivities(prev => [newActivity, ...prev.slice(0, 9)])
-            setCurrentIdx(0) // Reset to show new one
-        }, 8000 + Math.random() * 5000)
-
-        return () => clearInterval(interval)
+        import('../lib/trends').then(({ subscribeToRealtimeTrends }) => {
+            const unsubscribe = subscribeToRealtimeTrends((newActivity) => {
+                setActivities(prev => {
+                    // Prevent duplicates
+                    if (prev.find(a => a.id === newActivity.id)) return prev
+                    return [newActivity, ...prev.slice(0, 9)]
+                })
+                setCurrentIdx(0) // Show new activity immediately
+            })
+            return () => unsubscribe()
+        })
     }, [])
 
     // Rotate displayed message

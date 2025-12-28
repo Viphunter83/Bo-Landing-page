@@ -101,5 +101,54 @@ export const EmailTemplates = {
         <p style="margin-top: 40px; color: #666; font-size: 12px;">Valid for 7 days. One use per customer.</p>
       </div>
     `
+  },
+
+  reviewRequest: (name: string) => {
+    return `
+      <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px; text-align: center;">
+        <h1 style="color: #eab308;">How was it, ${name}? ⭐</h1>
+        <p>We hope you enjoyed your meal at Bo Dubai!</p>
+        <p>Your opinion helps us get better (and tastier).</p>
+        
+        <div style="margin: 30px 0;">
+            <a href="https://maps.google.com/?cid=YOUR_GOOGLE_MAPS_ID" style="background-color: #333; color: white; padding: 15px 30px; text-decoration: none; border-radius: 30px; border: 1px solid #555; font-weight: bold;">Leave a Review & Get Dessert 🍰</a>
+        </div>
+
+        <p style="color: #888; font-size: 12px;">Just show your review screenshot next time you visit!</p>
+      </div>
+    `
+  },
+
+  birthday: (name: string) => {
+    return `
+      <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px; text-align: center;">
+        <h1 style="color: #eab308;">Happy Birthday, ${name}! 🎂</h1>
+        <p>It's your special day, and we want to celebrate with you.</p>
+        
+        <div style="background-color: #111; padding: 30px; border: 2px solid #eab308; border-radius: 10px; margin: 30px 0;">
+             <h2 style="color: #fff; margin: 0;">20% OFF YOUR BILL</h2>
+             <p style="color: #888; margin-top: 10px;">Valid today only!</p>
+        </div>
+
+        <a href="https://bo-restaurant-dubai.vercel.app/book" style="display: inline-block; background-color: #eab308; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Book Your Table</a>
+      </div>
+    `
+  },
+
+  winBack: (name: string) => {
+    return `
+      <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px; text-align: center;">
+        <h1 style="color: #eab308;">We Miss You, ${name} 🥺</h1>
+        <p>It's been a while since we've seen you. The Pho is lonely without you!</p>
+        
+        <p>Here's a little reason to come back:</p>
+        
+        <div style="background-color: #111; padding: 20px; margin: 20px 0; border-radius: 10px;">
+            <span style="color: #38bdf8; font-weight: bold; font-size: 20px;">FREE DRINK ON US 🍹</span>
+        </div>
+
+        <a href="https://bo-restaurant-dubai.vercel.app/order" style="display: inline-block; background-color: #38bdf8; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Order Now</a>
+      </div>
+    `
   }
 }

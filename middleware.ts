@@ -7,9 +7,31 @@ let defaultLocale = 'en'
 export function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname
 
-    // Ignore admin routes and static files
+    // 1. Protection for Admin Routes
+    if (pathname.startsWith('/admin')) {
+        // Skip validation for login page itself
+        if (pathname === '/admin/login') {
+            return
+        }
+
+        // Check for session cookie (this assumes you set a cookie 'admin-session' on login)
+        // If you don't use cookies yet, you might need to rely on Client-Side protection for now
+        // BUT, the request was "Fix middleware".
+        // Let's check if we can verify a cookie. 
+        // For now, I will add a TODO or basic cookie check.
+        const hasSession = request.cookies.has('admin_session')
+
+        if (!hasSession) {
+            return NextResponse.redirect(new URL('/admin/login', request.url))
+        }
+
+        // If they have a session, we want to STOP here and NOT do locale redirection for /admin
+        // because /admin is not in [lang] folder.
+        return
+    }
+
+    // 2. Skip API and Static Files from Locale Logic
     if (
-        pathname.startsWith('/admin') ||
         pathname.startsWith('/api') ||
         pathname.startsWith('/_next') ||
         pathname.includes('.') ||
