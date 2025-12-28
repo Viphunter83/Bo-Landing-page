@@ -141,6 +141,70 @@ export default function MarketingPage() {
         setSending(false)
     }
 
+    const handleSendEmail = async () => {
+        const lead = leads.find(l => l.email === currentLeadId)
+        if (!lead || !lead.email) {
+            showToast('No email found', 'error')
+            return
+        }
+
+        let finalMessage = genResult
+        setSending(true)
+
+        try {
+            // 1. Create Coupon if requested (Duplicate logic for now)
+            if (attachCoupon) {
+                const couponRes = await fetch('/api/marketing/coupon/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'discount_percentage',
+                        value: couponValue,
+                        userId: lead.userId || 'email_user', // Fallback if no telegram ID
+                        expiryDays: 7
+                    })
+                })
+                const couponData = await couponRes.json()
+
+                if (couponData.success) {
+                    const origin = window.location.origin
+                    const magicLink = `${origin}/offer/${couponData.coupon.code}`
+
+                    // Auto-replace percentage
+                    finalMessage = finalMessage.replace(/\b\d+%\b/g, `${couponValue}%`)
+
+                    finalMessage += `\n\n🎁 Activate your ${couponValue}% offer here:\n${magicLink}`
+                    showToast('Coupon attached to email!', 'success')
+                } else {
+                    throw new Error('Coupon creation failed')
+                }
+            }
+
+            // 2. Send Email
+            const res = await fetch('/api/marketing/send/email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: lead.email,
+                    message: finalMessage,
+                    subject: 'Exclusive Invitation: Bo Restaurant 🍜'
+                })
+            })
+            const data = await res.json()
+            if (data.success) {
+                showToast('Email sent successfully! 📧', 'success')
+                setAttachCoupon(false)
+            } else {
+                showToast(data.error || 'Failed to send email', 'error')
+            }
+
+        } catch (e) {
+            console.error(e)
+            showToast('Error sending email', 'error')
+        }
+        setSending(false)
+    }
+
     const handlePersonalize = async (email: string) => {
         setGenerating(true)
         setCurrentLeadId(email) // Track who we are generating for
@@ -347,18 +411,34 @@ export default function MarketingPage() {
                                         )}
                                     </div>
 
-                                    {/* Send via Telegram Button */}
-                                    {currentLeadId && leads.find(l => l.email === currentLeadId)?.userId && (
-                                        <button
-                                            onClick={() => handleSendTelegram()}
-                                            disabled={sending}
-                                            className="absolute bottom-4 right-14 bg-blue-500 hover:bg-blue-400 text-white p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
-                                            title="Send via Telegram"
-                                        >
-                                            {sending ? <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" /> : <SendIcon size={14} />}
-                                            Send
-                                        </button>
-                                    )}
+                                    {/* Send Buttons Container */}
+                                    <div className="absolute bottom-4 right-16 flex items-center gap-2">
+                                        {/* Email Button - Always available if lead selected */}
+                                        {currentLeadId && (
+                                            <button
+                                                onClick={handleSendEmail}
+                                                disabled={sending}
+                                                className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
+                                                title="Send via Email"
+                                            >
+                                                {sending ? <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" /> : <Mail size={14} />}
+                                                Email
+                                            </button>
+                                        )}
+
+                                        {/* Telegram Button */}
+                                        {currentLeadId && leads.find(l => l.email === currentLeadId)?.userId && (
+                                            <button
+                                                onClick={() => handleSendTelegram()}
+                                                disabled={sending}
+                                                className="bg-blue-500 hover:bg-blue-400 text-white p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
+                                                title="Send via Telegram"
+                                            >
+                                                {sending ? <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" /> : <SendIcon size={14} />}
+                                                Telegram
+                                            </button>
+                                        )}
+                                    </div>
                                 </>
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-600 gap-2">
