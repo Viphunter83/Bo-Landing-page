@@ -61,7 +61,25 @@ function MarketingContent() {
         fetchStandard()
     }, [])
 
-    // 2. Handle URL Params (Ad-hoc) - Run whenever params or standard leads change
+    // 2. Persistence: Load & Save Adhoc Leads
+    useEffect(() => {
+        const stored = localStorage.getItem('bo_adhoc_leads')
+        if (stored) {
+            try {
+                setAdhocLeads(JSON.parse(stored))
+            } catch (e) {
+                console.error('Failed to parse stored leads', e)
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        if (adhocLeads.length > 0) {
+            localStorage.setItem('bo_adhoc_leads', JSON.stringify(adhocLeads))
+        }
+    }, [adhocLeads])
+
+    // 3. Handle URL Params and Fetching
     useEffect(() => {
         const handleParam = async () => {
             const paramLeadId = searchParams.get('leadId')
