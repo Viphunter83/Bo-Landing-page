@@ -206,7 +206,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
         handleSend(input)
     }
 
-    const isCart = typeof window !== 'undefined' ? window.location.pathname.includes('/cart') : false
+
 
     return (
         <>
