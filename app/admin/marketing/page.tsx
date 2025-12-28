@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { db } from '../../lib/firebase'
 import { collection, query, getDocs, where } from 'firebase/firestore'
 import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon, Clock } from 'lucide-react'
@@ -18,7 +19,7 @@ interface Lead {
     userId?: string // Telegram ID usually
 }
 
-export default function MarketingPage() {
+function MarketingContent() {
     const [leads, setLeads] = useState<Lead[]>([])
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
@@ -31,10 +32,12 @@ export default function MarketingPage() {
     const [genResult, setGenResult] = useState('')
     const [generating, setGenerating] = useState(false)
 
+    const searchParams = useSearchParams()
+
     useEffect(() => {
         if (!db) return
-        const fetchLeads = async () => {
-            // Fetch all quiz results that have an email
+        const fetchLeadsAndCheckParams = async () => {
+            // 1. Fetch Standard Leads (Quiz Results)
             const q = query(collection(db!, 'quiz_results'))
             const snap = await getDocs(q)
 
@@ -46,12 +49,57 @@ export default function MarketingPage() {
                 }
             })
 
+            // 2. Handle URL Params (Ad-hoc CRM Bridge)
+            const paramLeadId = searchParams.get('leadId')
+
+            if (paramLeadId) {
+                // Check if already in list
+                const existing = validLeads.find(l => l.email === paramLeadId || l.userId === paramLeadId)
+
+                if (existing) {
+                    // Lead exists, just wait for render then select
+                    setTimeout(() => setCurrentLeadId(existing.email), 500)
+                } else {
+                    // 3. Ad-hoc Fetch from 'users' collection
+                    console.log('Fetching ad-hoc user:', paramLeadId)
+                    try {
+                        // Try finding by email
+                        let userQ = query(collection(db!, 'users'), where('email', '==', paramLeadId))
+                        let userSnap = await getDocs(userQ)
+
+                        // Try finding by telegram ID if number
+                        if (userSnap.empty && !isNaN(Number(paramLeadId))) {
+                            userQ = query(collection(db!, 'users'), where('telegramId', '==', Number(paramLeadId)))
+                            userSnap = await getDocs(userQ)
+                        }
+
+                        if (!userSnap.empty) {
+                            const userDoc = userSnap.docs[0].data()
+                            const newLead: Lead = {
+                                id: 'adhoc_' + userDoc.email,
+                                email: userDoc.email || `tg_${userDoc.telegramId}@placeholder.com`,
+                                spice: userDoc.spice || 'Unknown',
+                                mood: userDoc.vibe || 'Unknown',
+                                createdAt: new Date(),
+                                marketing_segments: ['Ad-Hoc', 'CRM Import'],
+                                userId: userDoc.telegramId ? String(userDoc.telegramId) : undefined
+                            }
+                            validLeads.unshift(newLead) // Add to top
+                            setTimeout(() => setCurrentLeadId(newLead.email), 500)
+                            showToast('Guest imported from CRM', 'success')
+                        }
+                    } catch (e) {
+                        console.error('Error fetching ad-hoc user', e)
+                    }
+                }
+            }
+
             setLeads(validLeads)
             setLoading(false)
         }
 
-        fetchLeads()
-    }, [])
+        fetchLeadsAndCheckParams()
+    }, [searchParams, showToast])
 
     const sendCampaign = async (segment: string) => {
         setSending(true)
@@ -649,6 +697,14 @@ function TriggerButton({ title, desc, endpoint, icon }: { title: string, desc: s
             <div className="font-bold text-white text-sm">{title}</div>
             <div className="text-xs text-zinc-500 mt-1">{desc}</div>
         </button>
+    )
+}
+
+export default function MarketingPage() {
+    return (
+        <Suspense fallback={<div className="text-white">Loading...</div>}>
+            <MarketingContent />
+        </Suspense>
     )
 }
 

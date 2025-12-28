@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import AdminDataTable from '../components/AdminDataTable'
-import { Users, Search, Sparkles, MessageCircle } from 'lucide-react'
+import { Users, Search, Sparkles, MessageCircle, Send } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -120,6 +121,23 @@ export default function CustomersPage() {
                         {date.toLocaleDateString()} <br />
                         {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
+                )
+            }
+        },
+        {
+            header: "Actions",
+            cell: (item: Customer) => {
+                const hasContact = item.email || item.telegramId
+                if (!hasContact) return null
+
+                return (
+                    <Link
+                        href={`/admin/marketing?leadId=${item.email || item.telegramId}`}
+                        className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 w-fit"
+                    >
+                        <Send size={12} />
+                        Send Offer
+                    </Link>
                 )
             }
         }
