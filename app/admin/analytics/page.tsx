@@ -12,6 +12,7 @@ import { CalendarIcon, TrendingUp, TrendingDown, DollarSign, Users, ShoppingBag,
 import { format, subDays, startOfMonth, type Interval } from 'date-fns'
 import { getOrders } from '../../lib/db/orders'
 import { getExpenses, type Expense } from '../../lib/db/expenses'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 // Types
 interface FinancialMetrics {
@@ -35,6 +36,7 @@ export default function AnalyticsPage() {
         revenue: 0, cogs: 0, labor: 0, opex: 0, grossProfit: 0, netProfit: 0, orderCount: 0, avgTicket: 0
     })
     const [topItems, setTopItems] = useState<{ name: string, count: number, sales: number }[]>([])
+    const [chartData, setChartData] = useState<any[]>([])
 
     useEffect(() => {
         fetchData()
@@ -48,13 +50,22 @@ export default function AnalyticsPage() {
                 getExpenses(dateRange.from, dateRange.to)
             ])
 
+            // Filter out cancelled orders
+            // @ts-ignore
+            const validOrders = orders.filter(o => o.status !== 'cancelled')
+
             // Calculate Revenue
             let totalRevenue = 0
             const itemMap: Record<string, { count: number, sales: number }> = {}
+            const dailyRevenue: Record<string, number> = {}
 
-            orders.forEach(o => {
+            validOrders.forEach(o => {
                 const amount = parseFloat((o.total || '0').replace(/[^0-9.]/g, ''))
                 totalRevenue += amount
+
+                // Chart Data
+                const dayKey = format(o.createdAt, 'MMM dd')
+                dailyRevenue[dayKey] = (dailyRevenue[dayKey] || 0) + amount
 
                 o.items?.forEach(i => {
                     const iPrice = parseFloat((i.price || '0').replace(/[^0-9.]/g, ''))
@@ -63,6 +74,20 @@ export default function AnalyticsPage() {
                     itemMap[i.name].sales += (iPrice * (i.quantity || 1))
                 })
             })
+
+            // Prepare Chart Data
+            // We need to fill in dates in the range, but for now filtering existing days is a good start
+            // To make it look professional, let's just map the existing data points nicely
+            const chartDataArray = Object.entries(dailyRevenue).map(([date, revenue]) => ({
+                date,
+                revenue
+            }))
+            // Sort by date is tricky with 'MMM dd' format if spanning years, but within short range usually ok
+            // A better way is to rely on the object key insertion order if iterating or just sort the source validOrders
+            // Since validOrders is sorted by date desc, dailyRevenue keys creation order is desc
+            // So reversing makes it asc
+            chartDataArray.reverse()
+            setChartData(chartDataArray)
 
             // Calculate Expenses
             let cogs = 0
@@ -82,8 +107,8 @@ export default function AnalyticsPage() {
                 opex,
                 grossProfit: totalRevenue - cogs,
                 netProfit: totalRevenue - cogs - labor - opex,
-                orderCount: orders.length,
-                avgTicket: orders.length ? totalRevenue / orders.length : 0
+                orderCount: validOrders.length,
+                avgTicket: validOrders.length ? totalRevenue / validOrders.length : 0
             })
 
             // Top Items
@@ -101,7 +126,6 @@ export default function AnalyticsPage() {
 
     const setPresetRange = (value: string) => {
         const today = new Date()
-        const yesterday = subDays(today, 1) // Ensures 'from' is strictly before 'to' if range is 1 day, or handles logic correctly
 
         switch (value) {
             case 'today':
@@ -207,15 +231,15 @@ export default function AnalyticsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <KPICard title="Food Cost %" value={`${metrics.revenue ? Math.round((metrics.cogs / metrics.revenue) * 100) : 0}%`} sub="(Target: <30%)" />
                         <KPICard title="Labor Cost %" value={`${metrics.revenue ? Math.round((metrics.labor / metrics.revenue) * 100) : 0}%`} sub="(Target: <25%)" />
-                        <KPICard title="Profit Margin" value={`${metrics.revenue ? Math.round((metrics.netProfit / metrics.revenue) * 100) : 0}%`} color="text-green-500" />
+                        <KPICard title="Profit Margin" value={`${metrics.revenue ? Math.round((metrics.netProfit / metrics.revenue) * 100) : 0}%`} color={metrics.netProfit >= 0 ? "text-green-500" : "text-red-500"} />
                     </div>
                 </TabsContent>
 
                 <TabsContent value="charts" className="mt-4">
                     <Card className="bg-zinc-900 border-zinc-800 text-white">
-                        <CardHeader><CardTitle>Distribution</CardTitle></CardHeader>
-                        <CardContent className="h-64 flex items-center justify-center text-zinc-500">
-                            Chart visualization coming in next update
+                        <CardHeader><CardTitle>Revenue Trend</CardTitle></CardHeader>
+                        <CardContent className="h-[400px]">
+                            <SimpleBarChart data={chartData} />
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -272,5 +296,35 @@ function KPICard({ title, value, icon: Icon, trend, sub, color }: any) {
                 )}
             </CardContent>
         </Card>
+    )
+}
+
+function SimpleBarChart({ data }: { data: any[] }) {
+    if (!data || data.length === 0) return <div className="flex h-full items-center justify-center text-zinc-500">No data for this period</div>
+    return (
+        <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data}>
+                <XAxis
+                    dataKey="date"
+                    stroke="#71717a"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                />
+                <YAxis
+                    stroke="#71717a"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `AED ${value}`}
+                />
+                <Tooltip
+                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a' }}
+                    itemStyle={{ color: '#fff' }}
+                    cursor={{ fill: '#27272a' }}
+                />
+                <Bar dataKey="revenue" fill="#22c55e" radius={[4, 4, 0, 0]} />
+            </BarChart>
+        </ResponsiveContainer>
     )
 }
