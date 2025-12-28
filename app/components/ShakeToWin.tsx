@@ -191,16 +191,15 @@ export default function ShakeToWin() {
         setShakeIntensity(80)
     }
 
-    if (!isTelegram && !isDebugMode) return null
-
     // Auto-show game trigger once if ready
     useEffect(() => {
         if (isTelegram && !won && !showGame) {
-            // Optionally auto-open? No, that might be annoying.
-            // But let's make sure permission is handled.
-            setPermissionGranted(true) // Assume granted or handled by button
+            setPermissionGranted(true)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isTelegram])
+
+    if (!isTelegram && !isDebugMode) return null
 
     return (
         <>
