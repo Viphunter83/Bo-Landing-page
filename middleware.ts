@@ -30,10 +30,11 @@ export function middleware(request: NextRequest) {
         return
     }
 
-    // 2. Skip API and Static Files from Locale Logic
+    // 2. Skip API, Admin, Static Files, and Special Routes (Offer) from Locale Logic
     if (
         pathname.startsWith('/api') ||
         pathname.startsWith('/_next') ||
+        pathname.startsWith('/offer') ||
         pathname.includes('.') ||
         pathname === '/favicon.ico'
     ) {
