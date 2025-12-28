@@ -17,10 +17,15 @@ interface Lead {
     marketing_segments: string[]
     last_quiz_date?: any
     userId?: string // Telegram ID usually
+    url_param_id?: string // To store the original paramLeadId for ad-hoc leads
 }
 
 function MarketingContent() {
-    const [leads, setLeads] = useState<Lead[]>([])
+    const [standardLeads, setStandardLeads] = useState<Lead[]>([])
+    const [adhocLeads, setAdhocLeads] = useState<Lead[]>([])
+    // Combined leads for display
+    const leads = [...adhocLeads, ...standardLeads]
+
     const [loading, setLoading] = useState(true)
     const [sending, setSending] = useState(false)
     const { showToast } = useToast()
@@ -31,75 +36,120 @@ function MarketingContent() {
     const [genTone, setGenTone] = useState('Excited')
     const [genResult, setGenResult] = useState('')
     const [generating, setGenerating] = useState(false)
+    const [currentLeadId, setCurrentLeadId] = useState<string>('')
+    const [attachCoupon, setAttachCoupon] = useState(false)
+    const [couponValue, setCouponValue] = useState(20)
 
     const searchParams = useSearchParams()
 
+    // 1. Initial Fetch of Standard Leads
     useEffect(() => {
         if (!db) return
-        const fetchLeadsAndCheckParams = async () => {
-            // 1. Fetch Standard Leads (Quiz Results)
+        const fetchStandard = async () => {
             const q = query(collection(db!, 'quiz_results'))
             const snap = await getDocs(q)
-
-            const validLeads: Lead[] = []
+            const valid: Lead[] = []
             snap.forEach(doc => {
                 const data = doc.data()
                 if (data.email && data.email.includes('@')) {
-                    validLeads.push({ id: doc.id, ...data } as Lead)
+                    valid.push({ id: doc.id, ...data } as Lead)
                 }
             })
-
-            // 2. Handle URL Params (Ad-hoc CRM Bridge)
-            const paramLeadId = searchParams.get('leadId')
-
-            if (paramLeadId) {
-                // Check if already in list
-                const existing = validLeads.find(l => l.email === paramLeadId || l.userId === paramLeadId)
-
-                if (existing) {
-                    // Lead exists, just wait for render then select
-                    setTimeout(() => setCurrentLeadId(existing.email), 500)
-                } else {
-                    // 3. Ad-hoc Fetch from 'users' collection
-                    console.log('Fetching ad-hoc user:', paramLeadId)
-                    try {
-                        // Try finding by email
-                        let userQ = query(collection(db!, 'users'), where('email', '==', paramLeadId))
-                        let userSnap = await getDocs(userQ)
-
-                        // Try finding by telegram ID if number
-                        if (userSnap.empty && !isNaN(Number(paramLeadId))) {
-                            userQ = query(collection(db!, 'users'), where('telegramId', '==', Number(paramLeadId)))
-                            userSnap = await getDocs(userQ)
-                        }
-
-                        if (!userSnap.empty) {
-                            const userDoc = userSnap.docs[0].data()
-                            const newLead: Lead = {
-                                id: 'adhoc_' + userDoc.email,
-                                email: userDoc.email || `tg_${userDoc.telegramId}@placeholder.com`,
-                                spice: userDoc.spice || 'Unknown',
-                                mood: userDoc.vibe || 'Unknown',
-                                createdAt: new Date(),
-                                marketing_segments: ['Ad-Hoc', 'CRM Import'],
-                                userId: userDoc.telegramId ? String(userDoc.telegramId) : undefined
-                            }
-                            validLeads.unshift(newLead) // Add to top
-                            setTimeout(() => setCurrentLeadId(newLead.email), 500)
-                            showToast('Guest imported from CRM', 'success')
-                        }
-                    } catch (e) {
-                        console.error('Error fetching ad-hoc user', e)
-                    }
-                }
-            }
-
-            setLeads(validLeads)
+            setStandardLeads(valid)
             setLoading(false)
         }
+        fetchStandard()
+    }, [])
 
-        fetchLeadsAndCheckParams()
-    }, [searchParams, showToast])
+    // 2. Handle URL Params (Ad-hoc) - Run whenever params or standard leads change
+    useEffect(() => {
+        const handleParam = async () => {
+            const paramLeadId = searchParams.get('leadId')
+            if (!paramLeadId) return
+
+            // Check if already in standard
+            const inStandard = standardLeads.find(l => l.email === paramLeadId || l.userId === paramLeadId)
+            if (inStandard) {
+                setCurrentLeadId(inStandard.email)
+                return
+            }
+
+            // Check if already in adhoc
+            // We need to use a distinct check here to avoid dependencies loop if we depended on adhocLeads directly
+            // But we can use functional update to check existence or just fetch and check inside setter.
+            // Ideally we just check the current state, but effect deps is tricky.
+            // Better: Check if we ALREADY have this lead in the adhoc list in the SETTER, or checking a Ref.
+
+            // Simplest: Check adhocLeads (add to deps) - if found, set current. 
+            // If not found, fetch.
+            // To avoid loop, only run if paramLeadId changes or standardLeads loads.
+        }
+        // Actually, we can just run this logic. 
+        // We moved the fetch out.
+    }, [searchParams, standardLeads])
+
+    // Clean separate effect for fetching adhoc to avoid loops
+    useEffect(() => {
+        const fetchAdhoc = async () => {
+            const paramLeadId = searchParams.get('leadId')
+            if (!db || !paramLeadId) return
+
+            // If standard leads are still loading, wait.
+            if (loading) return
+
+            // If it's in standard, do nothing (handled by selection)
+            if (standardLeads.find(l => l.email === paramLeadId || l.userId === paramLeadId)) {
+                setCurrentLeadId(standardLeads.find(l => l.email === paramLeadId || l.userId === paramLeadId)!.email)
+                return
+            }
+
+            // Check if already in adhoc (using functional update to be safe or just checking state)
+            const alreadyAdhoc = adhocLeads.find(l => l.email === paramLeadId || l.url_param_id === paramLeadId)
+            if (alreadyAdhoc) {
+                setCurrentLeadId(alreadyAdhoc.email)
+                return
+            }
+
+            console.log('Fetching ad-hoc user:', paramLeadId)
+            try {
+                let userQ = query(collection(db!, 'users'), where('email', '==', paramLeadId))
+                let userSnap = await getDocs(userQ)
+
+                if (userSnap.empty && !isNaN(Number(paramLeadId))) {
+                    userQ = query(collection(db!, 'users'), where('telegramId', '==', Number(paramLeadId)))
+                    userSnap = await getDocs(userQ)
+                }
+
+                if (!userSnap.empty) {
+                    const userDoc = userSnap.docs[0].data()
+                    const newLead: Lead = {
+                        id: 'adhoc_' + (userDoc.email || userDoc.telegramId),
+                        email: userDoc.email || `tg_${userDoc.telegramId}@placeholder.com`,
+                        spice: userDoc.spice || 'Unknown',
+                        mood: userDoc.vibe || 'Unknown',
+                        createdAt: new Date(),
+                        marketing_segments: ['Ad-Hoc', 'CRM Import'],
+                        userId: userDoc.telegramId ? String(userDoc.telegramId) : undefined,
+                        url_param_id: paramLeadId // Store the original param for future checks
+                    }
+
+                    // Add to adhoc leads if not exists
+                    setAdhocLeads(prev => {
+                        if (prev.find(p => p.email === newLead.email || p.url_param_id === newLead.url_param_id)) return prev
+                        return [newLead, ...prev]
+                    })
+
+                    setCurrentLeadId(newLead.email)
+                    showToast('Guest imported from CRM', 'success')
+                }
+            } catch (e) {
+                console.error('Error fetching ad-hoc', e)
+            }
+        }
+
+        fetchAdhoc()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, standardLeads, loading]) // Re-run if URL changes or standard leads finish loading
 
     const sendCampaign = async (segment: string) => {
         setSending(true)
@@ -120,9 +170,6 @@ function MarketingContent() {
         setSending(false)
     }
 
-    const [currentLeadId, setCurrentLeadId] = useState<string | null>(null) // Email of current targeted lead
-    const [attachCoupon, setAttachCoupon] = useState(false)
-    const [couponValue, setCouponValue] = useState(20) // Default 20%
 
 
     const handleSendTelegram = async () => {
