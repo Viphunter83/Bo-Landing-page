@@ -2,17 +2,19 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
 // IMPORTANT: Use Environment Variable in Production
-if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error('STRIPE_SECRET_KEY is missing')
-}
+const getStripe = () => {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY is missing')
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-12-15.clover' as any,
-    typescript: true,
-})
+    return new Stripe(key, {
+        apiVersion: '2025-12-15.clover' as any,
+        typescript: true,
+    })
+}
 
 export async function POST(req: Request) {
     try {
+        const stripe = getStripe()
         const body = await req.json()
         const { items, deliveryFee, zoneName, orderId, email } = body
 

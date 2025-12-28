@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getAdminDb } from '../../../lib/firebase-admin'
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!
-if (!STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is missing')
+const getStripe = () => {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) throw new Error('STRIPE_SECRET_KEY is missing')
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-    apiVersion: '2025-12-15.clover' as any,
-    typescript: true
-})
+    return new Stripe(key, {
+        apiVersion: '2025-12-15.clover' as any,
+        typescript: true
+    })
+}
 
 export async function POST(req: Request) {
     const body = await req.text()
@@ -18,6 +20,7 @@ export async function POST(req: Request) {
     let event: Stripe.Event
 
     try {
+        const stripe = getStripe()
         if (endpointSecret) {
             event = stripe.webhooks.constructEvent(body, sig, endpointSecret)
         } else {
