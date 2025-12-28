@@ -230,7 +230,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className={`fixed right-4 z-50 w-[90vw] md:w-96 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden ${isTelegram ? 'bottom-20 max-h-[70vh]' : 'bottom-24 md:bottom-24 max-h-[600px] h-[70vh]'}`}
+                        className={`fixed right-4 z-[10005] w-[90vw] md:w-96 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden ${isTelegram ? 'bottom-4 max-h-[60vh]' : 'bottom-24 md:bottom-24 max-h-[600px] h-[70vh]'}`}
                     >
                         {/* Header */}
                         <div className="p-4 bg-gradient-to-r from-red-600/20 to-yellow-500/20 border-b border-white/10 flex justify-between items-center">
