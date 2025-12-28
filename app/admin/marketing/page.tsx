@@ -15,6 +15,7 @@ interface Lead {
     createdAt: any
     marketing_segments: string[]
     last_quiz_date?: any
+    userId?: string // Telegram ID usually
 }
 
 export default function MarketingPage() {
@@ -71,8 +72,41 @@ export default function MarketingPage() {
         setSending(false)
     }
 
+    const [currentLeadId, setCurrentLeadId] = useState<string | null>(null) // Email of current targeted lead
+
+    const handleSendTelegram = async () => {
+        const lead = leads.find(l => l.email === currentLeadId)
+        if (!lead || !lead.userId) {
+            showToast('No Telegram ID found for this user', 'error')
+            return
+        }
+
+        // userId format might be "telegram:12345" or just "12345"
+        // Adjust based on your Auth storage. existing auth/telegram stores "telegram:ID"
+        const chatId = lead.userId.replace('telegram:', '')
+
+        setSending(true)
+        try {
+            const res = await fetch('/api/marketing/send/telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatId, message: genResult })
+            })
+            const data = await res.json()
+            if (data.success) {
+                showToast('Message sent to Telegram! ✈️', 'success')
+            } else {
+                showToast(data.error || 'Failed to send', 'error')
+            }
+        } catch (e) {
+            showToast('Network Error', 'error')
+        }
+        setSending(false)
+    }
+
     const handlePersonalize = async (email: string) => {
         setGenerating(true)
+        setCurrentLeadId(email) // Track who we are generating for
         showToast('Analyzing customer profile...', 'info')
         try {
             // 1. Get Profile
@@ -238,9 +272,23 @@ export default function MarketingPage() {
                                     <button
                                         onClick={copyToClipboard}
                                         className="absolute bottom-4 right-4 bg-indigo-600 hover:bg-indigo-500 text-white p-2 rounded-lg transition-colors"
+                                        title="Copy to Clipboard"
                                     >
                                         <Copy size={16} />
                                     </button>
+
+                                    {/* Send via Telegram Button */}
+                                    {currentLeadId && leads.find(l => l.email === currentLeadId)?.userId && (
+                                        <button
+                                            onClick={() => handleSendTelegram()}
+                                            disabled={sending}
+                                            className="absolute bottom-4 right-14 bg-blue-500 hover:bg-blue-400 text-white p-2 rounded-lg transition-colors flex items-center gap-2 text-xs font-bold"
+                                            title="Send via Telegram"
+                                        >
+                                            {sending ? <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" /> : <SendIcon size={14} />}
+                                            Send
+                                        </button>
+                                    )}
                                 </>
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-600 gap-2">
