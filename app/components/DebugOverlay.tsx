@@ -13,7 +13,7 @@ export default function DebugOverlay() {
             const viewport = typeof window !== 'undefined' ? {
                 width: window.innerWidth,
                 height: window.innerHeight,
-                tgExpanded: window.Telegram?.WebApp?.isExpanded
+                tgExpanded: (window.Telegram?.WebApp as any)?.isExpanded
             } : {}
 
             setDebugInfo({
