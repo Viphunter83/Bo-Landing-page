@@ -73,6 +73,9 @@ export default function MarketingPage() {
     }
 
     const [currentLeadId, setCurrentLeadId] = useState<string | null>(null) // Email of current targeted lead
+    const [attachCoupon, setAttachCoupon] = useState(false)
+    const [couponValue, setCouponValue] = useState(20) // Default 20%
+
 
     const handleSendTelegram = async () => {
         const lead = leads.find(l => l.email === currentLeadId)
@@ -85,21 +88,51 @@ export default function MarketingPage() {
         // Adjust based on your Auth storage. existing auth/telegram stores "telegram:ID"
         const chatId = lead.userId.replace('telegram:', '')
 
+        let finalMessage = genResult
+
         setSending(true)
         try {
+            // 1. Create Coupon if requested
+            if (attachCoupon) {
+                const couponRes = await fetch('/api/marketing/coupon/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'discount_percentage',
+                        value: couponValue,
+                        userId: lead.userId,
+                        expiryDays: 7
+                    })
+                })
+                const couponData = await couponRes.json()
+
+                if (couponData.success) {
+                    const origin = window.location.origin
+                    const magicLink = `${origin}/offer/${couponData.coupon.code}`
+
+                    finalMessage += `\n\n🎁 Activate your offer here:\n${magicLink}`
+                    showToast('Coupon created & attached!', 'success')
+                } else {
+                    throw new Error('Coupon creation failed')
+                }
+            }
+
+            // 2. Send Message
             const res = await fetch('/api/marketing/send/telegram', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chatId, message: genResult })
+                body: JSON.stringify({ chatId, message: finalMessage })
             })
             const data = await res.json()
             if (data.success) {
                 showToast('Message sent to Telegram! ✈️', 'success')
+                setAttachCoupon(false) // Reset
             } else {
                 showToast(data.error || 'Failed to send', 'error')
             }
         } catch (e) {
-            showToast('Network Error', 'error')
+            console.error(e)
+            showToast('Error sending message', 'error')
         }
         setSending(false)
     }
@@ -276,6 +309,20 @@ export default function MarketingPage() {
                                     >
                                         <Copy size={16} />
                                     </button>
+
+                                    {/* Attach Coupon Toggle */}
+                                    <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/50 p-2 rounded-lg backdrop-blur-sm border border-zinc-700">
+                                        <input
+                                            type="checkbox"
+                                            checked={attachCoupon}
+                                            onChange={(e) => setAttachCoupon(e.target.checked)}
+                                            className="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500"
+                                            id="attachCoupon"
+                                        />
+                                        <label htmlFor="attachCoupon" className="text-xs text-zinc-300 font-medium cursor-pointer select-none">
+                                            Attach 20% Coupon
+                                        </label>
+                                    </div>
 
                                     {/* Send via Telegram Button */}
                                     {currentLeadId && leads.find(l => l.email === currentLeadId)?.userId && (
