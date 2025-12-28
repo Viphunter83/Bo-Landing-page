@@ -31,6 +31,9 @@ export interface OrderData {
     // Phase 13: Online Payments
     paymentStatus?: 'pending' | 'paid' | 'failed' | 'refunded';
     stripeSessionId?: string;
+    subtotal?: number;
+    discount?: number;
+    promoCode?: string;
 }
 
 export const createOrder = async (order: OrderData) => {
