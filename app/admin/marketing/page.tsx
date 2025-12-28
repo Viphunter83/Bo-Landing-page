@@ -66,7 +66,7 @@ function MarketingContent() {
 
     // 2. Persistence: Load & Save Adhoc Leads
     useEffect(() => {
-        const stored = localStorage.getItem('bo_adhoc_leads')
+        const stored = localStorage.getItem('bo_adhoc_leads_v2')
         if (stored) {
             try {
                 setAdhocLeads(JSON.parse(stored))
@@ -78,7 +78,7 @@ function MarketingContent() {
 
     useEffect(() => {
         if (adhocLeads.length > 0) {
-            localStorage.setItem('bo_adhoc_leads', JSON.stringify(adhocLeads))
+            localStorage.setItem('bo_adhoc_leads_v2', JSON.stringify(adhocLeads))
         }
     }, [adhocLeads])
 
