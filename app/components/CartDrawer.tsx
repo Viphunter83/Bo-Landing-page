@@ -55,9 +55,60 @@ export default function CartDrawer({ lang }: { lang: string }) {
         }
     }, [selectedZoneId, orderType, total, zones])
 
-    const finalTotal = total + deliveryFee
+    // Promo Code State
+    const [promoCode, setPromoCode] = useState('')
+    const [discount, setDiscount] = useState(0)
+    const [promoError, setPromoError] = useState<string | null>(null)
+    const [promoSuccess, setPromoSuccess] = useState<string | null>(null)
+
+    const applyPromo = () => {
+        setPromoError(null)
+        setPromoSuccess(null)
+
+        if (!promoCode.trim()) return
+
+        // Hardcoded Promo Logic
+        if (promoCode.trim().toUpperCase() === 'BOVIBE10') {
+            const discountValue = total * 0.10 // 10%
+            setDiscount(discountValue)
+            setPromoSuccess(lang === 'ru' ? 'Скидка 10% применена!' : '10% Discount Applied!')
+        } else {
+            setDiscount(0)
+            setPromoError(lang === 'ru' ? 'Неверный код' : 'Invalid code')
+        }
+    }
+
+    const finalTotal = Math.max(0, total + deliveryFee - discount)
 
     const [validationError, setValidationError] = useState<string | null>(null)
+    // ... rest of validation logic ...
+
+    // ... inside return ...
+    {/* Promo Code Section */ }
+    <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4">
+        <h3 className="font-bold text-white text-sm">
+            {lang === 'ru' ? 'Промокод' : 'Promo Code'}
+        </h3>
+        <div className="flex gap-2">
+            <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder={lang === 'ru' ? 'Введите код' : 'Enter code'}
+                className="flex-1 bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border"
+            />
+            <button
+                onClick={applyPromo}
+                className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 rounded-lg font-bold text-sm transition-colors"
+            >
+                {lang === 'ru' ? 'Применить' : 'Apply'}
+            </button>
+        </div>
+        {promoError && <p className="text-red-500 text-xs">{promoError}</p>}
+        {promoSuccess && <p className="text-green-500 text-xs">{promoSuccess}</p>}
+    </div>
+
+    {/* Payment Selector ... */ }
 
     const validateOrder = () => {
         setValidationError(null)
@@ -377,6 +428,30 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                         </div>
                                     )}
 
+                                    {/* Promo Code Section */}
+                                    <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4">
+                                        <h3 className="font-bold text-white text-sm">
+                                            {lang === 'ru' ? 'Промокод' : 'Promo Code'}
+                                        </h3>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={promoCode}
+                                                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                placeholder={lang === 'ru' ? 'Введите код' : 'Enter code'}
+                                                className="flex-1 bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border uppercase placeholder:normal-case"
+                                            />
+                                            <button
+                                                onClick={applyPromo}
+                                                className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 rounded-lg font-bold text-sm transition-colors"
+                                            >
+                                                {lang === 'ru' ? 'Применить' : 'Apply'}
+                                            </button>
+                                        </div>
+                                        {promoError && <p className="text-red-500 text-xs">{promoError}</p>}
+                                        {promoSuccess && <p className="text-green-500 text-xs">{promoSuccess}</p>}
+                                    </div>
+
                                     {/* Payment Selector */}
                                     <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4">
                                         <h3 className="font-bold text-white text-sm">
@@ -427,9 +502,15 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                             <span className="text-yellow-500">+{deliveryFee} AED</span>
                                         </div>
                                     )}
+                                    {discount > 0 && (
+                                        <div className="flex justify-between items-center text-zinc-400 text-sm">
+                                            <span>{lang === 'ru' ? 'Скидка' : 'Discount'} (BOVIBE10)</span>
+                                            <span className="text-green-500">-{discount.toFixed(2)} AED</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center text-zinc-400 text-sm pt-2 border-t border-zinc-800">
                                         <span className="font-bold text-white">{lang === 'ru' ? 'Итого' : (lang === 'ar' ? 'المجموع' : 'Total')}</span>
-                                        <span className="text-white font-bold text-lg">{finalTotal} AED</span>
+                                        <span className="text-white font-bold text-lg">{finalTotal.toFixed(2)} AED</span>
                                     </div>
                                 </div>
 
@@ -463,7 +544,10 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                     // 1. Create Pending Order
                                                     const orderId = await createOrder({
                                                         items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-                                                        total: `${finalTotal} AED`,
+                                                        total: `${finalTotal.toFixed(2)} AED`, // Update total
+                                                        subtotal: total, // Track original
+                                                        discount: discount, // Track discount
+                                                        promoCode: promoCode.trim().toUpperCase() === 'BOVIBE10' ? 'BOVIBE10' : undefined,
                                                         platform: 'Web',
                                                         status: 'new',
                                                         paymentStatus: 'pending',
@@ -489,6 +573,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                                 quantity: i.quantity
                                                             })),
                                                             deliveryFee,
+                                                            discount, // Pass discount
                                                             zoneName: zones.find(z => z.id === selectedZoneId)?.name,
                                                             orderId,
                                                             email

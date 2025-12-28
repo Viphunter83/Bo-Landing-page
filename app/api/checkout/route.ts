@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     try {
         const stripe = getStripe()
         const body = await req.json()
-        const { items, deliveryFee, zoneName, orderId, email } = body
+        const { items, deliveryFee, zoneName, orderId, email, discount } = body
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: 'No items in cart' }, { status: 400 })
@@ -48,7 +48,8 @@ export async function POST(req: Request) {
             })
         }
 
-        const session = await stripe.checkout.sessions.create({
+        // Handle Discount
+        let sessionParams: Stripe.Checkout.SessionCreateParams = {
             payment_method_types: ['card'],
             line_items,
             mode: 'payment',
@@ -56,7 +57,20 @@ export async function POST(req: Request) {
             customer_email: email, // Pre-fill email
             success_url: `${req.headers.get('origin')}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.headers.get('origin')}/?payment=cancelled`,
-        })
+        }
+
+        if (discount && discount > 0) {
+            // Create a one-time coupon for this specific amount
+            const coupon = await stripe.coupons.create({
+                amount_off: Math.round(discount * 100),
+                currency: 'aed',
+                duration: 'once',
+                name: 'Promo Code Discount'
+            })
+            sessionParams.discounts = [{ coupon: coupon.id }]
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionParams)
 
         return NextResponse.json({ url: session.url })
     } catch (err: any) {
