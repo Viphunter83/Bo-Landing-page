@@ -64,7 +64,16 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<TelegramUser | null>(null)
     const [ready, setReady] = useState(false)
 
+    const [error, setError] = useState<string | null>(null)
+
     useEffect(() => {
+        // Validation check for Firebase
+        if (!auth) {
+            setError("Firebase Configuration Missing. Please check env variables.")
+            console.error("Firebase Auth is null. Check NEXT_PUBLIC_FIREBASE_API_KEY.")
+            return
+        }
+
         // Double check availability
         if (typeof window !== 'undefined' && window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp
@@ -91,12 +100,12 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
 
                             const { token } = await res.json()
 
-                            if (!auth) throw new Error('Firebase Auth not initialized')
                             // 2. Sign in with Firebase
-                            await signInWithCustomToken(auth, token)
+                            await signInWithCustomToken(auth!, token)
                             console.log('🔮 Magic Login Success')
-                        } catch (e) {
+                        } catch (e: any) {
                             console.error('Magic Login Error', e)
+                            setError(`Login Failed: ${e.message}`)
                         }
                     }
 
@@ -106,6 +115,17 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
             setReady(true)
         }
     }, [])
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-black text-white p-4 text-center">
+                <div className="bg-red-500/10 border border-red-500 rounded-lg p-4">
+                    <h3 className="font-bold text-red-500 mb-2">Application Error</h3>
+                    <p className="text-sm text-zinc-300">{error}</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <TelegramContext.Provider value={{ isTelegram, user, ready }}>

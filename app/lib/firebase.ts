@@ -20,7 +20,11 @@ const getFirebaseApp = () => {
     if (firebaseConfig.apiKey) {
         return initializeApp(firebaseConfig);
     }
-    console.warn("Firebase API Key missing in environment variables.");
+    console.warn("Firebase Config Error: Missing keys", {
+        apiKey: !!firebaseConfig.apiKey,
+        authDomain: !!firebaseConfig.authDomain,
+        projectId: !!firebaseConfig.projectId
+    });
     return null;
 };
 
