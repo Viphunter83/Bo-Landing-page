@@ -227,10 +227,14 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className={`fixed right-4 z-[10005] w-[90vw] md:w-96 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden ${isTelegram ? 'bottom-4 max-h-[60vh]' : 'bottom-24 md:bottom-24 max-h-[600px] h-[70vh]'}`}
+                        initial={{ opacity: 0, y: isTelegram ? '100%' : 20, scale: isTelegram ? 1 : 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: isTelegram ? '100%' : 20, scale: isTelegram ? 1 : 0.9 }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        className={isTelegram
+                            ? "fixed inset-x-0 bottom-0 z-[10005] w-full h-[80vh] bg-zinc-900 border-t border-zinc-700 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden"
+                            : "fixed right-4 bottom-24 z-[10005] w-[90vw] md:w-96 h-[70vh] max-h-[600px] bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                        }
                     >
                         {/* Header */}
                         <div className="p-4 bg-gradient-to-r from-red-600/20 to-yellow-500/20 border-b border-white/10 flex justify-between items-center">
