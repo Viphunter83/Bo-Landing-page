@@ -216,7 +216,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className={`fixed right-6 z-40 bg-zinc-900 border border-zinc-700 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform group ${isTelegram ? 'bottom-24' : 'bottom-6'}`}
+                    className={`fixed right-6 z-[9999] bg-zinc-900 border border-zinc-700 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform group ${isTelegram ? 'bottom-24' : 'bottom-6'}`}
                 >
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                     <Sparkles className="group-hover:text-yellow-500 transition-colors" />

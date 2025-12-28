@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import './globals.css'
 import SchemaScript from './components/SchemaScript'
 import ShakeToWin from './components/ShakeToWin'
-import DebugOverlay from './components/DebugOverlay'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://bo-restuarant.vercel.app'), // Using likely Vercel URL or custom domain if known. Safest is to set this.
@@ -65,7 +64,6 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <TelegramProvider>
-          <DebugOverlay />
           <ShakeToWin />
           <SchemaScript />
           {/* Global Providers can go here */}

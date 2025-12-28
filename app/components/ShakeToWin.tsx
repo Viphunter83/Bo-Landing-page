@@ -193,37 +193,47 @@ export default function ShakeToWin() {
 
     if (!isTelegram && !isDebugMode) return null
 
+    // Auto-show game trigger once if ready
+    useEffect(() => {
+        if (isTelegram && !won && !showGame) {
+            // Optionally auto-open? No, that might be annoying.
+            // But let's make sure permission is handled.
+            setPermissionGranted(true) // Assume granted or handled by button
+        }
+    }, [isTelegram])
+
     return (
         <>
             {/* Teaser Button (Always visible if not detecting game yet) */}
             {!showGame && !won && (
                 <motion.div
-                    className="fixed bottom-24 left-4 z-40"
+                    className="fixed bottom-24 left-4 z-[9999]"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     whileHover={{ scale: 1.1 }}
                 >
-                    {needsPermission && !permissionGranted ? (
-                        <button
-                            onClick={requestAccess}
-                            className="bg-yellow-500 text-black p-4 rounded-full shadow-lg shadow-yellow-500/20 animate-bounce"
-                        >
-                            <Gift size={24} />
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => setShowGame(true)}
-                            className="group relative flex items-center justify-center"
-                        >
-                            <div className="absolute inset-0 bg-yellow-400 rounded-full animate-ping opacity-20 duration-1000" />
-                            <div className="bg-zinc-900 border border-yellow-500/50 p-4 rounded-full shadow-xl relative overflow-hidden">
-                                <Wine className="text-yellow-500 w-6 h-6 group-hover:rotate-12 transition-transform" />
-                            </div>
-                            <div className="absolute right-full mr-4 bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-white/10 hidden md:block">
-                                Shake for Gift!
-                            </div>
-                        </button>
-                    )}
+                    {/* Always show the Wine/Start button logic here, simplified */}
+                    <button
+                        onClick={() => {
+                            // First interaction triggers permission request if needed
+                            if (typeof DeviceMotionEvent !== 'undefined' &&
+                                // @ts-ignore
+                                typeof DeviceMotionEvent.requestPermission === 'function') {
+                                requestAccess()
+                            } else {
+                                setShowGame(true)
+                            }
+                        }}
+                        className="group relative flex items-center justify-center"
+                    >
+                        <div className="absolute inset-0 bg-yellow-400 rounded-full animate-ping opacity-20 duration-1000" />
+                        <div className="bg-zinc-900 border border-yellow-500/50 p-4 rounded-full shadow-xl relative overflow-hidden">
+                            <Wine className="text-yellow-500 w-6 h-6 group-hover:rotate-12 transition-transform" />
+                        </div>
+                        <div className="absolute left-full ml-4 bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-100 transition-opacity border border-white/10">
+                            Shake for Gift! 🎁
+                        </div>
+                    </button>
                 </motion.div>
             )}
 
