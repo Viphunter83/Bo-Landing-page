@@ -10,6 +10,7 @@ import { useTelegram } from '../context/TelegramContext'
 import { useCart } from '../context/CartContext'
 import { getMenuItemById } from '../data/menuData'
 import { saveQuizResult } from '../lib/db/quiz'
+import { usePathname } from 'next/navigation'
 
 interface Message {
     role: 'user' | 'assistant'
@@ -19,6 +20,8 @@ interface Message {
 export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang: string, activeVibe: string, onVibeChange?: (vibe: string) => void }) {
     const { addToCart } = useCart()
     const { isTelegram, user } = useTelegram()
+    const pathname = usePathname()
+    const isCart = pathname?.includes('/cart')
     const [isOpen, setIsOpen] = useState(false)
     const [quizOpen, setQuizOpen] = useState(false)
     const [preferences, setPreferences] = useState<UserPreferences | null>(null)
@@ -203,6 +206,8 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
         handleSend(input)
     }
 
+    const isCart = typeof window !== 'undefined' ? window.location.pathname.includes('/cart') : false
+
     return (
         <>
             <LunchQuizModal
@@ -216,7 +221,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className={`fixed right-6 z-[9999] bg-zinc-900 border border-zinc-700 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform group ${isTelegram ? 'bottom-24' : 'bottom-6'}`}
+                    className={`fixed right-6 z-[9999] bg-zinc-900 border border-zinc-700 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform group ${isTelegram ? (isCart ? 'bottom-48' : 'bottom-24') : 'bottom-6'}`}
                 >
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                     <Sparkles className="group-hover:text-yellow-500 transition-colors" />
