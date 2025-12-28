@@ -19,7 +19,7 @@ import JsonLd from '../components/JsonLd'
 import DubaiPulseTicker from '../components/DubaiPulseTicker'
 import CartDrawer from '../components/CartDrawer'
 import CartTrigger from '../components/CartTrigger'
-import { CartProvider } from '../context/CartContext'
+
 import { content } from '../data/content'
 import { faqData } from '../data/faqData'
 import { getMenuItemById } from '../data/menuData'
@@ -121,85 +121,84 @@ export default function Home({
   }
 
   return (
-    <CartProvider>
-      <>
-        <div className={`min-h-screen bg-black text-white font-sans selection:bg-red-600 selection:text-white`} dir={dir}>
-          <CartDrawer lang={lang} />
-          <CartTrigger />
-          <JsonLd data={faqSchema} />
-          <DubaiPulseTicker lang={lang} />
-          <Navbar
+
+    <>
+      <div className={`min-h-screen bg-black text-white font-sans selection:bg-red-600 selection:text-white`} dir={dir}>
+        <CartDrawer lang={lang} />
+        <CartTrigger />
+        <JsonLd data={faqSchema} />
+        <DubaiPulseTicker lang={lang} />
+        <Navbar
+          lang={lang}
+          t={content[lang as keyof typeof content]}
+          onBookClick={handleBookClick}
+        />
+
+        <main>
+          <Hero
             lang={lang}
             t={content[lang as keyof typeof content]}
             onBookClick={handleBookClick}
+            onMenuClick={handleMenuClick}
+            heroImage={siteSettings.heroImage}
+            heroTitle={siteSettings.heroTitle}
+            heroSub={siteSettings.heroSub}
           />
+          <VibeCheck
+            lang={lang}
+            t={content[lang as keyof typeof content]}
+            activeVibe={activeVibe}
+            setActiveVibe={handleVibeChange}
+          />
+          <SmartMenu
+            lang={lang}
+            t={content[lang as keyof typeof content]}
+            onDishClick={handleDishClick}
+            onFullMenuClick={handleMenuClick}
+            activeVibe={activeVibe}
+          />
+          <SocialProof
+            t={content[lang as keyof typeof content]}
+            images={siteSettings.socialImages}
+          />
+          <FAQ lang={lang} />
+          <FloatingChat lang={lang} activeVibe={activeVibe} onVibeChange={handleVibeChange} />
+        </main>
 
-          <main>
-            <Hero
-              lang={lang}
-              t={content[lang as keyof typeof content]}
-              onBookClick={handleBookClick}
-              onMenuClick={handleMenuClick}
-              heroImage={siteSettings.heroImage}
-              heroTitle={siteSettings.heroTitle}
-              heroSub={siteSettings.heroSub}
-            />
-            <VibeCheck
-              lang={lang}
-              t={content[lang as keyof typeof content]}
-              activeVibe={activeVibe}
-              setActiveVibe={handleVibeChange}
-            />
-            <SmartMenu
-              lang={lang}
-              t={content[lang as keyof typeof content]}
-              onDishClick={handleDishClick}
-              onFullMenuClick={handleMenuClick}
-              activeVibe={activeVibe}
-            />
-            <SocialProof
-              t={content[lang as keyof typeof content]}
-              images={siteSettings.socialImages}
-            />
-            <FAQ lang={lang} />
-            <FloatingChat lang={lang} activeVibe={activeVibe} onVibeChange={handleVibeChange} />
-          </main>
+        <Footer lang={lang} t={content[lang as keyof typeof content]} />
 
-          <Footer lang={lang} t={content[lang as keyof typeof content]} />
-
-          {/* Sticky Mobile CTA */}
-          <div className="fixed bottom-6 left-6 right-6 z-40 md:hidden">
-            <button
-              onClick={handleBookClick}
-              data-booking-trigger
-              className="w-full bg-red-600 text-white py-4 rounded-full font-bold shadow-2xl shadow-red-900/50 flex items-center justify-center gap-2"
-            >
-              <Utensils size={18} /> {content[lang as keyof typeof content].nav.book}
-            </button>
-          </div>
+        {/* Sticky Mobile CTA */}
+        <div className="fixed bottom-6 left-6 right-6 z-40 md:hidden">
+          <button
+            onClick={handleBookClick}
+            data-booking-trigger
+            className="w-full bg-red-600 text-white py-4 rounded-full font-bold shadow-2xl shadow-red-900/50 flex items-center justify-center gap-2"
+          >
+            <Utensils size={18} /> {content[lang as keyof typeof content].nav.book}
+          </button>
         </div>
+      </div>
 
-        {/* Modals outside main container */}
-        <BookingModal
-          isOpen={isBookingOpen}
-          onClose={() => setIsBookingOpen(false)}
-          lang={lang}
-          t={content[lang as keyof typeof content]}
-          initialValues={bookingInitialValues}
-        />
-        <FullMenuModal
-          isOpen={isFullMenuOpen}
-          onClose={() => setIsFullMenuOpen(false)}
-          lang={lang}
-          activeVibe={activeVibe}
-        />
-        <DishModal
-          isOpen={selectedDish !== null}
-          onClose={() => setSelectedDish(null)}
-          dish={selectedDish ? getMenuItemById(selectedDish) || null : null}
-          lang={lang}
-        />
-      </>
-    </CartProvider>
+      {/* Modals outside main container */}
+      <BookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        lang={lang}
+        t={content[lang as keyof typeof content]}
+        initialValues={bookingInitialValues}
+      />
+      <FullMenuModal
+        isOpen={isFullMenuOpen}
+        onClose={() => setIsFullMenuOpen(false)}
+        lang={lang}
+        activeVibe={activeVibe}
+      />
+      <DishModal
+        isOpen={selectedDish !== null}
+        onClose={() => setSelectedDish(null)}
+        dish={selectedDish ? getMenuItemById(selectedDish) || null : null}
+        lang={lang}
+      />
+    </>
   )
 }

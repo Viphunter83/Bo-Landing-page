@@ -54,6 +54,7 @@ export const metadata: Metadata = {
 }
 
 import { TelegramProvider } from './context/TelegramContext'
+import { CartProvider } from './context/CartContext'
 
 export default function RootLayout({
   children,
@@ -64,10 +65,12 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <TelegramProvider>
-          <ShakeToWin />
-          <SchemaScript />
-          {/* Global Providers can go here */}
-          {children}
+          <CartProvider>
+            <ShakeToWin />
+            <SchemaScript />
+            {/* Global Providers can go here */}
+            {children}
+          </CartProvider>
         </TelegramProvider>
       </body>
     </html>
