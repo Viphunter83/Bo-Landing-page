@@ -207,9 +207,9 @@ export default function ShakeToWin() {
     return (
         <>
             {/* Teaser Button (Always visible if not detecting game yet) */}
-            {!showGame && !won && (
+            {!showGame && !won && !isCartOpen && (
                 <motion.div
-                    className={`fixed left-4 z-[9999] ${isCartOpen ? 'bottom-48' : 'bottom-24'}`}
+                    className="fixed bottom-24 left-4 z-[9999]"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     whileHover={{ scale: 1.1 }}
