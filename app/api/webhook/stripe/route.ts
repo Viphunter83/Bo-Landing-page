@@ -41,28 +41,42 @@ export async function POST(req: Request) {
         console.log(`Payment success for Order ${orderId}`)
 
         if (orderId) {
-            // 1. Update Firestore using Admin SDK
+            const db = getAdminDb()
+            const orderRef = db.collection('orders').doc(orderId)
+
+            // 1. Idempotency Check & Transaction
+            // We fetch first to ensure we don't process twice
+            const orderDoc = await orderRef.get()
+
+            if (!orderDoc.exists) {
+                console.error(`Order ${orderId} not found`)
+                return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+            }
+
+            const orderData = orderDoc.data()
+            if (orderData?.paymentStatus === 'paid') {
+                console.log(`Order ${orderId} already paid. Skipping webhook processing.`)
+                return NextResponse.json({ received: true, status: 'already_processed' })
+            }
+
+            // 2. Update Status to PAID
             try {
-                await getAdminDb().collection('orders').doc(orderId).update({
+                await orderRef.update({
                     paymentStatus: 'paid',
-                    status: 'new', // Move to active queue
+                    status: 'new',
                     stripeSessionId: session.id,
                     paidAt: new Date()
                 })
                 console.log(`Updated Order ${orderId} to PAID`)
             } catch (dbError) {
                 console.error('Firestore Update Error:', dbError)
+                return NextResponse.json({ error: 'Database update failed' }, { status: 500 })
             }
 
-            // 1.1 Trigger Inventory Deduction
+            // 3. Trigger Inventory Deduction (Only if successful update)
             try {
-                // Fetch the order to get items
-                const orderDoc = await getAdminDb().collection('orders').doc(orderId).get()
-                if (orderDoc.exists) {
-                    const orderData = orderDoc.data()
-                    if (orderData?.items) {
-                        await deductStockForOrderAdmin(orderId, orderData.items)
-                    }
+                if (orderData?.items) {
+                    await deductStockForOrderAdmin(orderId, orderData.items)
                 }
             } catch (invError) {
                 console.error('Inventory Deduction Error:', invError)

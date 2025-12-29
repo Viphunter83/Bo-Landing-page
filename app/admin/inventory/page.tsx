@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, query, orderBy, onSnapshot, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, query, orderBy, onSnapshot, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, increment } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { Plus, Edit2, Trash2, AlertTriangle, Save, X, History } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
@@ -39,17 +39,9 @@ export default function InventoryManager() {
             // We use increment provided by Firestore
             const ingRef = doc(db, 'ingredients', restockForm.id)
 
-            // 1. Update Stock
-            // We can't use 'increment' easily if we are just passing numbers here without import
-            // I'll stick to calculating locally since we have latest snapshot in `ingredients`.
-            // Ideally use `increment` from firestore import (need to update imports).
-            // Let's just assume local calc is "okay" for MVP or add 'increment' to imports.
-
-            const currentItem = ingredients.find(i => i.id === restockForm.id)
-            const newStock = (currentItem?.currentStock || 0) + restockForm.amount
-
+            // 1. Update Stock Atomic
             await updateDoc(ingRef, {
-                currentStock: newStock,
+                currentStock: increment(restockForm.amount),
                 costPerUnit: restockForm.cost, // Update cost if changed
                 updatedAt: serverTimestamp()
             })
@@ -81,11 +73,10 @@ export default function InventoryManager() {
         if (!db || !restockForm.amount) return
         try {
             const ingRef = doc(db, 'ingredients', restockForm.id)
-            const currentItem = ingredients.find(i => i.id === restockForm.id)
-            const newStock = (currentItem?.currentStock || 0) - restockForm.amount
 
+            // Atomic decrement
             await updateDoc(ingRef, {
-                currentStock: newStock,
+                currentStock: increment(-restockForm.amount),
                 updatedAt: serverTimestamp()
             })
 
