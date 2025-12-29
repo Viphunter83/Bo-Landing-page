@@ -450,6 +450,7 @@ export default function ShakeToWin() {
                                         </button>
                                     )}
                                 </div>
+                            ) : (
                                 <div className="bg-gradient-to-br from-zinc-900 to-black border border-yellow-500/30 rounded-3xl p-8 relative overflow-hidden shadow-2xl text-center">
                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-yellow-500 to-red-500" />
 
@@ -480,7 +481,7 @@ export default function ShakeToWin() {
                                             Click to Copy
                                         </div>
                                     </div>
-                                    
+
                                     <p className="text-red-400 text-xs mb-6 flex items-center justify-center gap-1">
                                         <Clock size={12} /> Expires in 3 Days
                                     </p>

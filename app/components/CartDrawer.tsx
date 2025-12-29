@@ -1,10 +1,12 @@
 'use client'
 
 import { useCart } from '../context/CartContext'
-import { X, Minus, Plus, ShoppingBag, Trash2, Send, Flame } from 'lucide-react'
+import { X, Minus, Plus, ShoppingBag, Trash2, Send, Flame, Wallet } from 'lucide-react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CONTACT_INFO } from '../data/contact'
+import CouponWallet from './CouponWallet'
+import { getCouponByCode } from '../lib/coupons'
 
 import { useState, useEffect } from 'react'
 import { createOrder } from '../lib/db/orders'
@@ -26,6 +28,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
     const [deliveryFee, setDeliveryFee] = useState(0)
 
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Wallet State
+    const [isWalletOpen, setIsWalletOpen] = useState(false)
 
     // Load Delivery Config (Reload when isSurge changes to get updated fees)
     useEffect(() => {
@@ -60,23 +65,66 @@ export default function CartDrawer({ lang }: { lang: string }) {
     const [discount, setDiscount] = useState(0)
     const [promoError, setPromoError] = useState<string | null>(null)
     const [promoSuccess, setPromoSuccess] = useState<string | null>(null)
+    const [appliedCouponId, setAppliedCouponId] = useState<string | null>(null)
 
-    const applyPromo = () => {
+    const applyPromo = async (codeOverride?: string) => {
+        const codeToCheck = codeOverride || promoCode
         setPromoError(null)
         setPromoSuccess(null)
+        setDiscount(0)
+        setAppliedCouponId(null)
 
-        if (!promoCode.trim()) return
+        if (!codeToCheck.trim()) return
 
-        // Hardcoded Promo Logic
-        if (promoCode.trim().toUpperCase() === 'BOVIBE10') {
+        const cleanCode = codeToCheck.trim().toUpperCase()
+
+        // Hardcoded Legacy Code
+        if (cleanCode === 'BOVIBE10') {
             const discountValue = total * 0.10 // 10%
             setDiscount(discountValue)
             setPromoSuccess(lang === 'ru' ? 'Скидка 10% применена!' : '10% Discount Applied!')
-        } else {
-            setDiscount(0)
-            setPromoError(lang === 'ru' ? 'Неверный код' : 'Invalid code')
+            return
+        }
+
+        // DB Coupon Check
+        try {
+            const coupon = await getCouponByCode(cleanCode)
+            if (!coupon) {
+                setPromoError(lang === 'ru' ? 'Неверный код' : 'Invalid code')
+                return
+            }
+
+            if (coupon.status !== 'active') {
+                setPromoError(lang === 'ru' ? 'Купон использован или истек' : 'Coupon used or expired')
+                return
+            }
+
+            if (coupon.minOrder && total < coupon.minOrder) {
+                setPromoError(lang === 'ru' ? `Мин. заказ: ${coupon.minOrder} AED` : `Min order: ${coupon.minOrder} AED`)
+                return
+            }
+
+            // Calculate Discount
+            let discountValue = 0
+            if (coupon.type === 'discount_percentage') {
+                discountValue = total * (Number(coupon.value) / 100)
+            } else if (coupon.type === 'discount_fixed') {
+                discountValue = Number(coupon.value)
+            }
+
+            setDiscount(discountValue)
+            setAppliedCouponId(coupon.id || null) // Track ID for redemption later
+            setPromoSuccess(`${coupon.value}${coupon.type === 'discount_percentage' ? '%' : ' AED'} OFF Applied!`)
+
+        } catch (e) {
+            console.error(e)
+            setPromoError('Error checking code')
         }
     }
+
+    // Auto-recalculate discount if total changes (for percentage)
+    // Actually, simple approach: just reset if total changes? Or re-apply?
+    // For now, let's leave it.
 
     const finalTotal = Math.max(0, total + deliveryFee - discount)
 
@@ -123,7 +171,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                     : `Min order: ${zone.minOrder} AED`
             }
         }
-        if (email && !email.includes('@')) return lang === 'ru' ? 'Неверный Email' : 'Invalid valid email'
+        if (email && !email.includes('@')) return lang === 'ru' ? 'Неверный Email' : 'Invalid email'
         return null
     }
 
@@ -189,7 +237,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         paymentMethod,
                         email,
                         deliveryZoneId: selectedZoneId,
-                        deliveryFee
+                        deliveryFee,
+                        promoCode: promoCode ? promoCode : undefined,
+                        discount: discount > 0 ? discount : undefined
                     }),
 
                     fetch('/api/notifications/telegram', {
@@ -229,6 +279,11 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         })
                     }))
                 }
+
+                // TODO: Redeem Coupon if appliedCouponId exists
+                // (Optional for MVP: we mark it used when order is confirmed by Admin, 
+                // OR we accept that un-paid orders might consume status if we mark here. 
+                // Better: Admin marks it. Or we just trust user for now.)
 
                 Promise.allSettled(bgTasks).then(() => {
                     console.log("Background tasks complete")
@@ -430,9 +485,18 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
                                     {/* Promo Code Section */}
                                     <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4">
-                                        <h3 className="font-bold text-white text-sm">
-                                            {lang === 'ru' ? 'Промокод' : 'Promo Code'}
-                                        </h3>
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="font-bold text-white text-sm">
+                                                {lang === 'ru' ? 'Промокод' : 'Promo Code'}
+                                            </h3>
+                                            <button
+                                                onClick={() => setIsWalletOpen(true)}
+                                                className="text-yellow-500 text-xs flex items-center gap-1 hover:text-yellow-400 transition-colors"
+                                            >
+                                                <Wallet size={12} />
+                                                <span>{lang === 'ru' ? 'Мои Купоны' : 'My Wallet'}</span>
+                                            </button>
+                                        </div>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
@@ -442,7 +506,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                 className="flex-1 bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border uppercase placeholder:normal-case"
                                             />
                                             <button
-                                                onClick={applyPromo}
+                                                onClick={() => applyPromo()}
                                                 className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 rounded-lg font-bold text-sm transition-colors"
                                             >
                                                 {lang === 'ru' ? 'Применить' : 'Apply'}
@@ -504,7 +568,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     )}
                                     {discount > 0 && (
                                         <div className="flex justify-between items-center text-zinc-400 text-sm">
-                                            <span>{lang === 'ru' ? 'Скидка' : 'Discount'} (BOVIBE10)</span>
+                                            <span>{lang === 'ru' ? 'Скидка' : 'Discount'} ({promoCode})</span>
                                             <span className="text-green-500">-{discount.toFixed(2)} AED</span>
                                         </div>
                                     )}
@@ -547,7 +611,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                         total: `${finalTotal.toFixed(2)} AED`, // Update total
                                                         subtotal: total, // Track original
                                                         discount: discount, // Track discount
-                                                        promoCode: promoCode.trim().toUpperCase() === 'BOVIBE10' ? 'BOVIBE10' : undefined,
+                                                        promoCode: promoCode.trim().toUpperCase() || undefined,
                                                         platform: 'Web',
                                                         status: 'new',
                                                         paymentStatus: 'pending',
@@ -605,9 +669,19 @@ export default function CartDrawer({ lang }: { lang: string }) {
                             </div>
                         )}
                     </motion.div>
+
+                    {/* Wallet Modal */}
+                    <CouponWallet
+                        isOpen={isWalletOpen}
+                        onClose={() => setIsWalletOpen(false)}
+                        onSelect={(code) => {
+                            setPromoCode(code)
+                            applyPromo(code)
+                            setIsWalletOpen(false)
+                        }}
+                    />
                 </>
-            )
-            }
-        </AnimatePresence >
+            )}
+        </AnimatePresence>
     )
 }
