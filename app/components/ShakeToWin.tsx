@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Gift, X, Wine, Smartphone, Trophy, Zap, Clock, Wallet } from 'lucide-react'
 import confetti from 'canvas-confetti'
@@ -122,62 +122,7 @@ export default function ShakeToWin() {
         }
     }, [showGame, won])
 
-    // Shake Handler
-    useEffect(() => {
-        if (!permissionGranted || !showGame || won) return
-
-        const handleMotion = (event: DeviceMotionEvent) => {
-            const current = event.accelerationIncludingGravity
-            if (!current) return
-
-            const currentTime = new Date().getTime()
-            if ((currentTime - lastUpdate.current) > 100) {
-                const diffTime = currentTime - lastUpdate.current
-                lastUpdate.current = currentTime
-
-                const x = current.x || 0
-                const y = current.y || 0
-                const z = current.z || 0
-
-                const speed = Math.abs(x + y + z - lastX.current - lastY.current - lastZ.current) / diffTime * 10000
-
-                if (speed > 1000) { // EXTREME: Harder threshold (was 500)
-                    // Add progress based on speed/intensity
-                    const bonus = Math.min(speed / 150, 10) // HARDER: Less bonus per shake (was /100, max 15)
-
-                    setProgress(prev => {
-                        const newProgress = Math.min(100, prev + bonus)
-                        progressRef.current = newProgress // Keep ref synced for non-react usage if needed
-
-                        if (newProgress >= 100 && !won) {
-                            handleWin()
-                        }
-                        return newProgress
-                    })
-
-                    setShakeIntensity(Math.min(100, speed / 10))
-
-                    // Haptic feedback on strong shakes
-                    if (speed > 800) {
-                        if (window.Telegram?.WebApp?.HapticFeedback) {
-                            window.Telegram.WebApp.HapticFeedback.impactOccurred('medium')
-                        } else if (navigator.vibrate) {
-                            navigator.vibrate(50)
-                        }
-                    }
-                }
-
-                lastX.current = x
-                lastY.current = y
-                lastZ.current = z
-            }
-        }
-
-        window.addEventListener('devicemotion', handleMotion)
-        return () => window.removeEventListener('devicemotion', handleMotion)
-    }, [permissionGranted, showGame, won])
-
-    const handleWin = async () => {
+    const handleWin = useCallback(async () => {
         if (won) return
         setWon(true)
 
@@ -233,10 +178,66 @@ export default function ShakeToWin() {
 
         } catch (e) {
             console.error("Game Save Failed", e)
-            // Fallback for offline? Show code anyway but warn.
             setWonCoupon({ code: 'OFFLINE10', value: '10%' })
         }
-    }
+    }, [won, currentUserId])
+
+    // Shake Handler
+    useEffect(() => {
+        if (!permissionGranted || !showGame || won) return
+
+        const handleMotion = (event: DeviceMotionEvent) => {
+            const current = event.accelerationIncludingGravity
+            if (!current) return
+
+            const currentTime = new Date().getTime()
+            if ((currentTime - lastUpdate.current) > 100) {
+                const diffTime = currentTime - lastUpdate.current
+                lastUpdate.current = currentTime
+
+                const x = current.x || 0
+                const y = current.y || 0
+                const z = current.z || 0
+
+                const speed = Math.abs(x + y + z - lastX.current - lastY.current - lastZ.current) / diffTime * 10000
+
+                if (speed > 1000) { // EXTREME: Harder threshold (was 500)
+                    // Add progress based on speed/intensity
+                    const bonus = Math.min(speed / 150, 10) // HARDER: Less bonus per shake (was /100, max 15)
+
+                    setProgress(prev => {
+                        const newProgress = Math.min(100, prev + bonus)
+                        progressRef.current = newProgress // Keep ref synced for non-react usage if needed
+
+                        if (newProgress >= 100 && !won) {
+                            handleWin()
+                        }
+                        return newProgress
+                    })
+
+                    setShakeIntensity(Math.min(100, speed / 10))
+
+                    // Haptic feedback on strong shakes
+                    if (speed > 800) {
+                        if (window.Telegram?.WebApp?.HapticFeedback) {
+                            window.Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+                        } else if (navigator.vibrate) {
+                            navigator.vibrate(50)
+                        }
+                    }
+                }
+
+                lastX.current = x
+                lastY.current = y
+                lastZ.current = z
+            }
+        }
+
+        window.addEventListener('devicemotion', handleMotion)
+        return () => window.removeEventListener('devicemotion', handleMotion)
+    }, [permissionGranted, showGame, won, handleWin])
+
+
 
     const requestAccess = async () => {
         // @ts-ignore

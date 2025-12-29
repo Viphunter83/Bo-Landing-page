@@ -11,7 +11,9 @@ export async function POST(req: Request) {
             type: body.type || 'discount_percentage',
             value: body.value || 20,
             userId: body.userId,
-            expiryDays: body.expiryDays || 7
+            expiryDays: body.expiryDays || 7,
+            source: body.source || 'admin_gift',
+            minOrder: body.minOrder
         })
 
         return NextResponse.json({ success: true, coupon })

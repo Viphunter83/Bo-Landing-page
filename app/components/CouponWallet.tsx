@@ -29,22 +29,22 @@ export default function CouponWallet({ isOpen, onClose, onSelect }: CouponWallet
     }, [user])
 
     useEffect(() => {
+        const fetchCoupons = async () => {
+            setLoading(true)
+            try {
+                const list = await getUserCoupons(userId)
+                setCoupons(list)
+            } catch (e) {
+                console.error(e)
+            } finally {
+                setLoading(false)
+            }
+        }
+
         if (isOpen && userId) {
             fetchCoupons()
         }
     }, [isOpen, userId])
-
-    const fetchCoupons = async () => {
-        setLoading(true)
-        try {
-            const list = await getUserCoupons(userId)
-            setCoupons(list)
-        } catch (e) {
-            console.error(e)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const formatDate = (date: any) => {
         if (!date) return 'No stats'
