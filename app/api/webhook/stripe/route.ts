@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getAdminDb } from '../../../lib/firebase-admin'
+import { deductStockForOrderAdmin } from '../../../lib/inventory-admin'
 
 const getStripe = () => {
     const key = process.env.STRIPE_SECRET_KEY
@@ -51,6 +52,20 @@ export async function POST(req: Request) {
                 console.log(`Updated Order ${orderId} to PAID`)
             } catch (dbError) {
                 console.error('Firestore Update Error:', dbError)
+            }
+
+            // 1.1 Trigger Inventory Deduction
+            try {
+                // Fetch the order to get items
+                const orderDoc = await getAdminDb().collection('orders').doc(orderId).get()
+                if (orderDoc.exists) {
+                    const orderData = orderDoc.data()
+                    if (orderData?.items) {
+                        await deductStockForOrderAdmin(orderId, orderData.items)
+                    }
+                }
+            } catch (invError) {
+                console.error('Inventory Deduction Error:', invError)
             }
 
             // 2. Call Notifications (Telegram + Email)

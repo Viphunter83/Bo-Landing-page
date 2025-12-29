@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { checkStockAvailability } from '../../lib/inventory-admin'
 
 // IMPORTANT: Use Environment Variable in Production
 const getStripe = () => {
@@ -20,6 +21,15 @@ export async function POST(req: Request) {
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: 'No items in cart' }, { status: 400 })
+        }
+
+        // 1. Validate Stock
+        const stockCheck = await checkStockAvailability(items)
+        if (!stockCheck.success) {
+            return NextResponse.json({
+                error: `Some items are out of stock: ${stockCheck.missingItems.join(', ')}`,
+                outOfStock: true // Specific flag for UI
+            }, { status: 400 })
         }
 
         const line_items = items.map((item: any) => ({

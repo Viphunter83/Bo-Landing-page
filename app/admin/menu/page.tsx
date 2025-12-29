@@ -3,16 +3,19 @@
 import { useEffect, useState } from 'react'
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
-import { Edit2, Plus, Trash2 } from 'lucide-react'
+import { Edit2, Plus, Trash2, Scale } from 'lucide-react'
 import Image from 'next/image'
 import ImageUpload from '../../components/ImageUpload'
 import { useToast } from '../context/ToastContext'
 import AdminDataTable from '../components/AdminDataTable'
+import { Ingredient, RecipeItem } from '../../lib/types/inventory'
+
 
 export const dynamic = 'force-dynamic'
 
 export default function MenuManager() {
     const [items, setItems] = useState<any[]>([])
+    const [ingredients, setIngredients] = useState<Ingredient[]>([])
     const [editingId, setEditingId] = useState<string | null>(null)
     const [isCreating, setIsCreating] = useState(false)
     const [editForm, setEditForm] = useState<any>({})
@@ -21,11 +24,22 @@ export default function MenuManager() {
     useEffect(() => {
         if (!db) return
 
-        const q = query(collection(db, 'menu_items'), orderBy('category'))
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        // Fetch Menu Items
+        const qMenu = query(collection(db, 'menu_items'), orderBy('category'))
+        const unsubMenu = onSnapshot(qMenu, (snapshot) => {
             setItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
         })
-        return () => unsubscribe()
+
+        // Fetch Ingredients for Recipe Editor
+        const qIngredients = query(collection(db, 'ingredients'), orderBy('name'))
+        const unsubIngredients = onSnapshot(qIngredients, (snapshot) => {
+            setIngredients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ingredient)))
+        })
+
+        return () => {
+            unsubMenu()
+            unsubIngredients()
+        }
     }, [])
 
     const handleEdit = (item: any) => {
@@ -40,7 +54,8 @@ export default function MenuManager() {
             category: 'classic',
             desc: '',
             image: '',
-            stock: 'in_stock'
+            stock: 'in_stock',
+            recipe: [] // { ingredientId, quantity }
         })
         setIsCreating(true)
     }
@@ -227,12 +242,90 @@ export default function MenuManager() {
                                 <div className="col-span-2">
                                     <label className="block text-sm font-medium text-zinc-400 mb-2">Description (EN)</label>
                                     <textarea
-                                        value={editForm.desc || ''}
-                                        onChange={e => setEditForm({ ...editForm, desc: e.target.value })}
-                                        rows={3}
-                                        className="w-full bg-black border border-zinc-700 rounded p-3 text-white focus:border-red-600 outline-none"
-                                        placeholder="Dish description..."
+                                        value={editForm.description?.en || ''}
+                                        onChange={e => setEditForm({ ...editForm, description: { ...editForm.description, en: e.target.value, ru: editForm.description?.ru || '', ar: editForm.description?.ar || '' } })}
+                                        className="w-full bg-black border border-zinc-700 rounded p-3 text-white focus:border-red-600 outline-none h-24"
                                     />
+                                </div>
+
+                                {/* Recipe / Tech Card Section */}
+                                <div className="col-span-2 border-t border-zinc-800 pt-6 mt-2">
+                                    <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                        <Scale size={20} className="text-blue-500" /> Technical Card (Recipe)
+                                    </h4>
+
+                                    <div className="bg-zinc-950 rounded-xl p-4 border border-zinc-800 space-y-3">
+                                        {(editForm.recipe || []).map((rItem: RecipeItem, idx: number) => {
+                                            const ing = ingredients.find(i => i.id === rItem.ingredientId)
+                                            return (
+                                                <div key={idx} className="flex items-center gap-3 bg-zinc-900/50 p-2 rounded border border-zinc-800">
+                                                    <div className="flex-1 text-sm font-bold text-zinc-300">
+                                                        {ing?.name || 'Unknown Ingredient'}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="number"
+                                                            className="w-20 bg-black border border-zinc-700 rounded p-1 text-sm text-center text-white outline-none focus:border-blue-500"
+                                                            value={rItem.quantity}
+                                                            onChange={(e) => {
+                                                                const val = parseFloat(e.target.value) || 0
+                                                                const newRecipe = [...(editForm.recipe || [])]
+                                                                newRecipe[idx].quantity = val
+                                                                setEditForm({ ...editForm, recipe: newRecipe })
+                                                            }}
+                                                        />
+                                                        <span className="text-xs text-zinc-500 font-mono w-8">{ing?.unit}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            const newRecipe = [...(editForm.recipe || [])]
+                                                            newRecipe.splice(idx, 1)
+                                                            setEditForm({ ...editForm, recipe: newRecipe })
+                                                        }}
+                                                        className="text-zinc-600 hover:text-red-500 p-1"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            )
+                                        })}
+
+                                        {/* Add Ingredient Row */}
+                                        <div className="flex gap-2 mt-2">
+                                            <select
+                                                className="flex-1 bg-zinc-900 border border-zinc-700 rounded p-2 text-sm text-zinc-400 outline-none focus:border-blue-500"
+                                                id="new-ingredient-select"
+                                                onChange={(e) => {
+                                                    if (!e.target.value) return
+                                                    const newRecipe = [...(editForm.recipe || [])]
+                                                    newRecipe.push({
+                                                        ingredientId: e.target.value,
+                                                        quantity: 0
+                                                    })
+                                                    setEditForm({ ...editForm, recipe: newRecipe })
+                                                    // Reset select
+                                                    e.target.value = ""
+                                                }}
+                                            >
+                                                <option value="">+ Add Ingredient...</option>
+                                                {ingredients
+                                                    .filter(i => !(editForm.recipe || []).find((r: RecipeItem) => r.ingredientId === i.id))
+                                                    .map(i => (
+                                                        <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>
+                                                    ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {/* Cost Estimation */}
+                                    <div className="flex justify-end mt-2 text-xs text-zinc-500">
+                                        Estimated Cost: <span className="text-white font-mono font-bold ml-1">
+                                            {(editForm.recipe || []).reduce((acc: number, item: RecipeItem) => {
+                                                const ing = ingredients.find(i => i.id === item.ingredientId)
+                                                return acc + (item.quantity * (ing?.costPerUnit || 0))
+                                            }, 0).toFixed(2)} AED
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
