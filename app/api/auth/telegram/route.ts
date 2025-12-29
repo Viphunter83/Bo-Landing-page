@@ -4,7 +4,7 @@ import { getAdminAuth, getAdminDb } from '@/app/lib/firebase-admin'
 
 export async function POST(request: Request) {
     try {
-        const { initData } = await request.json()
+        const { initData, startParam } = await request.json()
 
         if (!initData) {
             return NextResponse.json({ error: 'No data provided' }, { status: 400 })
@@ -56,7 +56,8 @@ export async function POST(request: Request) {
             languageCode: telegramUser.language_code || 'en',
             lastLogin: new Date(),
             authProvider: 'telegram',
-            isPremium: telegramUser.is_premium || false
+            isPremium: telegramUser.is_premium || false,
+            lastStartParam: startParam || null
         }, { merge: true })
 
         // 4. Update Custom Token

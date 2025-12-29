@@ -8,6 +8,7 @@ import { signInWithCustomToken } from 'firebase/auth'
 interface TelegramContextType {
     isTelegram: boolean
     user: TelegramUser | null
+    startParam: string | null
     ready: boolean
 }
 
@@ -27,6 +28,7 @@ declare global {
                 initData: string
                 initDataUnsafe: {
                     user?: TelegramUser
+                    start_param?: string
                 }
                 ready: () => void
                 expand: () => void
@@ -56,12 +58,14 @@ declare global {
 const TelegramContext = createContext<TelegramContextType>({
     isTelegram: false,
     user: null,
+    startParam: null,
     ready: false
 })
 
 export function TelegramProvider({ children }: { children: React.ReactNode }) {
     const [isTelegram, setIsTelegram] = useState(false)
     const [user, setUser] = useState<TelegramUser | null>(null)
+    const [startParam, setStartParam] = useState<string | null>(null)
     const [ready, setReady] = useState(false)
 
     const [error, setError] = useState<string | null>(null)
@@ -80,6 +84,9 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
             // Only initialize if we are actually in Telegram (have initData)
             if (tg.initData) {
                 setIsTelegram(true)
+                if (tg.initDataUnsafe?.start_param) {
+                    setStartParam(tg.initDataUnsafe.start_param)
+                }
                 tg.expand()
                 tg.ready()
 
@@ -87,16 +94,25 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
                     setUser(tg.initDataUnsafe.user)
 
                     // Magic Login Logic
-                    const login = async () => {
+                    const login = async (retryCount = 0) => {
                         try {
                             // 1. Send initData to backend
                             const res = await fetch('/api/auth/telegram', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ initData: tg.initData })
+                                body: JSON.stringify({
+                                    initData: tg.initData,
+                                    startParam: tg.initDataUnsafe.start_param
+                                })
                             })
 
                             if (!res.ok) {
+                                // Retry logic for 5xx errors
+                                if (res.status >= 500 && retryCount < 3) {
+                                    console.log(`Retrying login... (${retryCount + 1})`)
+                                    setTimeout(() => login(retryCount + 1), 1000 * (retryCount + 1))
+                                    return
+                                }
                                 const errorData = await res.json().catch(() => ({}));
                                 throw new Error(errorData.error || `Server Error: ${res.status}`)
                             }
@@ -108,7 +124,10 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
                             console.log('🔮 Magic Login Success')
                         } catch (e: any) {
                             console.error('Magic Login Error', e)
-                            setError(`Login Failed: ${e.message}`)
+                            // Only set global error if retries exhausted
+                            if (retryCount >= 3) {
+                                setError(`Login Failed: ${e.message}`)
+                            }
                         }
                     }
 
@@ -131,7 +150,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <TelegramContext.Provider value={{ isTelegram, user, ready }}>
+        <TelegramContext.Provider value={{ isTelegram, user, startParam, ready }}>
             <Script
                 src="https://telegram.org/js/telegram-web-app.js"
                 strategy="beforeInteractive"

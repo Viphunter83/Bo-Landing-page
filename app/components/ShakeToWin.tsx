@@ -10,7 +10,7 @@ import { checkCooldown, recordGamePlay } from '../lib/db/gamification'
 import { createCoupon } from '../lib/coupons'
 
 export default function ShakeToWin() {
-    const { isTelegram, user } = useTelegram()
+    const { isTelegram, user, startParam } = useTelegram()
     const { isOpen: isCartOpen, toggleCart } = useCart()
 
     const [permissionGranted, setPermissionGranted] = useState(false)
@@ -273,10 +273,27 @@ export default function ShakeToWin() {
     // Auto-show game trigger once if ready
     useEffect(() => {
         if (isTelegram && !won && !showGame) {
-            setPermissionGranted(true)
+            // Auto open if deep linked with 'promo'
+            if (startParam === 'promo' && canPlay) {
+                if (typeof DeviceMotionEvent !== 'undefined' &&
+                    // @ts-ignore
+                    typeof DeviceMotionEvent.requestPermission === 'function') {
+                    // iOS requires user interaction, so we can't fully auto-start, 
+                    // but we can highlight the button or show a toast. 
+                    // For now, let's just highlight the button by setting a flag or reliance on the user to click.
+                    // Actually, let's try to set permissionGranted which might prompt if not already given? 
+                    // No, requestPermission must be triggered by user action.
+                    // So we will just do nothing distinct for iOS here, rely on the user clicking the button.
+                } else {
+                    setShowGame(true)
+                }
+            } else {
+                // Default behavior (existing)
+                setPermissionGranted(true)
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isTelegram])
+    }, [isTelegram, startParam, canPlay])
 
     const formatTime = (ms: number) => {
         const h = Math.floor(ms / (1000 * 60 * 60))
