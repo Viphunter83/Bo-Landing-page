@@ -1,30 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
-import { Clock, CheckCircle, Flame, Bell, Utensils, Truck, Users, MapPin, Phone, AlertCircle } from 'lucide-react'
+import { Clock, CheckCircle, Flame, Bell, Utensils, Truck, Users, MapPin, Phone, AlertCircle, Volume2, VolumeX, Filter } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
 interface UnifiedOrder {
     id: string
     source: 'booking' | 'order'
-    firebaseId: string // original ID for updates
+    firebaseId: string
     name: string
     items: any[] | string
     status: string
     type: 'dine_in' | 'delivery' | 'pickup'
     createdAt: Date
-    bookingDateTime?: string // for bookings
+    bookingDateTime?: string
     notes?: string
-    guests?: string // for bookings
-    totalPrice?: number // for orders
-    address?: string // for delivery
+    guests?: string
+    totalPrice?: number
+    address?: string
     phone?: string
-    platform?: string // for delivery
-    driverId?: string // for delivery
-    deliveryStatus?: string // for delivery
+    platform?: string
+    driverId?: string
+    deliveryStatus?: string
 }
 
 export default function KitchenDisplaySystem() {
@@ -32,6 +32,9 @@ export default function KitchenDisplaySystem() {
     const [hallData, setHallData] = useState<UnifiedOrder[]>([])
     const [deliveryData, setDeliveryData] = useState<UnifiedOrder[]>([])
     const [now, setNow] = useState(new Date())
+    const [filter, setFilter] = useState<'all' | 'kitchen' | 'bar'>('all')
+    const [audioAllowed, setAudioAllowed] = useState(false)
+    const prevOrdersLengthRef = useRef(0)
 
     // Update relative time every minute
     useEffect(() => {
@@ -44,6 +47,25 @@ export default function KitchenDisplaySystem() {
         const merged = [...hallData, ...deliveryData].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
         setOrders(merged)
     }, [hallData, deliveryData])
+
+    // Sync ref on mount/update so we don't play sound on initial load
+    useEffect(() => {
+        if (orders.length > 0 && prevOrdersLengthRef.current === 0) {
+            prevOrdersLengthRef.current = orders.length
+        }
+    }, [orders.length])
+
+    // Sound Effect
+    useEffect(() => {
+        if (orders.length > prevOrdersLengthRef.current) {
+            if (audioAllowed) {
+                // Using a pleasant notification bell sound
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3')
+                audio.play().catch(e => console.log('Audio auto-play blocked', e))
+            }
+        }
+        prevOrdersLengthRef.current = orders.length
+    }, [orders.length, audioAllowed])
 
     useEffect(() => {
         if (!db) return
@@ -140,6 +162,35 @@ export default function KitchenDisplaySystem() {
         return minutes < 0 ? 0 : minutes // Prevent negative time
     }
 
+    // Filter Logic
+    const getOrderCategoryType = (order: UnifiedOrder): 'kitchen' | 'bar' | 'mixed' => {
+        if (order.source === 'booking') return 'kitchen' // Bookings are tables/food usually
+        if (!Array.isArray(order.items)) return 'kitchen'
+
+        const hasFood = order.items.some((i: any) => {
+            const name = i.name.toLowerCase()
+            // Negative look for drinks
+            return !name.includes('coffee') && !name.includes('tea') && !name.includes('shake') && !name.includes('water') && !name.includes('coke') && !name.includes('drink')
+        })
+        const hasDrink = order.items.some((i: any) => {
+            const name = i.name.toLowerCase()
+            // Positive look for drinks
+            return name.includes('coffee') || name.includes('tea') || name.includes('shake') || name.includes('water') || name.includes('coke') || name.includes('drink')
+        })
+
+        if (hasFood && hasDrink) return 'mixed'
+        if (hasDrink) return 'bar'
+        return 'kitchen'
+    }
+
+    const filteredOrders = orders.filter(o => {
+        if (filter === 'all') return true
+        const type = getOrderCategoryType(o)
+        if (filter === 'kitchen') return type === 'kitchen' || type === 'mixed'
+        if (filter === 'bar') return type === 'bar' || type === 'mixed'
+        return true
+    })
+
     // Columns Definition
     const columns = [
         {
@@ -148,7 +199,7 @@ export default function KitchenDisplaySystem() {
             icon: Bell,
             color: 'border-zinc-500',
             bg: 'bg-zinc-800/50',
-            orders: orders.filter(o => o.status === 'pending' || o.status === 'confirmed' || o.status === 'new'),
+            orders: filteredOrders.filter(o => o.status === 'pending' || o.status === 'confirmed' || o.status === 'new'),
             action: { label: 'Start Cooking', status: 'preparing', icon: Flame }
         },
         {
@@ -157,7 +208,7 @@ export default function KitchenDisplaySystem() {
             icon: Flame,
             color: 'border-orange-500',
             bg: 'bg-orange-500/10',
-            orders: orders.filter(o => o.status === 'preparing' || o.status === 'cooking'),
+            orders: filteredOrders.filter(o => o.status === 'preparing' || o.status === 'cooking'),
             action: { label: 'Mark Ready', status: 'ready', icon: CheckCircle }
         },
         {
@@ -166,7 +217,7 @@ export default function KitchenDisplaySystem() {
             icon: CheckCircle,
             color: 'border-green-500',
             bg: 'bg-green-500/10',
-            orders: orders.filter(o => o.status === 'ready'),
+            orders: filteredOrders.filter(o => o.status === 'ready'),
             action: { label: 'Complete / Served', status: 'completed', icon: Utensils }
         }
     ]
@@ -180,9 +231,25 @@ export default function KitchenDisplaySystem() {
                     </div>
                     <div>
                         <h1 className="text-3xl font-black tracking-tighter uppercase">Unified KDS</h1>
-                        <div className="flex gap-4 text-xs font-bold uppercase tracking-wider mt-1">
-                            <span className="flex items-center gap-1 text-orange-400"><Users size={12} /> Hall ({hallData.length})</span>
-                            <span className="flex items-center gap-1 text-blue-400"><Truck size={12} /> Delivery ({deliveryData.length})</span>
+                        <div className="flex items-center gap-4 mt-1">
+                            <div className="flex bg-zinc-900 rounded-lg p-1 gap-1 border border-zinc-800">
+                                {['all', 'kitchen', 'bar'].map(f => (
+                                    <button
+                                        key={f}
+                                        onClick={() => setFilter(f as any)}
+                                        className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold transition-all ${filter === f ? 'bg-zinc-700 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                    >
+                                        {f}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setAudioAllowed(!audioAllowed)}
+                                className={`flex items-center gap-2 text-xs font-bold uppercase transition-colors ${audioAllowed ? 'text-green-500' : 'text-zinc-500'}`}
+                            >
+                                {audioAllowed ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                                {audioAllowed ? 'Sound ON' : 'Muted'}
+                            </button>
                         </div>
                     </div>
                 </div>

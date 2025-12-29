@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
-import { Save, Image as ImageIcon, Instagram, Link as LinkIcon, AlertCircle } from 'lucide-react'
+import { Save, Image as ImageIcon, Instagram, Link as LinkIcon, AlertCircle, Users } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 
 interface SiteSettings {
@@ -12,6 +12,7 @@ interface SiteSettings {
     heroSub?: string
     socialImages: string[]
     instagramToken?: string
+    waiterPin?: string
 }
 
 export default function SettingsPage() {
@@ -20,7 +21,8 @@ export default function SettingsPage() {
         heroTitle: '',
         heroSub: '',
         socialImages: ['', '', '', ''],
-        instagramToken: ''
+        instagramToken: '',
+        waiterPin: '1234'
     })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -205,6 +207,33 @@ export default function SettingsPage() {
                         <p className="text-xs text-zinc-500 mt-2 flex items-center gap-1">
                             <AlertCircle size={12} />
                             Token allows automatic feed fetching. Leave empty to use manual images above.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Access Control */}
+            <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 space-y-6">
+                <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
+                    <div className="p-2 bg-purple-500/20 text-purple-400 rounded-lg">
+                        <Users size={20} />
+                    </div>
+                    <h2 className="text-xl font-bold text-white">Access Control</h2>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-400 mb-2">Waiter Mode PIN</label>
+                        <input
+                            type="text"
+                            maxLength={4}
+                            value={settings.waiterPin || ''}
+                            onChange={e => setSettings({ ...settings, waiterPin: e.target.value.replace(/\D/g, '') })}
+                            className="bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors font-mono text-center tracking-[0.5em] w-32"
+                            placeholder="0000"
+                        />
+                        <p className="text-xs text-zinc-500 mt-2">
+                            PIN code used to access the Waiter Mode at <code>/waiter</code>.
                         </p>
                     </div>
                 </div>

@@ -41,14 +41,18 @@
 ## 📋 План (Backlog)
 
 ### 1. Operations
-- [ ] **Kitchen Display System (KDS)**: Экран для поваров.
-- [ ] **Inventory**: Списание ингредиентов по техкартам (Recipe Cards).
+- [x] **Kitchen Display System (KDS)**: Базовая версия (Unified KDS).
+- [x] **Inventory**: Складской учет, списания, техкарты.
+- [ ] **Waiter's Mode**: Мобильный интерфейс для официантов (Прием заказа -> KDS).
+- [ ] **Smart KDS**: Звуковые уведомления + Разделение на цеха (Бар/Кухня).
 
 ### 2. Marketing
+- [ ] **Winback Automation**: Авто-рассылка купонов "вернись" (Logic implementation).
 - [ ] **Referral System**: "Пригласи друга - получи 50 AED".
-- [ ] **Push Notifications**: Напоминания о забытой корзине (через Telegram).
+- [ ] **Push Notifications**: Напоминания о забытой корзине.
 
 ### 3. Scaling
+- [ ] **QR-Menu w/ Pay-at-Table**: Концепция (Research Phase).
 - [ ] **Multi-branch**: Поддержка нескольких филиалов.
 - [ ] **PWA**: Возможность установки как приложение на iOS/Android.
 
