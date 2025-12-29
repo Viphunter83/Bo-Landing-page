@@ -256,6 +256,13 @@ export default function InventoryManager() {
                                     <Plus size={14} /> Restock
                                 </button>
                                 <button
+                                    onClick={() => handleWastage(item)}
+                                    className="flex-1 bg-orange-900/40 hover:bg-orange-900/60 text-orange-500 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-orange-900/50"
+                                >
+                                    <AlertTriangle size={14} /> Waste
+                                </button>
+                                <div className="w-px bg-zinc-800 mx-1"></div>
+                                <button
                                     onClick={() => handleEdit(item)}
                                     className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2"
                                 >
