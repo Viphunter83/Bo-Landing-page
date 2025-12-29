@@ -80,7 +80,7 @@ export default function KitchenDisplaySystem() {
         // 2. Listen to Orders (Delivery)
         const qOrders = query(
             collection(db, 'orders'),
-            where('status', 'in', ['new', 'cooking', 'ready'])
+            where('status', 'in', ['new', 'confirmed', 'cooking', 'ready'])
         )
 
         const unsubscribeOrders = onSnapshot(qOrders, (snap) => {
@@ -93,7 +93,7 @@ export default function KitchenDisplaySystem() {
                     name: docData.userId || 'Online Customer',
                     items: docData.items,
                     // Map delivery statuses to unified KDS statuses
-                    status: docData.status === 'new' ? 'pending' : docData.status === 'cooking' ? 'preparing' : docData.status,
+                    status: (docData.status === 'new' || docData.status === 'confirmed') ? 'pending' : docData.status === 'cooking' ? 'preparing' : docData.status,
                     type: docData.type || 'delivery',
                     createdAt: docData.createdAt?.seconds ? new Date(docData.createdAt.seconds * 1000) : new Date(),
                     totalPrice: docData.total,
@@ -125,7 +125,6 @@ export default function KitchenDisplaySystem() {
         // Specific logic for Delivery mapping
         if (order.source === 'order') {
             if (newStatus === 'preparing') updatePayload.status = 'cooking' // Map back to DB schema
-            if (newStatus === 'completed') updatePayload.status = 'ready' // KDS Complete -> Ready for Dispatch in Logistics
         }
 
         try {

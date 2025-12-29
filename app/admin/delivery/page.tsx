@@ -210,7 +210,9 @@ export default function DeliveryAdminPage() {
                             </h3>
                             <span className="bg-white/10 text-white text-xs font-bold px-2 py-1 rounded-full">
                                 {orders.filter((o: any) =>
-                                    (col.id === 'out_for_delivery' ? o.deliveryStatus === 'out_for_delivery' : o.status === col.id)
+                                (col.id === 'out_for_delivery' ? o.deliveryStatus === 'out_for_delivery' :
+                                    col.id === 'new' ? (o.status === 'new' || o.status === 'confirmed') :
+                                        o.status === col.id)
                                 ).length}
                             </span>
                         </div>
@@ -221,6 +223,7 @@ export default function DeliveryAdminPage() {
                                 .filter((o: any) => {
                                     if (col.id === 'out_for_delivery') return o.deliveryStatus === 'out_for_delivery'
                                     if (col.id === 'ready') return o.status === 'ready' && o.deliveryStatus !== 'out_for_delivery'
+                                    if (col.id === 'new') return o.status === 'new' || o.status === 'confirmed'
                                     return o.status === col.id
                                 })
                                 .map((order: any) => (
