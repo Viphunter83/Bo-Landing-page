@@ -1,7 +1,7 @@
 
 export type CouponType = 'discount_percentage' | 'discount_fixed' | 'free_item'
 export type CouponStatus = 'active' | 'used' | 'expired'
-export type CouponSource = 'shake_game' | 'lunch_quiz' | 'admin_gift' | 'referral'
+export type CouponSource = 'shake_game' | 'lunch_quiz' | 'admin_gift' | 'referral' | 'winback_auto'
 
 export interface Coupon {
     id: string
