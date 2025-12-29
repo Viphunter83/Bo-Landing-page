@@ -13,7 +13,8 @@ import {
     Database,
     LogOut,
     X,
-    Sliders
+    Sliders,
+    Package
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -58,6 +59,7 @@ export default function AdminSidebar({ isOpen, onClose, onSignOut }: AdminSideba
                         <NavLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
                         <hr className="border-zinc-800 my-2" />
                         <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 pl-3">Operations</div>
+                        <NavLink href="/admin/inventory" icon={<Package size={20} />} label="Inventory / Stock" />
                         <NavLink href="/admin/menu" icon={<Menu size={20} />} label="Menu Manager" />
                         <NavLink href="/admin/kitchen" icon={<Users size={20} />} label="Kitchen Display" />
                         <NavLink href="/admin/customers" icon={<Users size={20} />} label="CRM / Guests" />
