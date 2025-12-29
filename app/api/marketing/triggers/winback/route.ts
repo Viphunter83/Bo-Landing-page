@@ -1,8 +1,3 @@
-import { NextResponse } from 'next/server'
-import { db } from '@/app/lib/firebase'
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
-
-export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server'
 import { db } from '@/app/lib/firebase'
