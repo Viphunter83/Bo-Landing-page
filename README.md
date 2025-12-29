@@ -51,38 +51,40 @@ vercel
 
 Проект готов к деплою через Vercel MCP инструменты.
 
-## ✨ Особенности
+## ✨ Особенности (Features)
 
-- 🌍 **Мультиязычность**: EN, RU, AR с автоматической RTL поддержкой для арабского
-- 📱 **Mobile-First**: Полностью адаптивный дизайн
-- ⚡ **Оптимизация**: Next.js Image для быстрой загрузки
-- 🎨 **Современный дизайн**: Темная тема с золотыми акцентами
-- 🔥 **Vibe Check**: Интерактивный выбор настроения
-- 📸 **Social Proof**: Интеграция с Instagram
+### 🎮 RPG Loyalty System
+- **Shake-to-Win**: Геймифицированная механика получения скидок с использованием акселерометра.
+- **Coupon Wallet**: Встроенный кошелек для хранения и применения выигранных купонов.
+- **Smart Cooldowns**: Система ограничений (24ч) для предотвращения абуза.
+
+### 📊 Professional Analytics
+- **Financial Dashboard**: EBITDA, Revenue, COGS в реальном времени.
+- **Interactive Charts**: Визуализация трендов продаж и популярных позиций.
+
+### 🌍 Core Features
+- **Мультиязычность**: Полная поддержка EN, RU, AR (RTL).
+- **Payments**: Интеграция Stripe (Test Mode) и наличных расчетов.
+- **Telegram Native**: Глубокая интеграция с Telegram Mini Apps.
+
+## 🗺️ Статус и Дорожная Карта
+
+Подробный статус проекта и план разработки доступны в файле [ROADMAP.md](./ROADMAP.md).
+
+Текущий статус: **Production Safe Beta** 🚀
 
 ## 📁 Структура проекта
 
 ```
 ├── app/
-│   ├── components/     # React компоненты
-│   ├── data/          # Данные и переводы
-│   ├── globals.css    # Глобальные стили
-│   ├── layout.tsx     # Root layout
-│   └── page.tsx       # Главная страница
-├── public/            # Статические файлы
-├── next.config.js     # Конфигурация Next.js
-├── tailwind.config.js # Конфигурация Tailwind
-└── package.json       # Зависимости
+│   ├── admin/          # Админ-панель (Защищена)
+│   ├── api/            # Backend API (Checkout, Webhooks)
+│   ├── components/     # UI Components (Shadcn + Custom)
+│   ├── lib/            # Утилиты, DB Logic, Types
+│   └── ...
+├── public/            # Статика
+└── ...
 ```
-
-## 🎯 Следующие шаги для улучшения
-
-1. Добавить форму бронирования стола
-2. Интеграция с реальным Instagram API
-3. Добавить анимации при скролле (Framer Motion)
-4. SEO оптимизация
-5. Добавить Google Maps интеграцию
-6. Аналитика (Google Analytics / Vercel Analytics)
 
 ## 📝 Лицензия
 
