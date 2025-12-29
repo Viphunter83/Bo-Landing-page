@@ -26,12 +26,18 @@ export default function WaiterApp() {
     const [cart, setCart] = useState<TableOrder>({})
     const [activeCategory, setActiveCategory] = useState('classic')
     const [submitting, setSubmitting] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Auth Check
     useEffect(() => {
+        if (!mounted) return
         const auth = localStorage.getItem('waiter_auth')
         if (!auth) router.push('/waiter/login')
-    }, [router])
+    }, [router, mounted])
 
     // Logout
     const handleLogout = () => {
@@ -114,6 +120,8 @@ export default function WaiterApp() {
         setSubmitting(false)
     }
 
+    if (!mounted) return <div className="min-h-screen bg-black" />
+
     // Views
     if (view === 'tables') {
         return (
@@ -173,7 +181,8 @@ export default function WaiterApp() {
                 {/* Menu List */}
                 <div className="flex-1 overflow-y-auto p-4 pb-32">
                     {/* Categories */}
-                    <div className="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar">
+                    <div className="flex gap-2 overflow-x-auto pb-4 mb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        <style dangerouslySetInnerHTML={{ __html: `::-webkit-scrollbar { display: none; }` }} />
                         {['classic', 'spicy', 'fresh', 'drinks', 'desserts'].map(cat => (
                             <button
                                 key={cat}
@@ -188,7 +197,7 @@ export default function WaiterApp() {
                     <div className="space-y-4">
                         {getMenuByCategory(activeCategory).map(item => (
                             <div key={item.id} className="bg-zinc-900/50 rounded-xl p-3 flex gap-4 active:bg-zinc-800 transition-colors" onClick={() => addToCart(item)}>
-                                {/* ESLint disable next line for img */}
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover bg-zinc-800" />
                                 <div className="flex-1 py-1">
                                     <h3 className="font-bold leading-tight">{item.name}</h3>
@@ -251,16 +260,6 @@ export default function WaiterApp() {
                     </div>
                 </div>
             </div>
-
-            <style jsx>{`
-                .no-scrollbar::-webkit-scrollbar {
-                    display: none;
-                }
-                .no-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
-                }
-            `}</style>
         </div>
     )
 }
