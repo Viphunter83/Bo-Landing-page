@@ -2,6 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { MenuItem } from '../data/menuData'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
+import { useTelegram } from './TelegramContext'
 
 export interface CartItem extends MenuItem {
     quantity: number
@@ -25,6 +28,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([])
     const [isOpen, setIsOpen] = useState(false)
     const [isSurge, setIsSurge] = useState(false)
+    const { user } = useTelegram()
 
     // Check for Rush Mode
     useEffect(() => {
@@ -38,12 +42,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         checkSurge()
-        // Poll every minute? Or just on mount/open. For MVP just mount + every 30s
+        // Poll every 30s
         const interval = setInterval(checkSurge, 30000)
         return () => clearInterval(interval)
     }, [])
-
-    // Load from local storage
 
     // Load from local storage
     useEffect(() => {
@@ -57,6 +59,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         localStorage.setItem('bo_cart', JSON.stringify(items))
     }, [items])
+
+    // Sync to DB (Debounced) - For Cart Recovery
+    useEffect(() => {
+        // Resolve effective user ID
+        const userId = user?.id?.toString() || localStorage.getItem('bo_guest_id')
+
+        if (!userId || !db) return
+
+        const timeout = setTimeout(() => {
+            if (!db) return
+            // Check if we should sync (items > 0)
+            if (items.length > 0) {
+                setDoc(doc(db, 'customers', userId), {
+                    cart: items,
+                    cartUpdatedAt: new Date().toISOString()
+                }, { merge: true }).catch(err => console.error("Cart Sync Failed", err))
+            }
+        }, 2000)
+
+        return () => clearTimeout(timeout)
+    }, [items, user])
 
     const addToCart = (item: MenuItem, quantity = 1) => {
         setItems(prev => {

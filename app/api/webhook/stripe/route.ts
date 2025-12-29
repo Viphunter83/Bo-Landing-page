@@ -82,6 +82,40 @@ export async function POST(req: Request) {
                 console.error('Inventory Deduction Error:', invError)
             }
 
+            // 4. Referral Reward Logic
+            try {
+                if (orderData?.promoCode) {
+                    const couponsSnap = await db.collection('coupons').where('code', '==', orderData.promoCode).limit(1).get()
+                    if (!couponsSnap.empty) {
+                        const coupon = couponsSnap.docs[0].data()
+                        if (coupon.source === 'referral' && coupon.userId) {
+                            // Verify if it's the first order for this customer (Referee)
+                            // We query orders by email or phone
+                            const identifier = orderData.email || orderData.customerPhone
+                            if (identifier) {
+                                // Simple check: Count paid orders
+                                const pastOrders = await db.collection('orders')
+                                    .where('paymentStatus', '==', 'paid')
+                                    .where(orderData.email ? 'email' : 'customerPhone', '==', identifier)
+                                    .count()
+                                    .get()
+
+                                // If count is 1 (this order is the first paid one), reward referrer
+                                if (pastOrders.data().count === 1) {
+                                    const { rewardReferrerAdmin } = require('../../../lib/referral-admin')
+                                    await rewardReferrerAdmin(coupon.userId, 50) // 50 AED Reward
+                                    console.log(`[Referral] Rewarded ${coupon.userId} for new customer ${identifier}`)
+                                } else {
+                                    console.log(`[Referral] Skipped reward - customer ${identifier} is not new.`)
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (refError) {
+                console.error('Referral Reward Error:', refError)
+            }
+
             // 2. Call Notifications (Telegram + Email)
             // Telegram
             await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/notifications/telegram`, {

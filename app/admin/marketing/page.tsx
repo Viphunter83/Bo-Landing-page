@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { db } from '../../lib/firebase'
 import { collection, query, getDocs, where } from 'firebase/firestore'
-import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon, Clock } from 'lucide-react'
+import Link from 'next/link'
+import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon, Clock, Coins } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import { fullMenu } from '../../data/menuData'
 
@@ -405,11 +406,17 @@ function MarketingContent() {
                     <h1 className="text-3xl font-bold text-white mb-2">Marketing Hub</h1>
                     <p className="text-zinc-400">Turn Quiz Data into Revenue.</p>
                 </div>
-                <div className="bg-zinc-900 border border-zinc-800 px-6 py-3 rounded-xl flex items-center gap-3">
-                    <UsersIcon className="text-yellow-500" />
-                    <div>
-                        <div className="text-2xl font-bold text-white">{totalLeads}</div>
-                        <div className="text-xs text-zinc-500 uppercase tracking-wider">Total Leads</div>
+                <div className="flex items-center gap-4">
+                    <Link href="/admin/marketing/referrals" className="bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-bold px-6 py-3 rounded-xl flex items-center gap-2 transition-all hover:scale-105 shadow-lg shadow-yellow-500/20">
+                        <Coins size={20} />
+                        Referral Program
+                    </Link>
+                    <div className="bg-zinc-900 border border-zinc-800 px-6 py-3 rounded-xl flex items-center gap-3">
+                        <UsersIcon className="text-yellow-500" />
+                        <div>
+                            <div className="text-2xl font-bold text-white">{totalLeads}</div>
+                            <div className="text-xs text-zinc-500 uppercase tracking-wider">Total Leads</div>
+                        </div>
                     </div>
                 </div>
             </header>

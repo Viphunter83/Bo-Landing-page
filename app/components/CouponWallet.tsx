@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Wallet, Gift, Clock, AlertCircle, Loader2, Check } from 'lucide-react'
+import { X, Wallet, Gift, Clock, AlertCircle, Loader2, Check, Copy, Send } from 'lucide-react'
 import { useTelegram } from '../context/TelegramContext'
 import { getUserCoupons } from '../lib/coupons'
 import { Coupon } from '../lib/types/marketing'
@@ -18,6 +18,7 @@ export default function CouponWallet({ isOpen, onClose, onSelect }: CouponWallet
     const [coupons, setCoupons] = useState<Coupon[]>([])
     const [loading, setLoading] = useState(false)
     const [userId, setUserId] = useState<string>('')
+    const [referralCode, setReferralCode] = useState<string>('')
 
     useEffect(() => {
         // Resolve User ID (Same logic as ShakeGame)
@@ -27,6 +28,24 @@ export default function CouponWallet({ isOpen, onClose, onSelect }: CouponWallet
         }
         setUserId(uid || '')
     }, [user])
+
+    // Load Referral Code
+    useEffect(() => {
+        if (!userId || !isOpen) return
+
+        fetch('/api/marketing/referral', {
+            method: 'POST',
+            body: JSON.stringify({
+                userId,
+                name: user?.first_name || 'Friend'
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code) setReferralCode(data.code)
+            })
+            .catch(err => console.error("Failed to load referral code", err))
+    }, [userId, isOpen, user])
 
     useEffect(() => {
         const fetchCoupons = async () => {
@@ -98,6 +117,51 @@ export default function CouponWallet({ isOpen, onClose, onSelect }: CouponWallet
 
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+                            {/* NEW: Referral Banner */}
+                            <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-5 shadow-xl">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                                <div className="relative z-10">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-black text-white text-lg">INVITE & EARN</h3>
+                                        <div className="bg-white/20 p-1.5 rounded-lg">
+                                            <Gift size={16} className="text-white" />
+                                        </div>
+                                    </div>
+                                    <p className="text-indigo-100 text-xs mb-4 max-w-[80%]">
+                                        Share your secret code. Friends get <span className="font-bold text-white">50 AED</span>, you get <span className="font-bold text-white">50 AED</span> after their first order!
+                                    </p>
+
+                                    {/* Code Display */}
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between">
+                                            <code className="font-mono font-bold text-white tracking-widest">
+                                                {referralCode || 'LOADING...'}
+                                            </code>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(referralCode)
+                                                    // Simple alert or toast if available, otherwise just feedback
+                                                }}
+                                                className="text-indigo-200 hover:text-white"
+                                            >
+                                                <Copy size={16} />
+                                            </button>
+                                        </div>
+                                        <a
+                                            href={`https://t.me/share/url?url=${encodeURIComponent(`https://bo.app/start?ref=${referralCode}`)}&text=${encodeURIComponent('🎁 50 AED gift for you at Bo Dubai! Best Bun Bo Hue in town. 🍜')}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="bg-white text-indigo-600 font-bold px-4 rounded-xl flex items-center justify-center hover:bg-indigo-50 transition-colors"
+                                        >
+                                            <Send size={18} />
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider px-2">Your Coupons</h3>
+
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
                                     <Loader2 className="animate-spin mb-4" />

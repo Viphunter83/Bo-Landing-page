@@ -30,10 +30,11 @@ export async function createCoupon(data: {
     expiryDays?: number
     source: CouponSource
     minOrder?: number
+    code?: string // Optional custom code
 }) {
     if (!db) throw new Error('DB not initialized')
 
-    const code = await generateUniqueCode()
+    const code = data.code || await generateUniqueCode()
     const expiry = new Date()
     expiry.setDate(expiry.getDate() + (data.expiryDays || 7))
 

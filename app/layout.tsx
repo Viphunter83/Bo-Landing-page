@@ -53,8 +53,10 @@ export const metadata: Metadata = {
   },
 }
 
+import { Suspense } from 'react'
 import { TelegramProvider } from './context/TelegramContext'
 import { CartProvider } from './context/CartContext'
+import ReferralHandler from './components/ReferralHandler'
 
 export default function RootLayout({
   children,
@@ -67,6 +69,9 @@ export default function RootLayout({
         <TelegramProvider>
           <CartProvider>
             <ShakeToWin />
+            <Suspense fallback={null}>
+              <ReferralHandler />
+            </Suspense>
             <SchemaScript />
             {/* Global Providers can go here */}
             {children}

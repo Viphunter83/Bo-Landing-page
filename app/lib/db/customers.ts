@@ -20,6 +20,15 @@ export interface Customer {
     firstSeenDate: any;
 
     preferences?: CustomerPreferences;
+
+    // Referral System
+    referralCode?: string; // My unique code (e.g. BO-ALEX-99)
+    referredBy?: string; // Who invited me
+    walletBalance?: number; // Store credit in AED
+
+    // Stats
+    totalReferrals?: number;
+    totalReferralEarnings?: number;
 }
 
 /**

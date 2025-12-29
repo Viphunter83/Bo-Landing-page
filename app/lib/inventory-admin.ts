@@ -10,15 +10,13 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
     if (!orderItems || orderItems.length === 0) return
 
     const db = getAdminDb()
-    const depletedIngredientIds: string[] = []
 
     try {
         await db.runTransaction(async (transaction) => {
-            // 1. Fetch Menu Items (Recipes)
+            // 1. Fetch Menu Items in the Order (to get their recipes)
             const itemNames = orderItems.map(i => i.name)
 
-            // Note: 'in' queries are limited to 10. Split if needed.
-            // For MVP assuming < 10 distinct items.
+            // Note: 'in' queries limited to 10.
             const menuSnapshot = await transaction.get(
                 db.collection('menu_items').where('name', 'in', itemNames)
             )
@@ -26,8 +24,8 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
             const menuMap = new Map()
             menuSnapshot.docs.forEach(d => menuMap.set(d.data().name, d.data()))
 
-            // 2. Calculate Usage
-            const ingredientUsage = new Map<string, number>() // id -> total
+            // 2. Calculate Ingredient Usage
+            const ingredientUsage = new Map<string, number>() // id -> total check
 
             for (const item of orderItems) {
                 const menuItem = menuMap.get(item.name)
@@ -42,83 +40,84 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
 
             if (ingredientUsage.size === 0) return
 
-            // 3. Update Ingredients & Create Transactions
-            // Use Array.from for map usage in stricter environments if needed
-            const usageEntries = Array.from(ingredientUsage.entries())
+            // 3. Fetch Ingredients to Check Stock
+            // We use standard reads here (blocking)
+            const ingredientIds = Array.from(ingredientUsage.keys())
+            const ingredientsRefs = ingredientIds.map(id => db.collection('ingredients').doc(id))
+            const ingredientsDocs = await transaction.getAll(...ingredientsRefs)
 
-            for (const [ingId, amount] of usageEntries) {
-                const ingRef = db.collection('ingredients').doc(ingId)
+            const depletedIngredientIds: string[] = []
+            const updatesByIngredientString: { ref: any, newStock: number, id: string }[] = []
 
-                const ingDoc = await transaction.get(ingRef)
-                if (!ingDoc.exists) continue
+            ingredientsDocs.forEach(doc => {
+                if (!doc.exists) return
+                const data = doc.data()
+                const ingId = doc.id
+                const usage = ingredientUsage.get(ingId) || 0
+                const currentStock = data?.currentStock || 0
+                const newStock = currentStock - usage
 
-                const currentStock = ingDoc.data()?.currentStock || 0
-                const newStock = currentStock - amount
+                updatesByIngredientString.push({ ref: doc.ref, newStock, id: ingId })
 
-                // Update Stock
-                transaction.update(ingRef, {
-                    currentStock: newStock,
+                // Mark for Stop List if depleted
+                // We consider <= 0 as depleted
+                if (newStock <= 0) {
+                    depletedIngredientIds.push(ingId)
+                }
+            })
+
+            // 4. ATOMIC STOP LIST: If any ingredient is depleted, fetch dependent menu items NOW
+            // to update them in the same transaction.
+            if (depletedIngredientIds.length > 0) {
+                // WE MUST READ before WRITING in a transaction.
+
+                const inStockMenuQuery = db.collection('menu_items').where('stock', '==', 'in_stock')
+                const inStockMenuSnap = await transaction.get(inStockMenuQuery)
+
+                inStockMenuSnap.docs.forEach(menuDoc => {
+                    const item = menuDoc.data()
+                    if (!item.recipe) return
+
+                    // Check if this item uses any depleted ingredient
+                    const usesDepleted = (item.recipe as RecipeItem[]).some(
+                        r => depletedIngredientIds.includes(r.ingredientId)
+                    )
+
+                    if (usesDepleted) {
+                        transaction.update(menuDoc.ref, {
+                            stock: 'out_of_stock',
+                            updatedAt: FieldValue.serverTimestamp()
+                        })
+                        console.log(`[Atomic StopList] Disabling ${item.name} due to depletion`)
+                    }
+                })
+            }
+
+            // 5. Apply Ingredient Updates (Writes)
+            updatesByIngredientString.forEach(update => {
+                transaction.update(update.ref, {
+                    currentStock: update.newStock,
                     updatedAt: FieldValue.serverTimestamp()
                 })
 
                 // Log Transaction
                 const txRef = db.collection('inventory_transactions').doc()
                 transaction.set(txRef, {
-                    ingredientId: ingId,
+                    ingredientId: update.id,
                     type: 'order',
-                    quantity: -amount,
+                    quantity: - (ingredientUsage.get(update.id) || 0),
                     referenceId: orderId,
                     createdAt: FieldValue.serverTimestamp(),
-                    createdBy: 'system (webhook)'
+                    createdBy: 'system (webhook)',
+                    isOversold: update.newStock < 0 // Flag oversold
                 })
-
-                if (newStock <= 0) {
-                    depletedIngredientIds.push(ingId)
-                }
-            }
+            })
         })
-        console.log(`[Inventory] Deducted stock for order ${orderId}`)
-
-        // 4. Trigger Stop List (Post-Transaction)
-        if (depletedIngredientIds.length > 0) {
-            await disableMenuItemsByIngredients(db, depletedIngredientIds)
-        }
+        console.log(`[Inventory] Atomic deduction complete for Order ${orderId}`)
 
     } catch (e) {
-        console.error("[Inventory] Failed to deduct stock:", e)
-    }
-}
-
-/**
- * Stop List: Disables menu items that rely on depleted ingredients.
- */
-async function disableMenuItemsByIngredients(db: FirebaseFirestore.Firestore, ingredientIds: string[]) {
-    try {
-        const menuSnap = await db.collection('menu_items').where('stock', '==', 'in_stock').get()
-        const batch = db.batch()
-        let updateCount = 0
-
-        menuSnap.docs.forEach(doc => {
-            const item = doc.data()
-            if (!item.recipe) return
-
-            const usesDepletedIngredient = (item.recipe as RecipeItem[]).some(
-                r => ingredientIds.includes(r.ingredientId)
-            )
-
-            if (usesDepletedIngredient) {
-                batch.update(doc.ref, { stock: 'out_of_stock' })
-                updateCount++
-                console.log(`[StopList] Constructive disabling: ${item.name}`)
-            }
-        })
-
-        if (updateCount > 0) {
-            await batch.commit()
-            console.log(`[StopList] Automatically disabled ${updateCount} dishes due to low stock.`)
-        }
-    } catch (e) {
-        console.error("[StopList] Failed to update menu availability:", e)
+        console.error("[Inventory] Transaction failed:", e)
+        // We log error but don't crash webhook (let Stripe retry if network error, but logic error is final)
     }
 }
 

@@ -60,6 +60,19 @@ export default function CartDrawer({ lang }: { lang: string }) {
         }
     }, [selectedZoneId, orderType, total, zones])
 
+    // Auto-Apply Referral Code
+    useEffect(() => {
+        if (isOpen && !promoCode && !appliedCouponId) {
+            const storedRef = localStorage.getItem('bo_referral_code')
+            if (storedRef) {
+                setPromoCode(storedRef)
+                // Small delay to ensure state is ready or just call directly
+                applyPromo(storedRef)
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen])
+
     // Promo Code State
     const [promoCode, setPromoCode] = useState('')
     const [discount, setDiscount] = useState(0)
@@ -618,14 +631,19 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                     })
 
                                                     const data = await res.json()
+
+                                                    if (!res.ok) {
+                                                        throw new Error(data.error || 'Checkout initialization failed')
+                                                    }
+
                                                     if (data.url) {
                                                         window.location.href = data.url
                                                     } else {
-                                                        throw new Error('No payment URL')
+                                                        throw new Error('No payment URL received')
                                                     }
-                                                } catch (e) {
+                                                } catch (e: any) {
                                                     console.error(e)
-                                                    setValidationError('Payment System Error')
+                                                    setValidationError(e.message || 'Payment System Error')
                                                     setIsSubmitting(false)
                                                 }
                                             } else {

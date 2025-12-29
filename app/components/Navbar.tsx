@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Menu, X } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
+import NotificationBell from './NotificationBell'
 import { useTelegram } from '../context/TelegramContext'
 
 interface NavbarProps {
@@ -47,6 +48,7 @@ export default function Navbar({ lang, t, onBookClick }: NavbarProps) {
         <div className="hidden md:flex items-center gap-8">
           <a href="#menu" className="text-white hover:text-yellow-400 transition-colors font-medium">{t.nav.menu}</a>
           <a href="#location" className="text-white hover:text-yellow-400 transition-colors font-medium">{t.nav.location}</a>
+          <NotificationBell />
           <LanguageSwitcher current={lang} />
           <button
             onClick={onBookClick}
@@ -69,6 +71,7 @@ export default function Navbar({ lang, t, onBookClick }: NavbarProps) {
           <a href="#menu" onClick={() => setIsOpen(false)} className="text-xl text-white font-medium">{t.nav.menu}</a>
           <a href="#location" onClick={() => setIsOpen(false)} className="text-xl text-white font-medium">{t.nav.location}</a>
           <div className="flex justify-between items-center">
+            <NotificationBell />
             <LanguageSwitcher current={lang} />
           </div>
           <button

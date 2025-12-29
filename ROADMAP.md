@@ -43,11 +43,11 @@
 ### 1. Operations
 - [x] **Kitchen Display System (KDS)**: Базовая версия (Unified KDS).
 - [x] **Inventory**: Складской учет, списания, техкарты.
-- [ ] **Waiter's Mode**: Мобильный интерфейс для официантов (Прием заказа -> KDS).
-- [ ] **Smart KDS**: Звуковые уведомления + Разделение на цеха (Бар/Кухня).
+- [x] **Waiter's Mode**: Мобильный интерфейс для официантов (Прием заказа -> KDS).
+- [x] **Smart KDS**: Звуковые уведомления + Разделение на цеха (Бар/Кухня).
 
 ### 2. Marketing
-- [ ] **Winback Automation**: Авто-рассылка купонов "вернись" (Logic implementation).
+- [x] **Winback Automation**: Авто-рассылка купонов "вернись" (Logic implementation).
 - [ ] **Referral System**: "Пригласи друга - получи 50 AED".
 - [ ] **Push Notifications**: Напоминания о забытой корзине.
 

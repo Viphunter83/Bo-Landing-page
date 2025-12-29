@@ -47,6 +47,11 @@ export const getAdminAuth = () => {
     return admin.auth()
 }
 
+export const getAdminMessaging = () => {
+    initAdmin()
+    return admin.messaging()
+}
+
 // Fallback for existing code using direct exports (will break if we just remove them)
 // We have to change the usage pattern in `route.ts`. 
 // OR keep the exports but make them lazy (Proxies?) - too complex.
