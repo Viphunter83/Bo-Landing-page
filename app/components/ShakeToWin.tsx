@@ -11,7 +11,7 @@ import { createCoupon } from '../lib/coupons'
 
 export default function ShakeToWin() {
     const { isTelegram, user } = useTelegram()
-    const { isOpen: isCartOpen } = useCart()
+    const { isOpen: isCartOpen, toggleCart } = useCart()
 
     const [permissionGranted, setPermissionGranted] = useState(false)
     const [showGame, setShowGame] = useState(false)
@@ -466,7 +466,7 @@ export default function ShakeToWin() {
 
                                     <h2 className="text-2xl font-black text-white mb-2">LOOT DROPPED! 🎒</h2>
                                     <p className="text-zinc-400 text-sm mb-8">
-                                        You found a 10% Discount Coupon. It has been added to your Wallet.
+                                        Your 10% Coupon is saved in your Wallet! Open the Cart to use it.
                                     </p>
 
                                     <div className="bg-zinc-800/50 border border-zinc-700 p-4 rounded-xl border-dashed mb-6 relative group cursor-pointer"
@@ -490,12 +490,12 @@ export default function ShakeToWin() {
                                     <button
                                         onClick={() => {
                                             setShowGame(false)
-                                            // TODO: Open Wallet
+                                            toggleCart()
                                         }}
                                         className="bg-yellow-500 text-black font-bold py-4 px-8 rounded-xl hover:bg-yellow-400 transition-colors w-full flex items-center justify-center gap-2"
                                     >
                                         <Trophy size={20} />
-                                        <span>Awesome!</span>
+                                        <span>Open Wallet & Cart</span>
                                     </button>
                                 </div>
                             )}
