@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
-import { Keypad, ArrowRight, Loader } from 'lucide-react'
+import { Lock, ArrowRight, Loader } from 'lucide-react'
 
 export default function WaiterLogin() {
     const [pin, setPin] = useState('')
@@ -12,7 +12,7 @@ export default function WaiterLogin() {
     const [error, setError] = useState('')
     const router = useRouter()
 
-    const handleLogin = async () => {
+    const handleLogin = useCallback(async () => {
         if (pin.length !== 4) return
         setLoading(true)
         setError('')
@@ -43,7 +43,7 @@ export default function WaiterLogin() {
             setError('System Error')
         }
         setLoading(false)
-    }
+    }, [pin, router])
 
     const appendDigit = (digit: string) => {
         if (pin.length < 4) {
@@ -58,14 +58,14 @@ export default function WaiterLogin() {
     // Auto submit on 4th digit
     useEffect(() => {
         if (pin.length === 4) handleLogin()
-    }, [pin])
+    }, [pin, handleLogin])
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
             <div className="w-full max-w-sm space-y-8">
                 <div className="text-center space-y-2">
                     <div className="bg-zinc-800 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <Keypad size={32} className="text-white" />
+                        <Lock size={32} className="text-white" />
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight">Waiter Access</h1>
                     <p className="text-zinc-500">Enter your 4-digit security PIN</p>
