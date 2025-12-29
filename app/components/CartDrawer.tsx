@@ -129,34 +129,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
     const finalTotal = Math.max(0, total + deliveryFee - discount)
 
     const [validationError, setValidationError] = useState<string | null>(null)
-    // ... rest of validation logic ...
 
-    // ... inside return ...
-    {/* Promo Code Section */ }
-    <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4">
-        <h3 className="font-bold text-white text-sm">
-            {lang === 'ru' ? 'Промокод' : 'Promo Code'}
-        </h3>
-        <div className="flex gap-2">
-            <input
-                type="text"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                placeholder={lang === 'ru' ? 'Введите код' : 'Enter code'}
-                className="flex-1 bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border"
-            />
-            <button
-                onClick={applyPromo}
-                className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 rounded-lg font-bold text-sm transition-colors"
-            >
-                {lang === 'ru' ? 'Применить' : 'Apply'}
-            </button>
-        </div>
-        {promoError && <p className="text-red-500 text-xs">{promoError}</p>}
-        {promoSuccess && <p className="text-green-500 text-xs">{promoSuccess}</p>}
-    </div>
-
-    {/* Payment Selector ... */ }
 
     const validateOrder = () => {
         setValidationError(null)
