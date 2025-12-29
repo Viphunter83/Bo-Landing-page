@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Gift, X, Wine, Smartphone, Trophy, Zap } from 'lucide-react'
+import { Gift, X, Wine, Smartphone, Trophy, Zap, Clock, Wallet } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { useTelegram } from '../context/TelegramContext'
 import { useCart } from '../context/CartContext'
+import { checkCooldown, recordGamePlay } from '../lib/db/gamification'
+import { createCoupon } from '../lib/coupons'
 
 export default function ShakeToWin() {
-    const { isTelegram } = useTelegram()
+    const { isTelegram, user } = useTelegram()
     const { isOpen: isCartOpen } = useCart()
 
     const [permissionGranted, setPermissionGranted] = useState(false)
@@ -16,6 +18,12 @@ export default function ShakeToWin() {
     const [progress, setProgress] = useState(0) // 0 to 100
     const [shakeIntensity, setShakeIntensity] = useState(0)
     const [won, setWon] = useState(false)
+
+    // RPG Logic
+    const [canPlay, setCanPlay] = useState(true)
+    const [cooldownRemaining, setCooldownRemaining] = useState(0)
+    const [currentUserId, setCurrentUserId] = useState<string>('')
+    const [wonCoupon, setWonCoupon] = useState<{ code: string, value: any } | null>(null)
 
     // Physics refs
     const lastUpdate = useRef(0)
@@ -29,31 +37,68 @@ export default function ShakeToWin() {
     const [needsPermission, setNeedsPermission] = useState(false)
     const [isDebugMode, setIsDebugMode] = useState(false)
 
-    // Check environment
+    // Check Identity & Cooldown
     useEffect(() => {
-        // Enable debug mode on localhost for testing without sensors
-        if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-            setIsDebugMode(true)
-            // Auto-grant permission in debug
-            setPermissionGranted(true)
-        }
+        const initGame = async () => {
+            let uid = user?.id?.toString()
 
-        if (typeof DeviceMotionEvent !== 'undefined' &&
-            // @ts-ignore
-            typeof DeviceMotionEvent.requestPermission === 'function') {
-            setNeedsPermission(true)
-        } else {
-            // For non-iOS 13+ devices, we assume permission is implicitly granted (or available)
-            // unless we are solely relying on a button press to start listening.
-            if (!isTelegram && !isDebugMode) {
-                // On normal web, we might still want the user to click "Start" logic if browser blocks it,
-                // but for now let's assume auto-start is fine or handled by the "Teaser" click.
-                setNeedsPermission(false)
+            // Guest Logic for Web
+            if (!uid) {
+                const stored = localStorage.getItem('bo_guest_id')
+                if (stored) {
+                    uid = stored
+                } else {
+                    uid = 'guest_' + Math.random().toString(36).substr(2, 9)
+                    localStorage.setItem('bo_guest_id', uid)
+                }
+            }
+            setCurrentUserId(uid)
+
+            // Check Cooldown
+            const status = await checkCooldown(uid, 'shake_game')
+            if (!status.allowed) {
+                setCanPlay(false)
+                setCooldownRemaining(status.remainingMs)
             } else {
+                setCanPlay(true)
+            }
+
+            // Debug & Permissions
+            if (window.location.hostname === 'localhost') {
+                setIsDebugMode(true)
                 setPermissionGranted(true)
             }
+
+            if (typeof DeviceMotionEvent !== 'undefined' &&
+                // @ts-ignore
+                typeof DeviceMotionEvent.requestPermission === 'function') {
+                setNeedsPermission(true)
+            } else {
+                if (!isTelegram && !isDebugMode) {
+                    setNeedsPermission(false)
+                } else {
+                    setPermissionGranted(true)
+                }
+            }
         }
-    }, [isTelegram, isDebugMode])
+
+        initGame()
+    }, [isTelegram, user, isDebugMode])
+
+    // Timer Tick
+    useEffect(() => {
+        if (cooldownRemaining <= 0) return
+        const interval = setInterval(() => {
+            setCooldownRemaining(prev => {
+                if (prev <= 1000) {
+                    setCanPlay(true)
+                    return 0
+                }
+                return prev - 1000
+            })
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [cooldownRemaining])
 
     // Decay Logic: Bar drops if you stop shaking
     useEffect(() => {
@@ -132,8 +177,11 @@ export default function ShakeToWin() {
         return () => window.removeEventListener('devicemotion', handleMotion)
     }, [permissionGranted, showGame, won])
 
-    const handleWin = () => {
+    const handleWin = async () => {
+        if (won) return
         setWon(true)
+
+        // Haptics
         if (window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success')
         } else if (navigator.vibrate) {
@@ -161,6 +209,33 @@ export default function ShakeToWin() {
             if (Date.now() < end) requestAnimationFrame(frame)
         }
         frame()
+
+        // RPG Backend Logic
+        try {
+            // 1. Create Coupon
+            const coupon = await createCoupon({
+                type: 'discount_percentage',
+                value: 10,
+                userId: currentUserId,
+                expiryDays: 3, // 3 days validity
+                source: 'shake_game',
+                minOrder: 50
+            })
+
+            setWonCoupon({ code: coupon.code, value: '10%' })
+
+            // 2. Record Cooldown
+            await recordGamePlay(currentUserId, 'shake_game', true, '10% OFF')
+
+            // 3. Update Local State to Block Future Play
+            setCanPlay(false)
+            setCooldownRemaining(24 * 60 * 60 * 1000)
+
+        } catch (e) {
+            console.error("Game Save Failed", e)
+            // Fallback for offline? Show code anyway but warn.
+            setWonCoupon({ code: 'OFFLINE10', value: '10%' })
+        }
     }
 
     const requestAccess = async () => {
@@ -202,11 +277,17 @@ export default function ShakeToWin() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isTelegram])
 
+    const formatTime = (ms: number) => {
+        const h = Math.floor(ms / (1000 * 60 * 60))
+        const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+        return `${h}h ${m}m`
+    }
+
     if (!isTelegram && !isDebugMode) return null
 
     return (
         <>
-            {/* Teaser Button (Always visible if not detecting game yet) */}
+            {/* Teaser Button (Trigger) */}
             {!showGame && !won && !isCartOpen && (
                 <motion.div
                     className="fixed bottom-24 left-4 z-[9999]"
@@ -214,28 +295,43 @@ export default function ShakeToWin() {
                     animate={{ scale: 1 }}
                     whileHover={{ scale: 1.1 }}
                 >
-                    {/* Always show the Wine/Start button logic here, simplified */}
-                    <button
-                        onClick={() => {
-                            // First interaction triggers permission request if needed
-                            if (typeof DeviceMotionEvent !== 'undefined' &&
-                                // @ts-ignore
-                                typeof DeviceMotionEvent.requestPermission === 'function') {
-                                requestAccess()
-                            } else {
-                                setShowGame(true)
-                            }
-                        }}
-                        className="group relative flex items-center justify-center"
-                    >
-                        <div className="absolute inset-0 bg-yellow-400 rounded-full animate-ping opacity-20 duration-1000" />
-                        <div className="bg-zinc-900 border border-yellow-500/50 p-4 rounded-full shadow-xl relative overflow-hidden">
-                            <Wine className="text-yellow-500 w-6 h-6 group-hover:rotate-12 transition-transform" />
-                        </div>
-                        <div className="absolute left-full ml-4 bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-100 transition-opacity border border-white/10">
-                            Shake for Gift! 🎁
-                        </div>
-                    </button>
+                    {canPlay ? (
+                        <button
+                            onClick={() => {
+                                if (typeof DeviceMotionEvent !== 'undefined' &&
+                                    // @ts-ignore
+                                    typeof DeviceMotionEvent.requestPermission === 'function') {
+                                    requestAccess()
+                                } else {
+                                    setShowGame(true)
+                                }
+                            }}
+                            className="group relative flex items-center justify-center"
+                        >
+                            <div className="absolute inset-0 bg-yellow-400 rounded-full animate-ping opacity-20 duration-1000" />
+                            <div className="bg-zinc-900 border border-yellow-500/50 p-4 rounded-full shadow-xl relative overflow-hidden">
+                                <Wine className="text-yellow-500 w-6 h-6 group-hover:rotate-12 transition-transform" />
+                            </div>
+                            <div className="absolute left-full ml-4 bg-black/80 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap opacity-100 transition-opacity border border-white/10">
+                                Shake for Gift! 🎁
+                            </div>
+                        </button>
+                    ) : (
+                        <button
+                            className="group relative flex items-center justify-center opacity-80"
+                            onClick={() => {
+                                // Maybe show toast "Come back later"?
+                            }}
+                        >
+                            <div className="bg-zinc-900 border border-red-500/30 p-4 rounded-full shadow-xl relative overflow-hidden grayscale">
+                                <Clock className="text-zinc-500 w-6 h-6" />
+                            </div>
+                            <div className="absolute left-full ml-4 bg-black/80 text-zinc-400 text-xs px-3 py-1.5 rounded-lg whitespace-nowrap border border-white/10 flex items-center gap-2">
+                                <span>Cooldown</span>
+                                <span className="font-mono text-white">{formatTime(cooldownRemaining)}</span>
+                            </div>
+                        </button>
+                    )}
                 </motion.div>
             )}
 
@@ -354,7 +450,6 @@ export default function ShakeToWin() {
                                         </button>
                                     )}
                                 </div>
-                            ) : (
                                 <div className="bg-gradient-to-br from-zinc-900 to-black border border-yellow-500/30 rounded-3xl p-8 relative overflow-hidden shadow-2xl text-center">
                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-yellow-500 to-red-500" />
 
@@ -364,39 +459,41 @@ export default function ShakeToWin() {
                                         transition={{ type: 'spring', delay: 0.2 }}
                                         className="w-24 h-24 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/50"
                                     >
-                                        <Trophy size={48} className="text-yellow-500" />
+                                        <Wallet size={48} className="text-yellow-500" />
                                     </motion.div>
 
-                                    <h2 className="text-3xl font-black text-white mb-2">PERFECT MIX! 🍹</h2>
+                                    <h2 className="text-2xl font-black text-white mb-2">LOOT DROPPED! 🎒</h2>
                                     <p className="text-zinc-400 text-sm mb-8">
-                                        You are a natural bartender! Here is your reward.
+                                        You found a 10% Discount Coupon. It has been added to your Wallet.
                                     </p>
 
                                     <div className="bg-zinc-800/50 border border-zinc-700 p-4 rounded-xl border-dashed mb-6 relative group cursor-pointer"
                                         onClick={() => {
-                                            navigator.clipboard.writeText('SHAKE10')
+                                            if (wonCoupon) navigator.clipboard.writeText(wonCoupon.code)
                                         }}
                                     >
-                                        <p className="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Promo Code</p>
+                                        <p className="text-xs text-zinc-500 mb-1 uppercase tracking-wider">Coupon Code</p>
                                         <div className="text-3xl font-mono font-bold text-yellow-500 tracking-widest">
-                                            SHAKE10
+                                            {wonCoupon ? wonCoupon.code : 'LOADING...'}
                                         </div>
                                         <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/90 text-white text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
                                             Click to Copy
                                         </div>
                                     </div>
+                                    
+                                    <p className="text-red-400 text-xs mb-6 flex items-center justify-center gap-1">
+                                        <Clock size={12} /> Expires in 3 Days
+                                    </p>
 
                                     <button
                                         onClick={() => {
                                             setShowGame(false)
-                                            window.dispatchEvent(new CustomEvent('open-booking', {
-                                                detail: { promoCode: 'SHAKE10' }
-                                            }))
+                                            // TODO: Open Wallet
                                         }}
                                         className="bg-yellow-500 text-black font-bold py-4 px-8 rounded-xl hover:bg-yellow-400 transition-colors w-full flex items-center justify-center gap-2"
                                     >
-                                        <Zap size={20} />
-                                        <span>Book with Discount</span>
+                                        <Trophy size={20} />
+                                        <span>Awesome!</span>
                                     </button>
                                 </div>
                             )}
