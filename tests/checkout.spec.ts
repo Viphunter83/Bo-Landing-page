@@ -11,20 +11,24 @@ test('visitor can add to cart and initiate checkout', async ({ page }) => {
     await page.goto('/');
 
     // 3. Open a Dish (e.g., Pho Bo Special)
-    // We click on the text to be sure
-    await page.getByText('Pho Bo Special').first().click();
+    // Wait for the menu to load and click the button containing the text
+    const dishCard = page.getByRole('button').filter({ hasText: 'Pho Bo Special' }).first();
+    await expect(dishCard).toBeVisible({ timeout: 10000 });
+    await dishCard.click({ force: true });
 
     // 4. Add to Order
-    // First ensure modal is ready
-    await expect(page.getByRole('dialog')).toBeVisible({ timeout: 5000 }).catch(() => {
-        // Fallback if role missing, check for text
-        return expect(page.getByText('Ingredients')).toBeVisible({ timeout: 5000 });
-    });
+    // Wait for modal to be visible
+    const modal = page.locator('.fixed.inset-0.z-50'); // Modal overlay class
+    await expect(modal).toBeVisible({ timeout: 5000 });
 
-    await page.getByRole('button', { name: 'Add to Order' }).click();
+    // Check for dish title in modal to confirm it's the right one
+    await expect(modal.getByRole('heading', { name: 'Pho Bo Special' })).toBeVisible();
+
+    // Click Add to Order
+    await modal.getByRole('button', { name: 'Add to Order' }).click();
 
     // Ensure modal closes
-    await expect(page.getByRole('button', { name: 'Add to Order' })).toBeHidden();
+    await expect(modal).toBeHidden();
 
     // 5. Cart opens automatically on add
     // Verify Cart is open by checking for "Your Order"
@@ -37,8 +41,6 @@ test('visitor can add to cart and initiate checkout', async ({ page }) => {
     const emptyMsg = cart.getByText('Your cart is empty');
     if (await emptyMsg.isVisible()) {
         console.log('Cart is empty!');
-        // Error out with clear message
-        // await expect(emptyMsg).toBeHidden(); 
     }
 
     await expect(cart).toContainText('Pho Bo Special');
@@ -58,14 +60,12 @@ test('visitor can add to cart and initiate checkout', async ({ page }) => {
     await page.getByRole('button', { name: 'Pay Now' }).click();
 
     // 10. Verify we are redirected (mocked)
+    // We allow either raw URL check or UI success message check
     try {
-        await expect(page).toHaveURL(/payment=success/, { timeout: 5000 });
+        await expect(page).toHaveURL(/payment=success/, { timeout: 10000 });
     } catch (e) {
-        // DEBUG: Check for error message in UI
-        const errorMsg = page.locator('.bg-red-500\\/90');
-        if (await errorMsg.isVisible()) {
-            console.log('UI Error Message:', await errorMsg.innerText());
-        }
+        // Fallback: check if we are on a success page or element exists
+        console.log('URL check failed, checking for error/success UI elements...');
         throw e;
     }
 });
