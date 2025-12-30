@@ -1,7 +1,7 @@
 'use client'
 
 import { useCart } from '../context/CartContext'
-import { X, Minus, Plus, ShoppingBag, Trash2, Send, Flame, Wallet } from 'lucide-react'
+import { X, Minus, Plus, ShoppingBag, Trash2, Send, Flame, Wallet, Gift } from 'lucide-react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CONTACT_INFO } from '../data/contact'
@@ -407,6 +407,18 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4">
                                     <ShoppingBag size={48} className="opacity-20" />
                                     <p>{lang === 'ru' ? 'Корзина пуста' : (lang === 'ar' ? 'سلة التسوق فارغة' : 'Your cart is empty')}</p>
+
+                                    {/* Active Promo in Empty State */}
+                                    {promoSuccess && (
+                                        <motion.div
+                                            initial={{ scale: 0.8, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            className="bg-green-500/10 border border-green-500/20 text-green-500 px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 mt-4"
+                                        >
+                                            <Gift size={16} />
+                                            {promoSuccess}
+                                        </motion.div>
+                                    )}
                                 </div>
                             ) : (
                                 <>
