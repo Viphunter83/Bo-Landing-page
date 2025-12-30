@@ -1,15 +1,30 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import SchemaScript from './components/SchemaScript'
 import ShakeToWin from './components/ShakeToWin'
+import InstallPrompt from './components/InstallPrompt'
+
+export const viewport: Viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://bo-restuarant.vercel.app'), // Using likely Vercel URL or custom domain if known. Safest is to set this.
+  metadataBase: new URL('https://bo-restuarant.vercel.app'),
   title: {
     default: 'Bo Restaurant Dubai - Authentic Vietnamese Cuisine',
     template: '%s | Bo Restaurant Dubai'
   },
   description: 'Experience the soul of Vietnam in Dubai Festival City. Authentic Pho, Banh Mi, and more. Delivery across Dubai.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Bo Dubai',
+  },
   keywords: ['Vietnamese Food Dubai', 'Best Pho Dubai', 'Asian Delivery Dubai', 'Dubai Festival City Restaurants', 'Bo Dubai'],
   authors: [{ name: 'Bo Restaurant' }],
   creator: 'Bo Restaurant',
@@ -21,7 +36,7 @@ export const metadata: Metadata = {
     siteName: 'Bo Restaurant Dubai',
     images: [
       {
-        url: '/images/og-image.jpg', // Ensure this image exists or is handled
+        url: '/images/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'Bo Restaurant Dubai',
@@ -34,7 +49,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Bo Restaurant Dubai',
     description: 'Authentic Vietnamese Cuisine in Dubai Festival City',
-    images: ['/images/og-image.jpg'], // Reusing OG image
+    images: ['/images/og-image.jpg'],
   },
   robots: {
     index: true,
@@ -48,7 +63,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'verification_token', // Placeholder, user can add later
+    google: 'verification_token',
     yandex: 'yandex_verification_token',
   },
 }
@@ -73,6 +88,7 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <ReferralHandler />
             </Suspense>
+            <InstallPrompt />
             <SchemaScript />
             {/* Global Providers can go here */}
             {children}
