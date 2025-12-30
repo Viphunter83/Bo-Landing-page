@@ -164,7 +164,7 @@ export default function LunchQuizModal({ isOpen, onClose, onComplete, lang }: Lu
     const progress = ((step + 1) / totalSteps) * 100
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[11000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
