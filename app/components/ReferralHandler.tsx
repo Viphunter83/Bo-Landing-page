@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext'
 
 export default function ReferralHandler() {
     const searchParams = useSearchParams()
-    const { toggleCart, isOpen } = useCart()
+    const { openCart, isOpen } = useCart()
     const { startParam, ready } = useTelegram()
     const processedRef = useRef('')
 
@@ -23,11 +23,15 @@ export default function ReferralHandler() {
             localStorage.setItem('bo_referral_code', refCode)
 
             // 2. Open Cart to show "Discount Applied" (via CartDrawer logic)
-            if (refCode.startsWith('BO-') && !isOpen) {
-                toggleCart()
+            if (refCode) {
+                // Force open even if already open (to ensure effect triggers if needed, though effect dep is on isOpen)
+                // actually if it's already open, useEffect in CartDrawer might not re-run if it depends on changing into open. 
+                // But CartDrawer checks isOpen in render? No, useEffect. 
+                // Let's just ensure it's open.
+                openCart()
             }
         }
-    }, [searchParams, startParam, ready, toggleCart, isOpen])
+    }, [searchParams, startParam, ready, openCart, isOpen])
 
     return null
 }

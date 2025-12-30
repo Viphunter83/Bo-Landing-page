@@ -18,6 +18,8 @@ interface CartContextType {
     updateQuantity: (id: string, delta: number) => void
     clearCart: () => void
     toggleCart: () => void
+    openCart: () => void
+    closeCart: () => void
     total: number
     isSurge: boolean
     tableNumber: string | null
@@ -124,6 +126,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const clearCart = () => setItems([])
     const toggleCart = () => setIsOpen(prev => !prev)
+    const openCart = () => setIsOpen(true)
+    const closeCart = () => setIsOpen(false)
 
     const total = items.reduce((sum, item) => {
         const price = parseInt(item.price.replace(/\D/g, '')) || 0
@@ -131,7 +135,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, 0)
 
     return (
-        <CartContext.Provider value={{ items, isOpen, addToCart, removeFromCart, updateQuantity, clearCart, toggleCart, total, isSurge, tableNumber, setTableNumber }}>
+        <CartContext.Provider value={{ items, isOpen, addToCart, removeFromCart, updateQuantity, clearCart, toggleCart, openCart, closeCart, total, isSurge, tableNumber, setTableNumber }}>
             {children}
         </CartContext.Provider>
     )

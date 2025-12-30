@@ -11,7 +11,7 @@ import { createCoupon } from '../lib/coupons'
 
 export default function ShakeToWin() {
     const { isTelegram, user, startParam } = useTelegram()
-    const { isOpen: isCartOpen, toggleCart } = useCart()
+    const { isOpen: isCartOpen, openCart } = useCart()
 
     const [permissionGranted, setPermissionGranted] = useState(false)
     const [showGame, setShowGame] = useState(false)
@@ -507,7 +507,7 @@ export default function ShakeToWin() {
                                     <button
                                         onClick={() => {
                                             setShowGame(false)
-                                            toggleCart()
+                                            openCart()
                                         }}
                                         className="bg-yellow-500 text-black font-bold py-4 px-8 rounded-xl hover:bg-yellow-400 transition-colors w-full flex items-center justify-center gap-2"
                                     >
