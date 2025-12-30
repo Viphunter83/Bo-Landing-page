@@ -1,116 +1,71 @@
-# Bo Restaurant Landing Page
+# Bo Dubai - Restaurant Platform 🍜
 
-Современный лендинг для ресторана Bo в Дубае с поддержкой трех языков (EN/RU/AR) и адаптивным дизайном.
+Современная платформа для ресторана с поддержкой PWA, Telegram Mini App и продвинутой системой управления (KDS, Inventory, CRM).
 
-## 🚀 Технологии
+## 🚀 Быстрые ссылки
 
-- **Next.js 14** - React фреймворк с App Router
-- **TypeScript** - Типизация
-- **Tailwind CSS** - Стилизация
-- **Lucide React** - Иконки
-- **Next/Image** - Оптимизация изображений
-
-## 📦 Установка
-
-```bash
-npm install
-```
-
-## 🛠️ Разработка
-
-```bash
-npm run dev
-```
-
-Откройте [http://localhost:3000](http://localhost:3000) в браузере.
-
-## 🏗️ Сборка для продакшена
-
-```bash
-npm run build
-npm start
-```
-
-## 🚢 Деплой на Vercel
-
-### Вариант 1: Через Vercel Dashboard
-
-1. Зайдите на [vercel.com](https://vercel.com)
-2. Нажмите "New Project"
-3. Подключите ваш Git репозиторий
-4. Vercel автоматически определит Next.js и настроит проект
-
-### Вариант 2: Через Vercel CLI
-
-```bash
-npm i -g vercel
-vercel
-```
-
-### Вариант 3: Через MCP (если доступно)
-
-Проект готов к деплою через Vercel MCP инструменты.
-
-## ✨ Особенности (Features)
-
-### 🎮 RPG Loyalty System
-- **Shake-to-Win**: Геймифицированная механика получения скидок с использованием акселерометра.
-- **Coupon Wallet**: Встроенный кошелек для хранения и применения выигранных купонов.
-- **Smart Cooldowns**: Система ограничений (24ч) для предотвращения абуза.
-
-### 📊 Professional Analytics
-- **Financial Dashboard**: EBITDA, Revenue, COGS в реальном времени.
-- **Interactive Charts**: Визуализация трендов продаж и популярных позиций.
-
-### 🌍 Core Features
-- **Мультиязычность**: Полная поддержка EN, RU, AR (RTL).
-- **Payments**: Интеграция Stripe (Test Mode) и наличных расчетов.
-- **Telegram Native**: Глубокая интеграция с Telegram Mini Apps.
-
-## 🏗️ Архитектура и Экосистема
-
-Проект состоит из трех независимых интерфейсов, объединенных в одном репозитории. **Важно понимать границы каждого решения:**
-
-### 1. 🌐 Публичный Сайт (Web)
-- **Цель**: Привлечение клиентов, SEO, меню, онлайн-заказ (Desktop/Mobile Web).
-- **Путь**: `app/page.tsx`, `app/menu/*`, `app/components/Hero.tsx`
-- **Риски**: Изменения здесь влияют на SEO и конверсию.
-- **Статус**: Production Ready.
-
-### 2. 📱 Telegram Mini App (TMA)
-- **Цель**: Лояльность, Геймификация (Shake-to-Win), Заказ внутри Telegram.
-- **Путь**: `app/components/ShakeToWin.tsx`, `app/context/TelegramContext.tsx`
-- **Важно**: Работает внутри WebView Telegram. Требует специфических контекстов (Telegram SDK).
-- **Изоляция**: Использует общие UI компоненты, но имеет свою логику авторизации.
-
-### 3. 🛡️ Админ-панель (Admin Dashboard)
-- **Цель**: Управление меню, просмотр аналитики, управление заказами.
-- **Путь**: `app/admin/*`
-- **Изоляция**: Полностью защищена Middleware. Имеет отдельный Layout.
-- **Правило**: Изменения в админке **НЕ** должны ломать публичный сайт. Это изолированная зона.
+| Ресурс | Ссылка | Описание |
+| :--- | :--- | :--- |
+| **🌐 Web / PWA** | [bo-restuarant.vercel.app](https://bo-restuarant.vercel.app) | Основной сайт и мобильное приложение |
+| **🖥️ Admin** | [/admin](https://bo-restuarant.vercel.app/admin) | Панель управления (Кухня, Склад, Маркетинг) |
+| **💻 Code** | [GitHub Repo](https://github.com/Viphunter83/Bo-Landing-page.git) | Исходный код |
+| **🤖 Telegram** | *Coming Soon* | Бот и Mini App |
 
 ---
 
-## 🗺️ Статус и Дорожная Карта
+## 🏗️ Архитектура и Модули
 
-Подробный статус проекта и план разработки доступны в файле [ROADMAP.md](./ROADMAP.md).
+Проект построен как монорепозиторий на **Next.js 14**, объединяющий 4 независимых интерфейса:
 
-Текущий статус: **Production Safe Beta** 🚀
+### 1. 📲 Progressive Web App (PWA)
+Полноценное мобильное приложение, которое устанавливается прямо из браузера.
+- **Особенности**: Оффлайн-режим, Push-уведомления, Native-like UI.
+- **Установка**: Нажмите "Поделиться" -> "На экран Домой" (iOS) или через баннер (Android).
 
-## 📁 Структура проекта
+### 2. 🌐 Public Website
+Адаптивный лендинг для привлечения трафика и SEO.
+- **Pay-at-Table**: QR-меню для заказа за столиком без официанта (`/?table=5`).
+- **Геймификация**: Shake-to-Win лотерея купонов.
 
+### 3. 🤖 Telegram Mini App (TMA)
+Глубокая интеграция с мессенджером.
+- **Бесшовный вход**: Не нужна регистрация (используется Telegram ID).
+- **Синхронизация**: Единая корзина с веб-версией.
+
+### 4. 🛡️ Operations Center (Admin)
+Профессиональный инструмент для управления рестораном.
+- **Smart KDS**: Кухонный экран со звуковыми оповещениями.
+- **AI Inventory**: Складской учет с прогнозированием закупок и авто-списанием.
+- **Waiter Mode**: Терминал официанта с PIN-авторизацией.
+
+---
+
+## 🛠️ Технический Стек
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + Shadcn UI
+- **Database**: Firebase Firestore (NoSQL)
+- **Payments**: Stripe Integration
+- **State**: React Context + LocalStorage Persistence
+
+## 📦 Установка и Запуск
+
+```bash
+# Клонирование
+git clone https://github.com/Viphunter83/Bo-Landing-page.git
+
+# Установка зависимостей
+npm install
+
+# Запуск локально
+npm run dev
+# Открыть http://localhost:3000
 ```
-├── app/
-│   ├── admin/          # Админ-панель (Защищена)
-│   ├── api/            # Backend API (Checkout, Webhooks)
-│   ├── components/     # UI Components (Shadcn + Custom)
-│   ├── lib/            # Утилиты, DB Logic, Types
-│   └── ...
-├── public/            # Статика
-└── ...
-```
+
+## 🗺️ Статус Разработки
+Полная история изменений и план развития доступны в [ROADMAP.md](./ROADMAP.md).
+
+**Текущая версия**: v2.0 (Production Ready) ✅
 
 ## 📝 Лицензия
-
 © 2025 Bo Restaurant. All rights reserved.
-
