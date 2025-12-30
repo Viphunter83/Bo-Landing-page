@@ -13,7 +13,7 @@ import { createOrder } from '../lib/db/orders'
 import { DeliveryZone } from '../lib/types/delivery'
 
 export default function CartDrawer({ lang }: { lang: string }) {
-    const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total, isSurge, clearCart } = useCart()
+    const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total, isSurge, clearCart, tableNumber } = useCart()
 
     // Phase 9.6 & 12: Delivery UI State
     const [orderType, setOrderType] = useState<'delivery' | 'pickup' | 'dine_in'>('delivery')
@@ -31,6 +31,13 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
     // Wallet State
     const [isWalletOpen, setIsWalletOpen] = useState(false)
+
+    // Force Dine-in if Table is set
+    useEffect(() => {
+        if (tableNumber) {
+            setOrderType('dine_in')
+        }
+    }, [tableNumber])
 
     // Load Delivery Config (Reload when isSurge changes to get updated fees)
     useEffect(() => {
@@ -351,20 +358,31 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                 />
                             </div>
 
-                            {/* Delivery Toggle */}
-                            <div className="bg-zinc-800 p-1 rounded-lg grid grid-cols-2 gap-1">
-                                <button
-                                    onClick={() => setOrderType('delivery')}
-                                    className={`py-2 text-sm font-bold rounded-md transition-all ${orderType === 'delivery' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
-                                >
-                                    🛵 {lang === 'ru' ? 'Доставка' : 'Delivery'}
-                                </button>
-                                <button
-                                    onClick={() => setOrderType('pickup')}
-                                    className={`py-2 text-sm font-bold rounded-md transition-all ${orderType === 'pickup' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
-                                >
-                                    🛍️ {lang === 'ru' ? 'Самовывоз' : 'Pickup'}
-                                </button>
+                            {/* Delivery Toggle / Table Info */}
+                            <div className="bg-zinc-800 p-1 rounded-lg">
+                                {tableNumber ? (
+                                    <div className="py-2 px-3 text-center bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+                                        <h3 className="text-yellow-500 font-bold flex items-center justify-center gap-2">
+                                            🍽️ Dine-in: Table #{tableNumber}
+                                        </h3>
+                                        <p className="text-zinc-400 text-xs">Ordering directly to your table</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 gap-1">
+                                        <button
+                                            onClick={() => setOrderType('delivery')}
+                                            className={`py-2 text-sm font-bold rounded-md transition-all ${orderType === 'delivery' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                                        >
+                                            🛵 {lang === 'ru' ? 'Доставка' : 'Delivery'}
+                                        </button>
+                                        <button
+                                            onClick={() => setOrderType('pickup')}
+                                            className={`py-2 text-sm font-bold rounded-md transition-all ${orderType === 'pickup' ? 'bg-zinc-700 text-white shadow' : 'text-zinc-400 hover:text-white'}`}
+                                        >
+                                            🛍️ {lang === 'ru' ? 'Самовывоз' : 'Pickup'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -602,8 +620,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                         status: 'new',
                                                         paymentStatus: 'pending',
                                                         type: orderType,
-                                                        address,
-                                                        apartment,
+                                                        table: tableNumber || undefined, // Add Table context
+                                                        address: orderType === 'delivery' ? address : undefined,
+                                                        apartment: orderType === 'delivery' ? apartment : undefined,
                                                         paymentMethod: 'online',
                                                         email,
                                                         deliveryZoneId: selectedZoneId,
@@ -626,7 +645,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                             discount, // Pass discount
                                                             zoneName: zones.find(z => z.id === selectedZoneId)?.name,
                                                             orderId,
-                                                            email
+                                                            email,
+                                                            table: tableNumber || undefined
                                                         })
                                                     })
 

@@ -48,8 +48,8 @@
 
 ### 2. Marketing
 - [x] **Winback Automation**: Авто-рассылка купонов "вернись" (Logic implementation).
-- [ ] **Referral System**: "Пригласи друга - получи 50 AED".
-- [ ] **Push Notifications**: Напоминания о забытой корзине.
+- [x] **Referral System**: "Пригласи друга - получи 50 AED".
+- [x] **Push Notifications**: Напоминания о забытой корзине.
 
 ### 3. Scaling
 - [ ] **QR-Menu w/ Pay-at-Table**: Концепция (Research Phase).

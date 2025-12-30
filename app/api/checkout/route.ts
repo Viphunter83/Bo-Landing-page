@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     try {
         const stripe = getStripe()
         const body = await req.json()
-        const { items, deliveryFee, zoneName, orderId, email, discount } = body
+        const { items, deliveryFee, zoneName, orderId, email, discount, table } = body
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: 'No items in cart' }, { status: 400 })
@@ -67,6 +67,11 @@ export async function POST(req: Request) {
             customer_email: email, // Pre-fill email
             success_url: `${req.headers.get('origin')}/?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${req.headers.get('origin')}/?payment=cancelled`,
+            metadata: {
+                orderId,
+                type: table ? 'dine_in' : (deliveryFee > 0 ? 'delivery' : 'pickup'),
+                table: table || ''
+            }
         }
 
         if (discount && discount > 0) {

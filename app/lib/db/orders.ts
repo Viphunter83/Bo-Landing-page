@@ -21,6 +21,7 @@ export interface OrderData {
     paymentMethod?: 'cash' | 'card' | 'online';
     name?: string;
     email?: string;
+    table?: string; // QR Menu Context
 
     // Phase 12 Delivery Fields
     deliveryZoneId?: string;

@@ -25,6 +25,7 @@ interface UnifiedOrder {
     platform?: string
     driverId?: string
     deliveryStatus?: string
+    table?: string
 }
 
 export default function KitchenDisplaySystem() {
@@ -123,7 +124,8 @@ export default function KitchenDisplaySystem() {
                     phone: docData.phone,
                     platform: docData.platform,
                     driverId: docData.driverId,
-                    deliveryStatus: docData.deliveryStatus
+                    deliveryStatus: docData.deliveryStatus,
+                    table: docData.table // Map table number
                 } as UnifiedOrder
             })
             setDeliveryData(data)
@@ -298,7 +300,9 @@ export default function KitchenDisplaySystem() {
                                         <div className="pr-10">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${isDelivery ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                                    {isDelivery ? (order.type === 'pickup' ? 'PICKUP' : 'DELIVERY') : 'DINING'}
+                                                    {isDelivery ? (order.type === 'pickup' ? 'PICKUP' : (
+                                                        order.type === 'dine_in' ? `TABLE ${order.table || '?'}` : 'DELIVERY'
+                                                    )) : 'DINING'}
                                                 </span>
                                                 <span className="text-zinc-600 text-xs font-mono">#{order.id.slice(-4)}</span>
                                             </div>

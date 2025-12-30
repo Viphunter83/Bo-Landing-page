@@ -57,6 +57,7 @@ import { Suspense } from 'react'
 import { TelegramProvider } from './context/TelegramContext'
 import { CartProvider } from './context/CartContext'
 import ReferralHandler from './components/ReferralHandler'
+import TableHandler from './components/TableHandler'
 
 export default function RootLayout({
   children,
