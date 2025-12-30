@@ -63,6 +63,7 @@ export const createOrder = async (order: OrderData) => {
                     email: order.email,
                     name: order.name,
                     orderTotal: totalVal,
+                    promoCode: order.promoCode || undefined
                 });
             });
         }

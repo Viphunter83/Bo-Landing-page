@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp, increment, arrayUnion } from 'firebase/firestore';
 
 export interface CustomerPreferences {
     hunger?: string;
@@ -29,6 +29,7 @@ export interface Customer {
     // Stats
     totalReferrals?: number;
     totalReferralEarnings?: number;
+    usedPromoCodes?: string[];
 }
 
 /**
@@ -41,6 +42,7 @@ export const upsertCustomer = async (data: {
     email?: string;
     orderTotal: number;
     preferences?: CustomerPreferences;
+    promoCode?: string;
 }) => {
     if (!db) return;
 
@@ -65,7 +67,9 @@ export const upsertCustomer = async (data: {
                 ...(data.name ? { name: data.name } : {}),
                 ...(data.email ? { email: data.email } : {}),
                 // Merge preferences (new ones overwrite old ones)
-                ...(data.preferences ? { preferences: data.preferences } : {})
+                ...(data.preferences ? { preferences: data.preferences } : {}),
+                // Add promo code if used
+                ...(data.promoCode ? { usedPromoCodes: arrayUnion(data.promoCode) } : {})
             });
             console.log(`Customer profile updated: ${cleanPhone}`);
         } else {
@@ -79,7 +83,8 @@ export const upsertCustomer = async (data: {
                 totalSpent: data.orderTotal,
                 firstSeenDate: serverTimestamp(),
                 lastOrderDate: serverTimestamp(),
-                preferences: data.preferences
+                preferences: data.preferences,
+                usedPromoCodes: data.promoCode ? [data.promoCode] : []
             };
 
             await setDoc(customerRef, newCustomer);

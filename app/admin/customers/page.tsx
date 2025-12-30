@@ -23,6 +23,7 @@ interface Customer {
     createdAt?: any
     vibe?: string // AI Preference
     spice?: string // AI Preference
+    usedPromoCodes?: string[]
 }
 
 export default function CustomersPage() {
@@ -120,6 +121,21 @@ export default function CustomersPage() {
                     <div className="text-xs text-zinc-400">
                         {date.toLocaleDateString()} <br />
                         {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                )
+            }
+        },
+        {
+            header: "Promo History",
+            cell: (item: Customer) => {
+                if (!item.usedPromoCodes || item.usedPromoCodes.length === 0) return <span className="text-zinc-600 text-xs">-</span>
+                return (
+                    <div className="flex flex-wrap gap-1 max-w-[150px]">
+                        {item.usedPromoCodes.map((code, i) => (
+                            <span key={i} className="text-[10px] bg-green-900/40 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded">
+                                {code}
+                            </span>
+                        ))}
                     </div>
                 )
             }
