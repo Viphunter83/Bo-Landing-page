@@ -1,16 +1,19 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useTelegram } from '../context/TelegramContext'
 import { useSearchParams } from 'next/navigation'
 import { useCart } from '../context/CartContext'
 
 export default function ReferralHandler() {
     const searchParams = useSearchParams()
     const { toggleCart, isOpen } = useCart()
+    const { startParam, ready } = useTelegram()
     const processedRef = useRef('')
 
     useEffect(() => {
-        const refCode = searchParams.get('ref')
+        // Prioritize URL param, fallback to Telegram startParam
+        const refCode = searchParams.get('ref') || (ready && startParam ? startParam : null)
 
         // Ensure we only process this once per session/load
         if (refCode && refCode !== processedRef.current) {
@@ -24,7 +27,7 @@ export default function ReferralHandler() {
                 toggleCart()
             }
         }
-    }, [searchParams, toggleCart, isOpen])
+    }, [searchParams, startParam, ready, toggleCart, isOpen])
 
     return null
 }
