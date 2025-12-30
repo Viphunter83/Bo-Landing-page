@@ -106,6 +106,20 @@ export default function CartDrawer({ lang }: { lang: string }) {
             return
         }
 
+        // Hardcoded Marketing Deep Links
+        if (cleanCode === 'WELCOME50') {
+            setDiscount(50) // Fixed 50 AED
+            setPromoSuccess(lang === 'ru' ? 'Скидка 50 AED применена!' : '50 AED Discount Applied!')
+            return
+        }
+
+        if (cleanCode === 'SUMMER2025') {
+            const discountValue = total * 0.20 // 20%
+            setDiscount(discountValue)
+            setPromoSuccess(lang === 'ru' ? 'Скидка 20% применена!' : '20% Discount Applied!')
+            return
+        }
+
         // DB Coupon Check
         try {
             const coupon = await getCouponByCode(cleanCode)
