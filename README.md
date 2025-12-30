@@ -6,8 +6,8 @@
 
 | Ресурс | Ссылка | Описание |
 | :--- | :--- | :--- |
-| **🌐 Web / PWA** | [bo-restuarant.vercel.app](https://bo-restuarant.vercel.app) | Основной сайт и мобильное приложение |
-| **🖥️ Admin** | [/admin](https://bo-restuarant.vercel.app/admin) | Панель управления (Кухня, Склад, Маркетинг) |
+| **🌐 Web / PWA** | [bo-restaurant-dubai.vercel.app](https://bo-restaurant-dubai.vercel.app) | Основной сайт и мобильное приложение |
+| **🖥️ Admin** | [/admin](https://bo-restaurant-dubai.vercel.app/admin) | Панель управления (Кухня, Склад, Маркетинг) |
 | **💻 Code** | [GitHub Repo](https://github.com/Viphunter83/Bo-Landing-page.git) | Исходный код |
 | **🤖 Telegram** | [@Bo_FCC_bot](https://t.me/Bo_FCC_bot) | Mini App & Admin Alerts |
 
