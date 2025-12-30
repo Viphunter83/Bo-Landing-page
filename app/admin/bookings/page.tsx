@@ -8,6 +8,7 @@ import { Booking } from '../../lib/types/booking'
 import { Clock, Calendar, Users, Phone, Trash2, Check, X, Mail } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import AdminDataTable from '../components/AdminDataTable'
+import AdminHelp from '../components/AdminHelp'
 
 // Enforce ID presence for Admin Table
 type BookingWithId = Booking & { id: string; bookingDateTime?: any }
@@ -125,7 +126,40 @@ export default function BookingAdminPage() {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-black text-white mb-6">Table Reservations 🗓️</h1>
+            <div className="flex items-center gap-3 mb-6">
+                <h1 className="text-3xl font-black text-white">Table Reservations 🗓️</h1>
+                <AdminHelp
+                    pageName="Reservations"
+                    content={{
+                        ru: {
+                            title: "Бронирование Столов",
+                            steps: [
+                                "Здесь отображаются заявки на бронь столов (Date, Time, Guests).",
+                                "Статусы: Pending (Ждет), Confirmed (Подтверждено), Cancelled (Отмена).",
+                                "Действия: Нажмите ✅ чтобы подтвердить бронь. Клиент (в будущем) получит уведомление.",
+                                "Архив: Прошедшие брони остаются в списке для истории."
+                            ],
+                            tips: [
+                                "Если гость пришел, можно найти его бронь через поиск (по имени или телефону).",
+                                "Special Requests: Обращайте внимание на пометки (День рождения, аллергии)."
+                            ]
+                        },
+                        en: {
+                            title: "Table Reservations",
+                            steps: [
+                                "View incoming table reservation requests (Date, Time, Guests).",
+                                "Statuses: Pending, Confirmed, Cancelled.",
+                                "Actions: Click ✅ to confirm availability.",
+                                "Archive: Past bookings remain for history."
+                            ],
+                            tips: [
+                                "Use Search to find a reservation when guests arrive.",
+                                "Check Special Requests for allergies or occasions."
+                            ]
+                        }
+                    }}
+                />
+            </div>
 
             <AdminDataTable
                 columns={columns}

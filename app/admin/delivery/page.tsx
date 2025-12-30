@@ -5,6 +5,7 @@ import { db } from '../../lib/firebase'
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { Truck, ChefHat, CheckCircle, MapPin, Phone, Clock, AlertCircle, Flame, Users } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
+import AdminHelp from '../components/AdminHelp'
 
 // Simple notification sound (Base64 short beep)
 const NOTIFICATION_SOUND = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw//OEAAAAAAAAAAAAAAAAAAAAAAAMTGF2YzU4LjU0AAAAAAAAAAAAAAAAAAAAJAAAAAAAAAAAASBkAAAAAAAAAAAA//OEZAAAAAI0JAAAACQETSEH/45AAn5/wAAAP/+//OEZAAAAAI0JAAAACQETSEH/45AAn5/wAAAP/+//OEZAAAAAI0JAAAACQETSEH/45AAn5/wAAAP/+//OEZAAAAAI0JAAAACQETSEH/45AAn5/wAAAP/+'
@@ -163,10 +164,45 @@ export default function DeliveryAdminPage() {
         <div className="h-[calc(100vh-100px)] flex flex-col">
             <header className="mb-6 flex justify-between items-center bg-black/50 p-4 rounded-xl border border-zinc-800 backdrop-blur-sm">
                 <div>
-                    <h1 className="text-2xl font-black text-white flex items-center gap-2">
-                        <Truck className="text-blue-500" />
-                        LOGISTICS & DISPATCH
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-2xl font-black text-white flex items-center gap-2">
+                            <Truck className="text-blue-500" />
+                            LOGISTICS & DISPATCH
+                        </h1>
+                        <AdminHelp
+                            pageName="Logistics & Dispatch"
+                            content={{
+                                ru: {
+                                    title: "Логистика и Доставка",
+                                    steps: [
+                                        "Этот экран управляет курьерами и самовывозом.",
+                                        "Колонки слева (Processing/Cooking) — это мониторинг Кухни. Вы просто наблюдаете.",
+                                        "Ready for Dispatch: Сюда падают заказы, когда кухня нажала 'Ready'.",
+                                        "Ваша задача: Выбрать водителя из списка и нажать 'Dispatch'.",
+                                        "Out for Delivery: Заказ уехал. Когда курьер вернется, нажмите 'Mark Delivered'."
+                                    ],
+                                    tips: [
+                                        "Pickup заказы: вместо водителя просто нажмите 'Customer Picked Up', когда гость заберет еду.",
+                                        "RUSH MODE: Включите, если заказов слишком много. Это может включать особые уведомления водителю (в будущем)."
+                                    ]
+                                },
+                                en: {
+                                    title: "Logistics & Dispatch",
+                                    steps: [
+                                        "This screen manages drivers and pickups.",
+                                        "Left columns (Processing/Cooking) are read-only views of the Kitchen status.",
+                                        "Ready for Dispatch: Orders appear here when Kitchen hits 'Ready'.",
+                                        "Your Job: Assign a driver from the dropdown and click 'Dispatch'.",
+                                        "Out for Delivery: Order is en route. Click 'Mark Delivered' when confirmed."
+                                    ],
+                                    tips: [
+                                        "Pickup Orders: Click 'Customer Picked Up' when the guest arrives.",
+                                        "RUSH MODE: Enable during peak hours to alert staff (visual cue)."
+                                    ]
+                                }
+                            }}
+                        />
+                    </div>
                     <p className="text-zinc-400 text-sm">Real-time driver assignment & tracking</p>
                 </div>
 

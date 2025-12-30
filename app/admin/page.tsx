@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import AdminHelp from './components/AdminHelp'
 import AdminOrderModal from '../components/AdminOrderModal'
 import AdminDataTable from './components/AdminDataTable'
 import { BadgeCheck, Clock, Check, X, MapPin, Phone, ShoppingBag, Utensils, AlertCircle } from 'lucide-react'
@@ -207,6 +208,41 @@ export default function AdminDashboard() {
                 <div>
                     <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-2">
                         <BadgeCheck className="text-blue-500" /> Unified Command
+                        <AdminHelp
+                            pageName="Dashboard & System"
+                            content={{
+                                ru: {
+                                    title: "Центр Управления (Unified Command)",
+                                    steps: [
+                                        "Это главная страница ('диспетчерская'). Здесь стекаются все заказы: из Зала (QR), Доставки, Самовывоза и Бронирования.",
+                                        "Таблица показывает единый список по времени (новые сверху).",
+                                        "Используйте фильтры 'Type' и 'Status' для поиска.",
+                                        "Кнопки действий (✅/❌) позволяют быстро принять или отклонить новый заказ.",
+                                        "Unified System: Заказы из Telegram бота и сайта попадают в одну базу."
+                                    ],
+                                    tips: [
+                                        "Следите за виджетом 'Action Needed' — он показывает, сколько заказов висит в статусе 'Pending' или 'New'.",
+                                        "Кликните на имя гостя, чтобы увидеть или скопировать адрес.",
+                                        "Зеленый маячок 'Live Updates' означает, что данные обновляются в реальном времени."
+                                    ]
+                                },
+                                en: {
+                                    title: "Unified Command Center",
+                                    steps: [
+                                        "This is the main hub. All orders flow here: Dine-in (QR), Delivery, Pickup, and Table Reservations.",
+                                        "The unified table lists everything chronologically.",
+                                        "Use 'Type' and 'Status' filters to drill down.",
+                                        "Quick Action buttons (✅/❌) let you accept or reject pending orders immediately.",
+                                        "Unified System: Telegram Bot and Website orders sync to this single database."
+                                    ],
+                                    tips: [
+                                        "Watch the 'Action Needed' widget — it counts pending tasks.",
+                                        "Click a guest name to view details.",
+                                        "Green 'Live Updates' dot means real-time connection is active."
+                                    ]
+                                }
+                            }}
+                        />
                     </h2>
                     <p className="text-zinc-400">All bookings and orders in one place.</p>
                 </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, where } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
+import AdminHelp from '../components/AdminHelp'
 import { Clock, CheckCircle, Flame, Bell, Utensils, Truck, Users, MapPin, Phone, AlertCircle, Volume2, VolumeX, Filter } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -232,7 +233,44 @@ export default function KitchenDisplaySystem() {
                         <Utensils className="text-white" size={24} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black tracking-tighter uppercase">Unified KDS</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-black tracking-tighter uppercase">Unified KDS</h1>
+                            <AdminHelp
+                                pageName="Kitchen Display System"
+                                content={{
+                                    ru: {
+                                        title: "Экран Кухни (KDS)",
+                                        steps: [
+                                            "Ваш главный экран. Здесь появляются все заказы, требующие готовки.",
+                                            "Оранжевые карточки (T-1, T-5) = ЗАЛ. Синие/Фиолетовые = ДОСТАВКА/САМОВЫВОЗ.",
+                                            "Таймер показывает время ожидания. Если мигает красным — заказ опаздывает (>30 мин).",
+                                            "Нажмите кнопку 'Cook' (или иконку), чтобы перевести статус (New -> Cooking -> Ready).",
+                                            "Для доставки: когда нажмете 'Ready', заказ уйдет во вкладку Delivery для курьеров."
+                                        ],
+                                        tips: [
+                                            "Включите звук на устройстве! KDS делает 'дзынь' при новом заказе.",
+                                            "Крупный номер T-5 помогает быстро понять, куда нести еду.",
+                                            "Используйте фильтры 'Kitchen' / 'Bar', если хотите разделить станции."
+                                        ]
+                                    },
+                                    en: {
+                                        title: "Kitchen Display System (KDS)",
+                                        steps: [
+                                            "This is your main screen. All orders needing preparation appear here.",
+                                            "Orange Cards (T-X) = DINE-IN. Blue/Purple = DELIVERY/PICKUP.",
+                                            "Timer shows wait time. Flashing red means overdue (>30m).",
+                                            "Tap the status button to advance (New -> Cooking -> Ready).",
+                                            "For Delivery: marking 'Ready' moves the ticket to the Delivery Dashboard for dispatch."
+                                        ],
+                                        tips: [
+                                            "Unmute your device! The KDS chimes on new orders.",
+                                            "Big T-numbers help runners locate tables fast.",
+                                            "Use 'Kitchen' / 'Bar' filters to split stations."
+                                        ]
+                                    }
+                                }}
+                            />
+                        </div>
                         <div className="flex items-center gap-4 mt-1">
                             <div className="flex bg-zinc-900 rounded-lg p-1 gap-1 border border-zinc-800">
                                 {['all', 'kitchen', 'bar'].map(f => (
