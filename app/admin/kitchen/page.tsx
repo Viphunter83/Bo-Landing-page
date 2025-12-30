@@ -296,51 +296,80 @@ export default function KitchenDisplaySystem() {
                                             {elapsed}m
                                         </div>
 
-                                        {/* Header */}
-                                        <div className="pr-10">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${isDelivery ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                                                    {isDelivery ? (order.type === 'pickup' ? 'PICKUP' : (
-                                                        order.type === 'dine_in' ? `TABLE ${order.table || '?'}` : 'DELIVERY'
-                                                    )) : 'DINING'}
-                                                </span>
-                                                <span className="text-zinc-600 text-xs font-mono">#{order.id.slice(-4)}</span>
+                                        {/* Header - Optimized for Chef Visibility */}
+                                        <div className="flex justify-between items-start mb-2 border-b border-zinc-800 pb-2">
+                                            {/* Left: Identifier (Table/Type) */}
+                                            <div>
+                                                {isDelivery ? (
+                                                    <div className={`px-2 py-1 rounded text-xs font-black uppercase tracking-wider ${order.type === 'pickup' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                        {order.type === 'pickup' ? '🛍️ PICKUP' : '🛵 DELIVERY'}
+                                                    </div>
+                                                ) : (
+                                                    /* TABLE NUMBER - HUGE */
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="bg-orange-600 text-white px-3 py-1 rounded font-black text-xl shadow-lg border border-orange-500">
+                                                            T-{order.table || '?'}
+                                                        </div>
+                                                        {order.guests && (
+                                                            <div className="text-zinc-500 font-bold text-xs flex flex-col leading-none">
+                                                                <span>{order.guests}</span>
+                                                                <span className="text-[8px] uppercase">Pers</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {/* Order Content */}
-                                            {isDelivery ? (
-                                                <div>
-                                                    <div className="space-y-1 mb-2">
-                                                        {Array.isArray(order.items) ? order.items.map((item: any, i: number) => (
-                                                            <div key={i} className="flex justify-between items-start text-sm">
-                                                                <span className="text-zinc-200 font-bold"><span className="text-blue-500 mr-2">{item.quantity}x</span>{item.name}</span>
-                                                            </div>
-                                                        )) : <div className="text-red-500">Invalid Items</div>}
-                                                    </div>
-                                                    <div className="flex items-center gap-2 text-xs text-zinc-500">
-                                                        <MapPin size={10} /> {order.address ? order.address.slice(0, 20) + '...' : 'No Address'}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                /* Hall Booking/Order */
-                                                <div>
-                                                    {order.items === 'Table Reservation' || !order.items ? (
-                                                        <div>
-                                                            <h3 className="text-lg font-bold text-white mb-1">{order.name}</h3>
-                                                            <div className="text-xs text-orange-400 font-bold flex items-center gap-1">
-                                                                <Users size={12} /> {order.guests} Guests
-                                                                {order.bookingDateTime && <span className="text-zinc-500 ml-1">at {order.bookingDateTime.split(' ')[1]}</span>}
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div>
-                                                            <h3 className="text-lg font-bold text-white">{order.items as string}</h3>
-                                                            {order.guests && <div className="text-xs text-zinc-500">Table for {order.guests}</div>}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
+                                            {/* Right: ID */}
+                                            <div className="text-right">
+                                                <span className="text-zinc-600 text-xs font-mono block">#{order.id.slice(-4)}</span>
+                                                {!isDelivery && order.name && order.name !== 'Guest' && (
+                                                    <span className="text-zinc-400 text-[10px] font-bold truncate max-w-[80px] block">{order.name}</span>
+                                                )}
+                                            </div>
                                         </div>
+
+                                        {/* Waiter/Source Info (Hidden if irrelevant) */}
+                                        {!isDelivery && order.bookingDateTime && (
+                                            <div className="mb-2 text-[10px] text-zinc-500 flex items-center gap-1">
+                                                <Clock size={10} /> Reserved: {order.bookingDateTime.split(' ')[1]}
+                                            </div>
+                                        )}
+
+                                        {/* Order Content */}
+                                        {isDelivery ? (
+                                            <div>
+                                                <div className="space-y-1 mb-2">
+                                                    {Array.isArray(order.items) ? order.items.map((item: any, i: number) => (
+                                                        <div key={i} className="flex justify-between items-start text-sm">
+                                                            <span className="text-zinc-200 font-bold"><span className="text-blue-500 mr-2">{item.quantity}x</span>{item.name}</span>
+                                                        </div>
+                                                    )) : <div className="text-red-500">Invalid Items</div>}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                                    <MapPin size={10} /> {order.address ? order.address.slice(0, 20) + '...' : 'No Address'}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* Hall Booking/Order */
+                                            <div>
+                                                {order.items === 'Table Reservation' || !order.items ? (
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-white mb-1">{order.name}</h3>
+                                                        <div className="text-xs text-orange-400 font-bold flex items-center gap-1">
+                                                            <Users size={12} /> {order.guests} Guests
+                                                            {order.bookingDateTime && <span className="text-zinc-500 ml-1">at {order.bookingDateTime.split(' ')[1]}</span>}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-white">{order.items as string}</h3>
+                                                        {order.guests && <div className="text-xs text-zinc-500">Table for {order.guests}</div>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
 
                                         {/* Notes */}
                                         {(order.notes) && (
@@ -381,6 +410,6 @@ export default function KitchenDisplaySystem() {
                     border-radius: 10px;
                 }
             `}</style>
-        </div>
+        </div >
     )
 }
