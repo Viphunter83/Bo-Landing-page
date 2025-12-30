@@ -36,6 +36,10 @@ export interface UnifiedOrder {
     specialRequests?: string;
     total?: number;
 
+    // Marketing
+    promoCode?: string;
+    discount?: number;
+
     // Internal
     driverId?: string;
     deliveryStatus?: string;

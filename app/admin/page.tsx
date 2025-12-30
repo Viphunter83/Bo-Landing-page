@@ -66,6 +66,8 @@ export default function AdminDashboard() {
                     items: d.items,
                     notes: d.notes,
                     total: d.total,
+                    promoCode: d.promoCode,
+                    discount: d.discount,
                     createdAt: d.createdAt
                 } as UnifiedOrder
             })
@@ -173,6 +175,12 @@ export default function AdminDashboard() {
                     {item.total && (
                         <div className="mt-1 font-bold text-white border-t border-zinc-800 pt-1">
                             Total: {item.total} AED
+                        </div>
+                    )}
+                    {item.promoCode && (
+                        <div className="mt-1 text-[10px] text-green-400 font-bold bg-green-500/10 px-1 py-0.5 rounded w-fit flex items-center gap-1">
+                            <span className="opacity-70">PROMO:</span> {item.promoCode}
+                            {item.discount && <span>(-{item.discount})</span>}
                         </div>
                     )}
                 </div>
