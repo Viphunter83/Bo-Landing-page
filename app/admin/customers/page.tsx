@@ -7,6 +7,7 @@ import AdminDataTable from '../components/AdminDataTable'
 import { Users, Search, Sparkles, MessageCircle, Send } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import Link from 'next/link'
+import AdminHelp from '../components/AdminHelp'
 
 export const dynamic = 'force-dynamic'
 
@@ -206,9 +207,42 @@ export default function CustomersPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-2">
-                        <Users className="text-purple-500" /> CRM / Guests
-                    </h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-3xl font-black text-white mb-2 flex items-center gap-2">
+                            <Users className="text-purple-500" /> CRM / Guests
+                        </h2>
+                        <AdminHelp
+                            pageName="CRM / Guests"
+                            content={{
+                                ru: {
+                                    title: "База Клиентов (CRM)",
+                                    steps: [
+                                        "Список всех гостей, кто хоть раз логинился или делал заказ.",
+                                        "AI Vibe: ИИ анализирует вкусы гостя (Vibe, Spice Level).",
+                                        "Promo History: Показывает, какие промокоды использовались.",
+                                        "Actions: Кнопка 'Send Offer' позволяет отправить персональное предложение."
+                                    ],
+                                    tips: [
+                                        "New Guest: Можно вручную добавить гостя, если он позвонил по телефону.",
+                                        "Клик по @username откроет Telegram чат."
+                                    ]
+                                },
+                                en: {
+                                    title: "CRM / Guest Database",
+                                    steps: [
+                                        "Directory of all registered guests.",
+                                        "AI Vibe: AI analysis of taste preferences.",
+                                        "Promo History: Track coupons used.",
+                                        "Actions: 'Send Offer' triggers a direct marketing message."
+                                    ],
+                                    tips: [
+                                        "New Guest: Manually register walk-ins or phone orders.",
+                                        "Click @username to open Telegram chat."
+                                    ]
+                                }
+                            }}
+                        />
+                    </div>
                     <p className="text-zinc-400">Manage customer profiles and AI preferences.</p>
                 </div>
                 <button

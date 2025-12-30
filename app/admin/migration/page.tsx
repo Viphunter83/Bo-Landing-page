@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { doc, setDoc, writeBatch, collection } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { fullMenu } from '../../data/menuData'
+import AdminHelp from '../components/AdminHelp'
 import { content } from '../../data/content'
 
 export const dynamic = 'force-dynamic'
@@ -66,7 +67,38 @@ export default function MigrationPage() {
     return (
         <div className="max-w-2xl mx-auto space-y-8">
             <div>
-                <h1 className="text-3xl font-bold mb-4">Data Migration</h1>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold mb-4">Data Migration</h1>
+                    <AdminHelp
+                        pageName="Data Migration"
+                        content={{
+                            ru: {
+                                title: "Миграция Данных",
+                                steps: [
+                                    "Перенос локальных данных в облако Firebase.",
+                                    "Кнопка 'Start Migration' загрузит меню (menu_items) и контент (site_content) из JSON файлов.",
+                                    "Используйте только при первоначальной настройке или сбросе базы данных."
+                                ],
+                                tips: [
+                                    "Зеленый лог ниже покажет статус загрузки.",
+                                    "Если данные уже есть, они будут перезаписаны."
+                                ]
+                            },
+                            en: {
+                                title: "Data Migration",
+                                steps: [
+                                    "Upload local JSON data to Firebase Cloud.",
+                                    "'Start Migration' pushes menu_items and site_content to Firestore.",
+                                    "Use only for initial setup or database reset."
+                                ],
+                                tips: [
+                                    "Check the green log below for status.",
+                                    "Existing data will be overwritten."
+                                ]
+                            }
+                        }}
+                    />
+                </div>
                 <p className="text-zinc-400">
                     Upload local JSON data to Firestore. checks console for details.
                 </p>

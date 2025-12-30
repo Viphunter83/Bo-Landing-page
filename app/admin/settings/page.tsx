@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
 import { Save, Image as ImageIcon, Instagram, Link as LinkIcon, AlertCircle, Users } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
+import AdminHelp from '../components/AdminHelp'
 
 interface SiteSettings {
     heroImage: string
@@ -79,7 +80,40 @@ export default function SettingsPage() {
         <div className="space-y-8 max-w-4xl">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Site Content & Settings</h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl font-bold text-white mb-2">Site Content & Settings</h1>
+                        <AdminHelp
+                            pageName="Site Settings"
+                            content={{
+                                ru: {
+                                    title: "Настройки Сайта",
+                                    steps: [
+                                        "Управление контентом, который видят клиенты на сайте.",
+                                        "Main Banner (Hero): Загрузите фото (ссылка) для главной обложки сайта.",
+                                        "Social Media Feed: Ссылки на фото для блока 'Мы в Instagram'.",
+                                        "Integrations: Токены для автоматических интеграций (Advanced)."
+                                    ],
+                                    tips: [
+                                        "Waiter Mode PIN: Код для входа в режим официанта (оформление заказа за столом).",
+                                        "Все изменения применяются мгновенно после нажатия 'Save Changes'."
+                                    ]
+                                },
+                                en: {
+                                    title: "Site Settings",
+                                    steps: [
+                                        "Manage customer-facing content.",
+                                        "Main Banner (Hero): Update the primary cover image of the website.",
+                                        "Social Media Feed: Image links for the 'Follow Us' section.",
+                                        "Integrations: API tokens for external services (Advanced)."
+                                    ],
+                                    tips: [
+                                        "Waiter Mode PIN: Access code for staff-only waiter interface.",
+                                        "Changes are applied instantly upon saving."
+                                    ]
+                                }
+                            }}
+                        />
+                    </div>
                     <p className="text-zinc-400">Manage visual capability and external integrations.</p>
                 </div>
                 <button

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Printer, Copy, Check, Download, ExternalLink } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
+import AdminHelp from '../components/AdminHelp'
 
 export default function QrGeneratorPage() {
     const [activeTab, setActiveTab] = useState<'table' | 'marketing'>('table')
@@ -117,7 +118,40 @@ export default function QrGeneratorPage() {
     return (
         <div className="space-y-8 max-w-4xl">
             <header>
-                <h1 className="text-3xl font-bold text-white mb-2">QR Code Generator</h1>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-white mb-2">QR Code Generator</h1>
+                    <AdminHelp
+                        pageName="QR Code Generator"
+                        content={{
+                            ru: {
+                                title: "Генератор QR-кодов",
+                                steps: [
+                                    "Создание кодов для столов (Table QR) и маркетинга (Deep Links).",
+                                    "Table QR: Ссылка на веб-приложение с привязкой к номеру стола.",
+                                    "Marketing Deep Link: Ссылка на Telegram Mini App с параметром (например, купон BO-SUMMER24).",
+                                    "Preview & Print: Можно скачать PNG или сразу отправить на печать."
+                                ],
+                                tips: [
+                                    "Распечатайте QR столов и наклейте их на столы для заказа без официанта.",
+                                    "Используйте Deep Links для отслеживания эффективности рекламы у блогеров."
+                                ]
+                            },
+                            en: {
+                                title: "QR Code Generator",
+                                steps: [
+                                    "Create QR codes for Tables and Marketing campaigns.",
+                                    "Table QR: Links to web app with table context for ordering.",
+                                    "Marketing Deep Link: Links to Telegram Mini App with start params (e.g. promo codes).",
+                                    "Preview & Print: Download PNG or print directly."
+                                ],
+                                tips: [
+                                    "Stick Table QRs on physical tables for self-service.",
+                                    "Use Deep Links to track influencer campaigns or ads."
+                                ]
+                            }
+                        }}
+                    />
+                </div>
                 <p className="text-zinc-400">Create QR codes for Tables and Marketing Campaigns.</p>
             </header>
 

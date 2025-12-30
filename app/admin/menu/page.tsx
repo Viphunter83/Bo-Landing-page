@@ -9,6 +9,7 @@ import ImageUpload from '../../components/ImageUpload'
 import { useToast } from '../context/ToastContext'
 import AdminDataTable from '../components/AdminDataTable'
 import { Ingredient, RecipeItem } from '../../lib/types/inventory'
+import AdminHelp from '../components/AdminHelp'
 
 
 export const dynamic = 'force-dynamic'
@@ -145,7 +146,40 @@ export default function MenuManager() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-3xl font-bold mb-2">Menu Manager</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-3xl font-bold mb-2">Menu Manager</h2>
+                        <AdminHelp
+                            pageName="Menu Manager"
+                            content={{
+                                ru: {
+                                    title: "Управление Меню",
+                                    steps: [
+                                        "Список всех блюд с ценами и статусами.",
+                                        "Add Item: Создать новое блюдо.",
+                                        "Technical Card (Recipe): Внутри каждого блюда можно настроить состав (калькуляция).",
+                                        "Stock Status: Переключатель 'IN STOCK' / 'SOLD OUT' для 86-листа."
+                                    ],
+                                    tips: [
+                                        "Фотографии блюд грузятся по ссылке или через аплоад.",
+                                        "Категории влияют на сортировку в основном меню."
+                                    ]
+                                },
+                                en: {
+                                    title: "Menu Manager",
+                                    steps: [
+                                        "Manage dishes, prices, and availability.",
+                                        "Add Item: Create new menu items.",
+                                        "Technical Card: Configure recipe ingredients for inventory tracking.",
+                                        "Stock Status: Toggle 'IN STOCK' / 'SOLD OUT' instantly."
+                                    ],
+                                    tips: [
+                                        "Photos: Use high-quality URL or upload directly.",
+                                        "Categories follow the order on the customer site."
+                                    ]
+                                }
+                            }}
+                        />
+                    </div>
                     <p className="text-zinc-400">Manage your menu items, prices, and availability.</p>
                 </div>
                 <button

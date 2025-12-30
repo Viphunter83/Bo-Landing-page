@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon, Clock, Coins } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import { fullMenu } from '../../data/menuData'
+import AdminHelp from '../components/AdminHelp'
 
 interface Lead {
     id: string
@@ -403,7 +404,40 @@ function MarketingContent() {
         <div className="space-y-8">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Marketing Hub</h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl font-bold text-white mb-2">Marketing Hub</h1>
+                        <AdminHelp
+                            pageName="Marketing Hub"
+                            content={{
+                                ru: {
+                                    title: "Маркетинговый Центр",
+                                    steps: [
+                                        "Центр генерации контента и рассылок.",
+                                        "AI Social Media Agent: ИИ напишет пост для Instagram или Telegram о любом блюде.",
+                                        "Segments Grid: Готовые группы клиентов (острое, здоровое) для массовой рассылки в один клик.",
+                                        "Triggers: Ручной запуск автоматических кампаний (Дни рождения, Win-Back)."
+                                    ],
+                                    tips: [
+                                        "Smart Offer: Можно сгенерировать персональное предложение для конкретного лида из таблицы.",
+                                        "Attach Coupon: ИИ может сразу создать одноразовый купон и вшить ссылку в сообщение."
+                                    ]
+                                },
+                                en: {
+                                    title: "Marketing Hub",
+                                    steps: [
+                                        "Content generation and campaign center.",
+                                        "AI Social Media Agent: Create viral posts for any dish instantly.",
+                                        "Segments: One-click blast to targeted groups (Spicy Lovers, Healthy).",
+                                        "Triggers: Manually fire automation jobs (Birthday, Win-Back)."
+                                    ],
+                                    tips: [
+                                        "Smart Offer: Generate hyper-personalized copy for specific leads.",
+                                        "Attach Coupon: AI generates a unique link/code and embeds it."
+                                    ]
+                                }
+                            }}
+                        />
+                    </div>
                     <p className="text-zinc-400">Turn Quiz Data into Revenue.</p>
                 </div>
                 <div className="flex items-center gap-4">

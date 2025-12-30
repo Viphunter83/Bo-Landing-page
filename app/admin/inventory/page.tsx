@@ -7,11 +7,17 @@ import { Plus, Edit2, Trash2, AlertTriangle, Save, X, History } from 'lucide-rea
 import { useToast } from '../context/ToastContext'
 import { Ingredient, InventoryTransaction } from '../../lib/types/inventory'
 import { generateInventoryInsights, InventoryInsight } from '../../lib/analytics-inventory'
+import AdminHelp from '../components/AdminHelp'
 
 export const dynamic = 'force-dynamic'
 
 export default function InventoryManager() {
     const [ingredients, setIngredients] = useState<Ingredient[]>([])
+    // ...
+    // Note: I will only replace the header part in the second chunk, but I need to do the import first.
+    // Wait, I can do both via separate calls or careful chunking. I'll do separate calls for safety.
+    // This call is just for Import.
+
     const [transactions, setTransactions] = useState<InventoryTransaction[]>([])
     const [isCreating, setIsCreating] = useState(false)
     const [isRestocking, setIsRestocking] = useState(false)
@@ -180,7 +186,42 @@ export default function InventoryManager() {
         <div className="space-y-6 text-white min-h-screen">
             <div className="flex justify-between items-center bg-zinc-900/50 p-6 rounded-2xl border border-zinc-800">
                 <div>
-                    <h2 className="text-3xl font-black mb-1">Inventory</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-3xl font-black mb-1">Inventory</h2>
+                        <AdminHelp
+                            pageName="Inventory / Stock"
+                            content={{
+                                ru: {
+                                    title: "Склад и Инвентарь",
+                                    steps: [
+                                        "Управление остатками продуктов (Current Stock).",
+                                        "Restock (+): Добавить количество, когда привезли товар.",
+                                        "Waste (-): Списать испорченное или потраченное мимо кассы.",
+                                        "History: Вкладка истории показывает все движения.",
+                                        "Low Stock: Система подсветит красным, если запасы ниже минимума."
+                                    ],
+                                    tips: [
+                                        "Daily Burn: Аналитика покажет, на сколько дней хватит запасов.",
+                                        "Cost/Unit: Обновляйте цену при закупке — это важно для фудкоста."
+                                    ]
+                                },
+                                en: {
+                                    title: "Inventory Management",
+                                    steps: [
+                                        "Track ingredient usage and leftovers.",
+                                        "Restock (+): Add quantity on new delivery.",
+                                        "Waste (-): Log spoilage or accidental loss.",
+                                        "History: View audit log of all manual changes.",
+                                        "Low Stock: Auto-alerts when below threshold."
+                                    ],
+                                    tips: [
+                                        "Daily Burn: Estimation of how many days regarding recent sales.",
+                                        "Cost/Unit: Keep updated for accurate food cost reports."
+                                    ]
+                                }
+                            }}
+                        />
+                    </div>
                     <p className="text-zinc-400">Manage stock and ingredients</p>
                 </div>
                 <div className="flex gap-2">
