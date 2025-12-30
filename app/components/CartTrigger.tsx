@@ -18,6 +18,7 @@ export default function CartTrigger() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 onClick={toggleCart}
+                aria-label="Open Cart"
                 className="fixed bottom-24 right-6 md:bottom-6 z-50 bg-yellow-500 text-black p-4 rounded-full shadow-2xl shadow-yellow-500/20 hover:scale-110 active:scale-95 transition-transform"
             >
                 <div className="relative">

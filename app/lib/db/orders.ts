@@ -16,15 +16,15 @@ export interface OrderData {
     customerPhone?: string;
     // New Fields for Phase 9.5 & 12
     type?: 'dine_in' | 'delivery' | 'pickup' | 'online_order';
-    address?: string;
-    apartment?: string;
+    address?: string | null;
+    apartment?: string | null;
     paymentMethod?: 'cash' | 'card' | 'online';
     name?: string;
     email?: string;
-    table?: string; // QR Menu Context
+    table?: string | null; // QR Menu Context
 
     // Phase 12 Delivery Fields
-    deliveryZoneId?: string;
+    deliveryZoneId?: string | null;
     deliveryFee?: number;
     deliveryStatus?: 'pending' | 'assigned' | 'out_for_delivery' | 'delivered';
     driverId?: string;
@@ -34,7 +34,7 @@ export interface OrderData {
     stripeSessionId?: string;
     subtotal?: number;
     discount?: number;
-    promoCode?: string;
+    promoCode?: string | null;
 }
 
 export const createOrder = async (order: OrderData) => {

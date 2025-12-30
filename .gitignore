@@ -35,3 +35,11 @@ yarn-error.log*
 next-env.d.ts
 
 
+
+# Playwright
+/playwright-report/
+/test-results/
+
+# PWA
+/public/sw.js
+/public/workbox-*.js

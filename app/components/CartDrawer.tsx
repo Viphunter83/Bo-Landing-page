@@ -317,6 +317,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         exit={{ x: '100%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         className="fixed right-0 top-0 h-full w-full max-w-md bg-zinc-900 border-l border-zinc-800 z-[70] flex flex-col shadow-2xl"
+                        data-testid="cart-drawer"
                     >
                         {/* Header */}
                         <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md">
@@ -614,18 +615,18 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                         items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
                                                         total: `${finalTotal.toFixed(2)} AED`, // Update total
                                                         subtotal: total, // Track original
-                                                        discount: discount, // Track discount
-                                                        promoCode: promoCode.trim().toUpperCase() || undefined,
+                                                        discount: discount > 0 ? discount : 0, // Zero instead of undefined
+                                                        promoCode: promoCode.trim().toUpperCase() || null, // Null is allowed
                                                         platform: 'Web',
                                                         status: 'new',
                                                         paymentStatus: 'pending',
                                                         type: orderType,
-                                                        table: tableNumber || undefined, // Add Table context
-                                                        address: orderType === 'delivery' ? address : undefined,
-                                                        apartment: orderType === 'delivery' ? apartment : undefined,
+                                                        table: tableNumber || null, // Null instead of undefined
+                                                        address: orderType === 'delivery' ? address : null,
+                                                        apartment: orderType === 'delivery' ? apartment : null,
                                                         paymentMethod: 'online',
                                                         email,
-                                                        deliveryZoneId: selectedZoneId,
+                                                        deliveryZoneId: selectedZoneId || null,
                                                         deliveryFee
                                                     })
 
