@@ -20,6 +20,8 @@ interface CartContextType {
     toggleCart: () => void
     total: number
     isSurge: boolean
+    tableNumber: string | null
+    setTableNumber: (table: string | null) => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -28,6 +30,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([])
     const [isOpen, setIsOpen] = useState(false)
     const [isSurge, setIsSurge] = useState(false)
+    const [tableNumber, setTableNumber] = useState<string | null>(null)
     const { user } = useTelegram()
 
     // Check for Rush Mode
@@ -47,11 +50,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return () => clearInterval(interval)
     }, [])
 
-    // Load from local storage
+    // Load from local storage (Cart & Table)
     useEffect(() => {
-        const saved = localStorage.getItem('bo_cart')
-        if (saved) {
-            try { setItems(JSON.parse(saved)) } catch (e) { console.error(e) }
+        const savedCart = localStorage.getItem('bo_cart')
+        if (savedCart) {
+            try { setItems(JSON.parse(savedCart)) } catch (e) { console.error(e) }
+        }
+
+        const savedTable = localStorage.getItem('bo_table')
+        if (savedTable) {
+            setTableNumber(savedTable)
         }
     }, [])
 
@@ -59,6 +67,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         localStorage.setItem('bo_cart', JSON.stringify(items))
     }, [items])
+
+    useEffect(() => {
+        if (tableNumber) {
+            localStorage.setItem('bo_table', tableNumber)
+        } else {
+            localStorage.removeItem('bo_table')
+        }
+    }, [tableNumber])
 
     // Sync to DB (Debounced) - For Cart Recovery
     useEffect(() => {
@@ -115,7 +131,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, 0)
 
     return (
-        <CartContext.Provider value={{ items, isOpen, addToCart, removeFromCart, updateQuantity, clearCart, toggleCart, total, isSurge }}>
+        <CartContext.Provider value={{ items, isOpen, addToCart, removeFromCart, updateQuantity, clearCart, toggleCart, total, isSurge, tableNumber, setTableNumber }}>
             {children}
         </CartContext.Provider>
     )
