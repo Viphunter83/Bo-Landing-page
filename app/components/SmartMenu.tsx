@@ -14,25 +14,21 @@ interface SmartMenuProps {
 }
 
 import { useEffect, useState } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
-import { db } from '../lib/firebase'
-import { getInitialTrends } from '../lib/trends'
-import { Flame } from 'lucide-react'
+import { tenantConfig } from '../lib/config/tenant'
+import { query, where, onSnapshot } from 'firebase/firestore'
+import { getTenantCollection } from '../lib/db/tenant_db'
 
 export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activeVibe }: SmartMenuProps) {
   const [liveData, setLiveData] = useState<Record<string, any>>({})
 
   useEffect(() => {
-    if (!db) return // Skip if firebase not init
-
-    // Listen to real-time menu updates
-    console.log("Subscribing to menu_items...")
-    const unsubscribe = onSnapshot(collection(db, 'menu_items'), (snapshot) => {
-      console.log("Menu update received!", snapshot.size, "docs")
+    // Listen to real-time menu updates (tenant isolated)
+    console.log(`Subscribing to menu_items for tenant: ${tenantConfig.id}...`)
+    const q = query(getTenantCollection('menu_items'))
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const updates: Record<string, any> = {}
       snapshot.forEach((doc) => {
         updates[doc.id] = doc.data()
-        console.log("Updated item:", doc.id, doc.data().price)
       })
       setLiveData(updates)
     }, (error) => {
@@ -41,13 +37,7 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
     return () => unsubscribe()
   }, [])
   // Get featured dishes based on active vibe or show default
-  const featuredDishes = activeVibe && activeVibe !== 'all'
-    ? getMenuByCategory(activeVibe).slice(0, 3)
-    : [
-      getMenuItemById('pho-bo-special'),
-      getMenuItemById('nem-ran'),
-      getMenuItemById('mango-shake')
-    ].filter(Boolean) as any[]
+    : fullMenu.slice(0, 3)
 
   return (
     <section id="menu" className="py-24 bg-black relative">
@@ -59,9 +49,9 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
           </div>
           <button
             onClick={onFullMenuClick}
-            className="text-yellow-500 hover:text-white transition-colors flex items-center gap-2"
+            className="text-primary hover:text-white transition-colors flex items-center gap-2"
           >
-            {lang === 'en' ? 'View Full Menu' : lang === 'ru' ? 'Полное Меню' : 'القائمة الكاملة'} <ChevronRight size={16} />
+            {t.menu.viewAll} <ChevronRight size={16} />
           </button>
         </div>
 
@@ -76,9 +66,9 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
             // Skip if out of stock (optional, or just show badge)
             // if (dish.stock === 'out_of_stock') return null 
 
-            const name = lang === 'en' ? dish.name : lang === 'ru' ? dish.nameRu : dish.nameAr
-            const desc = lang === 'en' ? dish.desc : lang === 'ru' ? dish.descRu : dish.descAr
-            const tag = dish.tag && (lang === 'en' ? dish.tag : lang === 'ru' ? dish.tagRu : dish.tagAr)
+            const name = (dish as any)[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || dish.name
+            const desc = (dish as any)[`desc${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || dish.desc
+            const tag = (dish as any)[`tag${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || dish.tag
 
             return (
               <button
@@ -88,7 +78,7 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
               >
                 <div className="aspect-[4/5] rounded-2xl overflow-hidden mb-6 relative">
                   {tag && (
-                    <div className="absolute top-4 left-4 bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full z-10 flex items-center gap-1">
+                    <div className="absolute top-4 left-4 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full z-10 flex items-center gap-1">
                       {tag}
                     </div>
                   )}
@@ -119,8 +109,8 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
 
                   <div className={`absolute bottom-6 left-6 right-6 ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
                     <div className="flex justify-between items-end mb-2">
-                      <h3 className="text-2xl font-bold text-white group-hover:text-yellow-400 transition-colors">{name}</h3>
-                      <span className="text-xl font-bold text-yellow-400">{dish.price}</span>
+                      <h3 className="text-2xl font-bold text-white group-hover:text-primary transition-colors">{name}</h3>
+                      <span className="text-xl font-bold text-primary">{dish.price}</span>
                     </div>
                     <p className="text-gray-300 text-sm">{desc}</p>
                   </div>

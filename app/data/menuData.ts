@@ -2,15 +2,18 @@ export interface MenuItem {
   id: string
   name: string
   nameRu: string
-  nameAr: string
+  nameAr?: string
+  nameVn?: string
   price: string
   desc: string
   descRu: string
-  descAr: string
+  descAr?: string
+  descVn?: string
   tag?: string
   tagRu?: string
   tagAr?: string
-  category: 'classic' | 'spicy' | 'fresh' | 'drinks' | 'desserts'
+  tagVn?: string
+  category: 'classic' | 'spicy' | 'fresh' | 'drinks' | 'desserts' | 'cocktails' | 'snacks'
   image: string
   ingredients?: string[]
   spicy?: boolean
@@ -18,7 +21,7 @@ export interface MenuItem {
   glutenFree?: boolean
 }
 
-export const fullMenu: MenuItem[] = [
+export const boMenu: MenuItem[] = [
   // Classic / Traditional
   {
     id: 'pho-bo-special',
@@ -61,7 +64,7 @@ export const fullMenu: MenuItem[] = [
     price: '58 AED',
     desc: 'Grilled beef patties, vermicelli noodles, fresh herbs, nuoc cham sauce.',
     descRu: 'Жареные котлеты из говядины, вермишель, свежая зелень, соус ныок чам.',
-    descAr: 'كباب لحم بقري مشوي، نودلز الشعيرية، أعشاب طازجة، صلصة نووك تشام.',
+    descAr: 'كباب لحم بقري مشوي، نودلز الشعيرية، أعшاب طازجة، صلصة نووك تشام.',
     tag: 'Must Try',
     tagRu: 'Must Try',
     tagAr: 'يجب تجربته',
@@ -79,14 +82,12 @@ export const fullMenu: MenuItem[] = [
     price: '42 AED',
     desc: 'Crispy baguette, grilled chicken, pate, pickled vegetables, cilantro, chili.',
     descRu: 'Хрустящий багет, жареная курица, паштет, маринованные овощи, кинза, чили.',
-    descAr: 'خبز فرنسي مقرمش، دجاج مشوي، باتيه، خضار مخللة، كزبرة، فلفل حار.',
+    descAr: 'خبز فرنسي مقرمш, دجاج مشوي, باتيه, خضار مخللة, كزبرة, فلفل حار.',
     category: 'classic',
     image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=1000&q=80',
     ingredients: ['Baguette', 'Grilled chicken', 'Pate', 'Pickled carrots', 'Cilantro', 'Chili'],
     spicy: false
   },
-
-  // Spicy & Bold
   {
     id: 'nem-ran',
     name: 'Nem Ran (Spicy)',
@@ -105,97 +106,17 @@ export const fullMenu: MenuItem[] = [
     spicy: true
   },
   {
-    id: 'bun-bo-hue',
-    name: 'Bun Bo Hue',
-    nameRu: 'Бун Бо Хюэ',
-    nameAr: 'بون بو هوي',
-    price: '68 AED',
-    desc: 'Spicy beef noodle soup from Hue, lemongrass broth, beef shank.',
-    descRu: 'Острый суп с лапшой и говядиной из Хюэ, бульон с лемонграссом, говяжья голяшка.',
-    descAr: 'حساء نودلز لحم بقري حار من هوي، مرق الليمون الحامض، لحم بقري.',
-    tag: 'Spicy',
-    tagRu: 'Острое',
-    tagAr: 'حار',
-    category: 'spicy',
-    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=1000&q=80',
-    ingredients: ['Beef shank', 'Lemongrass', 'Rice noodles', 'Chili', 'Lime'],
-    spicy: true,
-    glutenFree: true
-  },
-  {
-    id: 'tom-yum-pho',
-    name: 'Tom Yum Pho',
-    nameRu: 'Том Ям Фо',
-    nameAr: 'توم يام فو',
-    price: '62 AED',
-    desc: 'Fusion pho with tom yum flavors, shrimp, mushrooms, spicy lemongrass broth.',
-    descRu: 'Фьюжн фо с ароматом том ям, креветки, грибы, острый бульон с лемонграссом.',
-    descAr: 'فو بانكه مع نكهات توم يام، جمبري، فطر، مرق ليمون حامض حار.',
-    category: 'spicy',
-    image: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=1000&q=80',
-    ingredients: ['Shrimp', 'Mushrooms', 'Lemongrass', 'Kaffir lime', 'Chili', 'Rice noodles'],
-    spicy: true,
-    glutenFree: true
-  },
-  {
-    id: 'spicy-wings',
-    name: 'Vietnamese Spicy Wings',
-    nameRu: 'Вьетнамские Острые Крылышки',
-    nameAr: 'أجنحة فيتنامية حارة',
-    price: '48 AED',
-    desc: 'Crispy chicken wings marinated in Vietnamese spices, served with chili sauce.',
-    descRu: 'Хрустящие куриные крылышки, маринованные во вьетнамских специях, подаются с острым соусом.',
-    descAr: 'أجنحة دجاج مقرمشة متبلة بالبهارات الفيتنامية، تقدم مع صلصة الفلفل الحار.',
-    category: 'spicy',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1000&q=80',
-    ingredients: ['Chicken wings', 'Vietnamese spices', 'Garlic', 'Chili', 'Fish sauce'],
-    spicy: true
-  },
-
-  // Fresh & Light
-  {
-    id: 'goi-cuon',
-    name: 'Goi Cuon (Fresh Rolls)',
-    nameRu: 'Гой Куон (Свежие Роллы)',
-    nameAr: 'غوي كوون (رولز طازجة)',
-    price: '38 AED',
-    desc: 'Fresh spring rolls with shrimp, chicken, vermicelli, herbs, peanut sauce.',
-    descRu: 'Свежие спринг-роллы с креветками, курицей, вермишелью, зеленью, арахисовым соусом.',
-    descAr: 'سبرينغ رولز طازجة مع جمبري، دجاج، شعيرية، أعشاب، صلصة الفول السوداني.',
-    category: 'fresh',
-    image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=1000&q=80',
-    ingredients: ['Shrimp', 'Chicken', 'Rice paper', 'Vermicelli', 'Lettuce', 'Mint', 'Peanut sauce'],
-    spicy: false,
-    glutenFree: true
-  },
-  {
-    id: 'papaya-salad',
-    name: 'Green Papaya Salad',
-    nameRu: 'Салат из Зеленой Папайи',
-    nameAr: 'سلطة البابايا الخضراء',
-    price: '42 AED',
-    desc: 'Shredded green papaya, carrots, herbs, peanuts, tangy dressing.',
-    descRu: 'Тертая зеленая папайя, морковь, зелень, арахис, пикантная заправка.',
-    descAr: 'بابايا خضراء مبشورة، جزر، أعشاب، فول سوداني، صلصة منعشة.',
-    category: 'fresh',
-    image: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=1000&q=80',
-    ingredients: ['Green papaya', 'Carrots', 'Peanuts', 'Lime', 'Fish sauce', 'Chili'],
-    spicy: false,
-    vegetarian: true,
-    glutenFree: true
-  },
-  {
     id: 'mango-shake',
     name: 'Mango Shake',
     nameRu: 'Манго Шейк',
-    nameAr: 'مانجو شيك',
+    nameAr: 'مانجو шيك',
     price: '35 AED',
     desc: 'Fresh majestic mangoes, blended to perfection, served chilled.',
     descRu: 'Спелое манго, взбитое до идеальной текстуры, подается охлажденным.',
     descAr: 'مانجو طازج، ممزوج للكمال، يقدم بارداً.',
     tag: 'Refresh',
     tagRu: 'Освежает',
-    tagAr: 'منعش',
+    tagAr: 'منعш',
     category: 'fresh',
     image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=1000&q=80',
     ingredients: ['Fresh mango', 'Ice', 'Condensed milk'],
@@ -203,24 +124,6 @@ export const fullMenu: MenuItem[] = [
     vegetarian: true,
     glutenFree: true
   },
-  {
-    id: 'coconut-smoothie',
-    name: 'Coconut Smoothie',
-    nameRu: 'Кокосовый Смузи',
-    nameAr: 'سموذي جوز الهند',
-    price: '32 AED',
-    desc: 'Fresh coconut, coconut milk, ice, sweet and refreshing.',
-    descRu: 'Свежий кокос, кокосовое молоко, лед, сладкий и освежающий.',
-    descAr: 'جوز هند طازج، حليب جوز الهند، ثلج، حلو ومنعش.',
-    category: 'fresh',
-    image: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=1000&q=80',
-    ingredients: ['Fresh coconut', 'Coconut milk', 'Ice', 'Sugar'],
-    spicy: false,
-    vegetarian: true,
-    glutenFree: true
-  },
-
-  // Drinks
   {
     id: 'vietnamese-coffee',
     name: 'Vietnamese Iced Coffee',
@@ -236,57 +139,60 @@ export const fullMenu: MenuItem[] = [
     spicy: false,
     vegetarian: true,
     glutenFree: true
-  },
-  {
-    id: 'lemongrass-tea',
-    name: 'Lemongrass Tea',
-    nameRu: 'Чай с Лемонграссом',
-    nameAr: 'شاي الليمون الحامض',
-    price: '22 AED',
-    desc: 'Fresh lemongrass, ginger, honey, served hot or iced.',
-    descRu: 'Свежий лемонграсс, имбирь, мед, подается горячим или со льдом.',
-    descAr: 'ليمون حامض طازج، زنجبيل، عسل، يقدم ساخناً أو مثلجاً.',
-    category: 'drinks',
-    image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=1000&q=80',
-    ingredients: ['Lemongrass', 'Ginger', 'Honey'],
-    spicy: false,
-    vegetarian: true,
-    glutenFree: true
-  },
+  }
+];
 
-  // Desserts
+export const lunaMenu: MenuItem[] = [
   {
-    id: 'che-ba-mau',
-    name: 'Che Ba Mau',
-    nameRu: 'Че Ба Мау',
-    nameAr: 'تشي با ماو',
-    price: '38 AED',
-    desc: 'Three-color dessert with mung beans, red beans, coconut cream, ice.',
-    descRu: 'Трехцветный десерт с машем, красной фасолью, кокосовыми сливками, льдом.',
-    descAr: 'حلوى ثلاثية الألوان مع الفاصوليا الخضراء، الفاصوليا الحمراء، كريمة جوز الهند، ثلج.',
-    category: 'desserts',
-    image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=1000&q=80',
-    ingredients: ['Mung beans', 'Red beans', 'Coconut cream', 'Ice', 'Sugar'],
-    spicy: false,
-    vegetarian: true,
-    glutenFree: true
+    id: 'signature-cocktail',
+    name: 'Luna Signature',
+    nameRu: 'Авторский Луна',
+    nameVn: 'Luna Signature',
+    price: '180,000 VND',
+    desc: 'Gin, dragon fruit, lime, and a touch of secret spice.',
+    descRu: 'Джин, питахайя, лайм и секретные специи.',
+    descVn: 'Gin, thanh long, chanh và một chút gia vị bí mật.',
+    tag: 'Signature',
+    tagRu: 'Фирменный',
+    tagVn: 'Đặc trưng',
+    category: 'cocktails',
+    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=1000&q=80',
+    ingredients: ['Gin', 'Dragon fruit', 'Lime', 'Spice syrup'],
+    spicy: false
   },
   {
-    id: 'banana-fritters',
-    name: 'Banana Fritters',
-    nameRu: 'Банановые Оладьи',
-    nameAr: 'فطائر الموز',
-    price: '42 AED',
-    desc: 'Crispy fried bananas, coconut, sesame seeds, served with ice cream.',
-    descRu: 'Хрустящие жареные бананы, кокос, кунжут, подаются с мороженым.',
-    descAr: 'موز مقلي مقرمش، جوز هند، بذور السمسم، يقدم مع الآيس كريم.',
-    category: 'desserts',
-    image: 'https://images.unsplash.com/photo-1571875257727-256c39da42af?w=1000&q=80',
-    ingredients: ['Bananas', 'Coconut', 'Sesame seeds', 'Ice cream'],
+    id: 'sunset-sparkling',
+    name: 'Sunset Sparkling',
+    nameRu: 'Игристое Сансет',
+    nameVn: 'Vang nổ Sunset',
+    price: '220,000 VND',
+    desc: 'Premium sparkling wine with a dash of peach schnapps.',
+    descRu: 'Премиальное игристое вино с персиковым шнапсом.',
+    descVn: 'Rượu vang nổ cao cấp với một chút rượu đào.',
+    category: 'cocktails',
+    image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=1000&q=80',
+    ingredients: ['Sparkling wine', 'Peach schnapps', 'Fresh peach'],
+    spicy: false
+  },
+  {
+    id: 'premium-cheese-platter',
+    name: 'Premium Cheese Platter',
+    nameRu: 'Сырная тарелка Премиум',
+    nameVn: 'Khay phô mai cao cấp',
+    price: '350,000 VND',
+    desc: 'Selection of local and imported cheeses, nuts, and honey.',
+    descRu: 'Ассорти местных и импортных сыров, орехи, мед.',
+    descVn: 'Lựa chọn các loại phô mai nội địa và nhập khẩu, các loại hạt và mật ong.',
+    category: 'snacks',
+    image: 'https://images.unsplash.com/photo-1631451095765-2c91616fc9e6?w=1000&q=80',
+    ingredients: ['Brie', 'Gorgonzola', 'Cheddar', 'Walnuts', 'Honey'],
     spicy: false,
     vegetarian: true
   }
-]
+];
+
+// Determine which menu to use
+export const fullMenu = process.env.NEXT_PUBLIC_TENANT_ID === 'luna_hcmc' ? lunaMenu : boMenu;
 
 export const getMenuByCategory = (category: string): MenuItem[] => {
   if (category === 'all') return fullMenu
@@ -296,4 +202,3 @@ export const getMenuByCategory = (category: string): MenuItem[] => {
 export const getMenuItemById = (id: string): MenuItem | undefined => {
   return fullMenu.find(item => item.id === id)
 }
-

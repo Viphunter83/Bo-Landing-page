@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { doc, setDoc, writeBatch, collection } from 'firebase/firestore'
 import { db } from '../../lib/firebase'
+import { getTenantCollection } from '../../lib/db/tenant_db'
 import { fullMenu } from '../../data/menuData'
 import AdminHelp from '../components/AdminHelp'
 import { content } from '../../data/content'
@@ -16,14 +17,12 @@ export default function MigrationPage() {
     const addLog = (msg: string) => setLog(prev => [...prev, msg])
 
     const migrateMenu = async () => {
-        if (!db) return
         addLog('Starting Menu Migration...')
         try {
-            const firestore = db
-            const batch = writeBatch(firestore)
+            const batch = writeBatch(db!)
 
             for (const item of fullMenu) {
-                const ref = doc(firestore, 'menu_items', item.id)
+                const ref = doc(getTenantCollection('menu_items'), item.id)
                 batch.set(ref, item)
             }
 
@@ -36,16 +35,14 @@ export default function MigrationPage() {
     }
 
     const migrateContent = async () => {
-        if (!db) return
         addLog('Starting Content Migration...')
         try {
-            const firestore = db
-            const batch = writeBatch(firestore)
+            const batch = writeBatch(db!)
 
-            // content is { en: {...}, ru: {...}, ar: {...} }
+            // content is { en: {...}, ru: {...}, vn: {...} }
             for (const [lang, data] of Object.entries(content)) {
-                const ref = doc(firestore, 'site_content', lang)
-                batch.set(ref, data)
+                const ref = doc(getTenantCollection('site_content'), lang)
+                batch.set(ref, { ...data, lang })
             }
 
             await batch.commit()

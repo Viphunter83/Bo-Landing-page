@@ -2,8 +2,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { db } from '../../lib/firebase'
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { getTenantCollection } from '@/app/lib/db/tenant_db'
+import { query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { Booking } from '../../lib/types/booking'
 import { Clock, Calendar, Users, Phone, Trash2, Check, X, Mail } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
@@ -19,12 +19,7 @@ export default function BookingAdminPage() {
     const { showToast } = useToast()
 
     useEffect(() => {
-        if (!db) {
-            setLoading(false)
-            return
-        }
-
-        const q = query(collection(db, 'bookings'), orderBy('bookingDateTime', 'desc'))
+        const q = query(getTenantCollection('bookings'), orderBy('bookingDateTime', 'desc'))
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BookingWithId))
@@ -36,9 +31,8 @@ export default function BookingAdminPage() {
     }, [])
 
     const updateStatus = async (id: string, status: 'confirmed' | 'cancelled') => {
-        if (!db) return
         try {
-            await updateDoc(doc(db, 'bookings', id), { status })
+            await updateDoc(doc(getTenantCollection('bookings'), id), { status })
             showToast(`Booking ${status}`, 'success')
         } catch (e) {
             console.error(e)
@@ -47,10 +41,9 @@ export default function BookingAdminPage() {
     }
 
     const deleteBooking = async (id: string) => {
-        if (!db) return
         if (!confirm('Permanently delete this booking?')) return
         try {
-            await deleteDoc(doc(db, 'bookings', id))
+            await deleteDoc(doc(getTenantCollection('bookings'), id))
             showToast('Booking deleted', 'success')
         } catch (e) {
             console.error(e)

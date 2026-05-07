@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { X, Calendar, Clock, User, Phone, MapPin, ShoppingBag, Truck, Check } from 'lucide-react'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { addDoc, serverTimestamp } from 'firebase/firestore'
+import { getTenantCollection } from '../lib/db/tenant_db'
 import { useToast } from '../admin/context/ToastContext'
 import { OrderType, ORDER_TYPES } from '../lib/types/core'
 
@@ -32,10 +32,6 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!db) {
-            showToast("Database connection failed", "error")
-            return
-        }
         setIsLoading(true)
 
         try {
@@ -50,7 +46,7 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
 
             if (orderType === 'dine_in') {
                 // Save to BOOKINGS
-                await addDoc(collection(db, 'bookings'), {
+                await addDoc(getTenantCollection('bookings'), {
                     ...commonData,
                     status: 'pending',
                     date: formData.date,
@@ -69,7 +65,7 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
                     price: 0
                 })).filter(i => i.name)
 
-                await addDoc(collection(db, 'orders'), {
+                await addDoc(getTenantCollection('orders'), {
                     ...commonData,
                     status: 'new', // KDS expects 'new'
                     address: formData.address,

@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, query, orderBy, onSnapshot, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, increment } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
+import { doc, addDoc, updateDoc, deleteDoc, serverTimestamp, increment, onSnapshot, query, orderBy } from 'firebase/firestore'
+import { getTenantCollection } from '../../lib/db/tenant_db'
 import { Plus, Edit2, Trash2, AlertTriangle, Save, X, History } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import { Ingredient, InventoryTransaction } from '../../lib/types/inventory'
@@ -39,11 +39,11 @@ export default function InventoryManager() {
     }
 
     const submitRestock = async () => {
-        if (!db || !restockForm.amount) return
+        if (!restockForm.amount) return
         try {
-            // Atomic update (increment) is safer but updateDoc with calculation is fine for this scale
-            // We use increment provided by Firestore
-            const ingRef = doc(db, 'ingredients', restockForm.id)
+            const ingredientsCol = getTenantCollection('ingredients')
+            const transactionsCol = getTenantCollection('inventory_transactions')
+            const ingRef = doc(ingredientsCol, restockForm.id)
 
             // 1. Update Stock Atomic
             await updateDoc(ingRef, {
@@ -53,7 +53,7 @@ export default function InventoryManager() {
             })
 
             // 2. Log Transaction
-            await addDoc(collection(db, 'inventory_transactions'), {
+            await addDoc(transactionsCol, {
                 ingredientId: restockForm.id,
                 type: 'restock',
                 quantity: restockForm.amount,
@@ -76,9 +76,11 @@ export default function InventoryManager() {
     }
 
     const submitWastage = async () => {
-        if (!db || !restockForm.amount) return
+        if (!restockForm.amount) return
         try {
-            const ingRef = doc(db, 'ingredients', restockForm.id)
+            const ingredientsCol = getTenantCollection('ingredients')
+            const transactionsCol = getTenantCollection('inventory_transactions')
+            const ingRef = doc(ingredientsCol, restockForm.id)
 
             // Atomic decrement
             await updateDoc(ingRef, {
@@ -86,7 +88,7 @@ export default function InventoryManager() {
                 updatedAt: serverTimestamp()
             })
 
-            await addDoc(collection(db, 'inventory_transactions'), {
+            await addDoc(transactionsCol, {
                 ingredientId: restockForm.id,
                 type: 'waste',
                 quantity: -restockForm.amount, // Negative for usage/waste
@@ -103,27 +105,36 @@ export default function InventoryManager() {
         }
     }
     useEffect(() => {
-        if (!db) return
-        const q = query(collection(db, 'ingredients'), orderBy('name'))
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ingredient))
-            setIngredients(data)
+        try {
+            const col = getTenantCollection('ingredients')
+            const q = query(col, orderBy('name'))
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ingredient))
+                setIngredients(data)
 
-            // Generate Insights
-            generateInventoryInsights(data).then(setInsights)
-        })
-        return () => unsubscribe()
+                // Generate Insights
+                generateInventoryInsights(data).then(setInsights)
+            })
+            return () => unsubscribe()
+        } catch (e) {
+            console.error("Failed to subscribe to ingredients:", e)
+        }
     }, [])
 
     // Fetch Recent Transactions (Limit 50 ideally, but simple for now)
     useEffect(() => {
-        if (!db || activeTab !== 'history') return
-        const q = query(collection(db, 'inventory_transactions'), orderBy('createdAt', 'desc'))
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as InventoryTransaction))
-            setTransactions(data)
-        })
-        return () => unsubscribe()
+        if (activeTab !== 'history') return
+        try {
+            const col = getTenantCollection('inventory_transactions')
+            const q = query(col, orderBy('createdAt', 'desc'))
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as InventoryTransaction))
+                setTransactions(data)
+            })
+            return () => unsubscribe()
+        } catch (e) {
+            console.error("Failed to subscribe to transactions:", e)
+        }
     }, [activeTab])
 
     const handleCreate = () => {
@@ -145,23 +156,20 @@ export default function InventoryManager() {
     }
 
     const handleSave = async () => {
-        if (!db) return
         if (!editForm.name) return showToast("Name is required", "error")
 
         try {
+            const col = getTenantCollection('ingredients')
             const payload = {
                 ...editForm,
                 updatedAt: serverTimestamp()
             }
 
             if (editingId) {
-                // If stock changed manually, we should probably log a transaction, 
-                // but for simple edit we'll just update for now. 
-                // Ideally stock updates should be separate actions.
-                await updateDoc(doc(db, 'ingredients', editingId), payload)
+                await updateDoc(doc(col, editingId), payload)
                 showToast("Ingredient updated", "success")
             } else {
-                await addDoc(collection(db, 'ingredients'), payload)
+                await addDoc(col, payload)
                 showToast("Ingredient created", "success")
             }
             setIsCreating(false)
@@ -172,10 +180,10 @@ export default function InventoryManager() {
     }
 
     const handleDelete = async (id: string, name: string) => {
-        if (!db) return
         if (!confirm(`Delete ${name}? This might break recipes!`)) return
         try {
-            await deleteDoc(doc(db, 'ingredients', id))
+            const col = getTenantCollection('ingredients')
+            await deleteDoc(doc(col, id))
             showToast("Deleted", "info")
         } catch (e) {
             showToast("Failed to delete", "error")

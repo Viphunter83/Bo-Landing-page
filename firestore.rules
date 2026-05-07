@@ -1,1 +1,65 @@
-rules_version = '2'; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if true; } } }
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- ПОМОЩНИКИ ---
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Проверка, является ли пользователь администратором платформы
+    function isPlatformAdmin() {
+      let userPath = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isAuthenticated() && (
+        request.auth.token.email == 'olegvakin@gmail.com' ||
+        request.auth.token.email.matches('.*@bo-restaurant\\.com') ||
+        (exists(userPath) && get(userPath).data.role == 'ADMIN')
+      );
+    }
+
+    // Проверка, является ли пользователь администратором конкретного арендатора
+    function isTenantAdmin(tenantId) {
+      let tenantUserPath = /databases/$(database)/documents/tenants/$(tenantId)/users/$(request.auth.uid);
+      return isAuthenticated() && (
+        isPlatformAdmin() || 
+        (exists(tenantUserPath) && get(tenantUserPath).data.role == 'ADMIN')
+      );
+    }
+
+    // --- ПРАВИЛА ---
+
+    // 1. Новая мульти-арендная структура (SaaS)
+    // Путь: /tenants/{tenantId}/{collectionId}/{docId}
+    match /tenants/{tenantId}/{collectionId}/{docId} {
+      // Публичные коллекции (доступны всем на чтение)
+      allow read: if collectionId in ['menu_items', 'site_settings', 'coupons'];
+      
+      // Полный доступ для админов арендатора (включая платформенных админов)
+      allow read, write: if isTenantAdmin(tenantId);
+      
+      // Позволяем создание заказов и бронирований для клиентов
+      allow create: if collectionId in ['orders', 'bookings'];
+    }
+
+    // 2. Глобальные пользователи (профили)
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isPlatformAdmin();
+    }
+
+    // 3. Обратная совместимость (Root collections - Legacy)
+    match /bookings/{id} { allow read, write: if isPlatformAdmin(); allow create: if true; }
+    match /orders/{id} { allow read, write: if isPlatformAdmin(); allow create: if true; }
+    match /menu_items/{id} { allow read: if true; allow write: if isPlatformAdmin(); }
+    match /site_settings/{id} { allow read: if true; allow write: if isPlatformAdmin(); }
+    match /system_logs/{id} { allow create: if true; allow read: if isPlatformAdmin(); }
+    match /coupons/{id} { allow read: if true; allow write: if isPlatformAdmin(); }
+    match /inventory/{id} { allow read, write: if isPlatformAdmin(); }
+
+    // По умолчанию — всё закрыто
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

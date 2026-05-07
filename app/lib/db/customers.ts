@@ -1,5 +1,6 @@
 import { db } from '../firebase';
-import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp, increment, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, increment, arrayUnion } from 'firebase/firestore';
+import { getTenantCollection } from './tenant_db';
 
 export interface CustomerPreferences {
     hunger?: string;
@@ -52,7 +53,7 @@ export const upsertCustomer = async (data: {
 
     if (!cleanPhone) return;
 
-    const customerRef = doc(db, 'customers', cleanPhone);
+    const customerRef = doc(getTenantCollection('customers'), cleanPhone);
 
     try {
         const snapshot = await getDoc(customerRef);

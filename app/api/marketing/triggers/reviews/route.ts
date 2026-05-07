@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/app/lib/firebase'
-import { collection, query, getDocs, orderBy, limit } from 'firebase/firestore'
+import { getTenantCollection } from '@/app/lib/db/tenant_db'
+import { query, getDocs, orderBy, limit } from 'firebase/firestore'
 import { resend } from '@/app/lib/resend'
 import { generateBoEmailHtml } from '@/app/lib/email-templates'
 
@@ -8,13 +8,11 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
     try {
-        if (!db) throw new Error('DB not initialized')
-
         // 1. Find recent completed orders (last 48 hours for demo purposes)
         const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
 
         const q = query(
-            collection(db, 'orders'),
+            getTenantCollection('orders'),
             orderBy('createdAt', 'desc'),
             limit(20) // Limit to avoid massive blasts during test
         )
@@ -83,3 +81,4 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: e.message }, { status: 500 })
     }
 }
+

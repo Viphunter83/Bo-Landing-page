@@ -1,5 +1,6 @@
 import { db } from './firebase'
-import { collection, doc, getDoc, getDocs, runTransaction, query, where, serverTimestamp, writeBatch, increment } from 'firebase/firestore'
+import { doc, getDoc, getDocs, runTransaction, query, where, serverTimestamp, increment } from 'firebase/firestore'
+import { getTenantCollection } from './db/tenant_db'
 import { Ingredient, RecipeItem, InventoryTransaction } from './types/inventory'
 
 /**
@@ -23,7 +24,7 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
 
             // NOTE: 'in' query limit is 10. If order has > 10 distinct items, we need batching.
             // For now assuming < 10 distinct items per order for MVP.
-            const menuQuery = query(collection(firestore, 'menu_items'), where('name', 'in', itemNames))
+            const menuQuery = query(getTenantCollection('menu_items'), where('name', 'in', itemNames))
             const menuSnap = await getDocs(menuQuery)
 
             const menuMap = new Map()
@@ -52,7 +53,7 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
             // 3. Deduct Stock & Create Transactions
             const usageEntries = Array.from(ingredientUsage.entries())
             for (const [ingId, amount] of usageEntries) {
-                const ingRef = doc(firestore, 'ingredients', ingId)
+                const ingRef = doc(getTenantCollection('ingredients'), ingId)
                 const ingDoc = await transaction.get(ingRef)
 
                 if (!ingDoc.exists()) continue
@@ -66,7 +67,7 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
                 })
 
                 // Create Transaction Record
-                const txRef = doc(collection(firestore, 'inventory_transactions'))
+                const txRef = doc(getTenantCollection('inventory_transactions'))
                 transaction.set(txRef, {
                     ingredientId: ingId,
                     type: 'order',

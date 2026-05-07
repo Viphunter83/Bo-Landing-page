@@ -3,8 +3,10 @@
 import React, { useState } from 'react'
 import { X, Calendar, Clock, Users, Phone, Mail, CheckCircle, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { addDoc, serverTimestamp } from 'firebase/firestore'
+import { getTenantCollection } from '../lib/db/tenant_db'
+
+import { tenantConfig } from '../lib/config/tenant'
 
 interface BookingModalProps {
   isOpen: boolean
@@ -18,13 +20,15 @@ interface BookingModalProps {
 const DAYS = {
   en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
   ru: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
-  ar: ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت']
+  ar: ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'],
+  vn: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 }
 
 const MONTHS = {
   en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   ru: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
-  ar: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+  ar: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+  vn: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
 }
 
 export default function BookingModal({ isOpen, onClose, lang, t, initialValues }: BookingModalProps) {
@@ -122,15 +126,10 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
     // Basic validation
     if (!formData.date || !formData.time || !formData.name || !formData.phone) return
 
-    if (!db) {
-      alert("System unavailable: Database not connected.")
-      return
-    }
-
     setIsSubmitted(true)
 
     try {
-      await addDoc(collection(db, 'bookings'), {
+      await addDoc(getTenantCollection('bookings'), {
         ...formData,
         status: 'pending', // pending, confirmed, cancelled
         createdAt: serverTimestamp(),
@@ -203,13 +202,13 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
       onClick={onClose}
     >
       <div
-        className={`bg-zinc-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-yellow-500/20 shadow-2xl relative ${lang === 'ar' ? 'text-right' : 'text-left'}`}
+        className={`bg-zinc-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-primary/20 shadow-2xl relative ${lang === 'ar' ? 'text-right' : 'text-left'}`}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="sticky top-0 bg-zinc-900/95 backdrop-blur border-b border-zinc-800 p-6 flex justify-between items-center z-20">
           <h2 className="text-2xl font-black text-white">
-            {lang === 'en' ? 'Book a Table' : lang === 'ru' ? 'Бронь стола' : 'احجز طاولة'}
+            {t.nav.book}
           </h2>
           <button
             type="button"
@@ -244,8 +243,8 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
             <div className="space-y-4">
               <div className="flex justify-between items-center mb-2">
                 <label className="flex items-center gap-2 text-white font-bold text-lg">
-                  <Calendar size={20} className="text-yellow-500" />
-                  <span>{lang === 'en' ? 'Select Date' : lang === 'ru' ? 'Выберите дату' : 'اختر التاريخ'}</span>
+                  <Calendar size={20} className="text-primary" />
+                  <span>{lang === 'en' ? 'Select Date' : lang === 'ru' ? 'Выберите дату' : lang === 'vn' ? 'Chọn ngày' : 'اختر التاريخ'}</span>
                 </label>
                 <div className="flex items-center gap-2 bg-zinc-800 rounded-lg p-1">
                   <button type="button" onClick={() => changeMonth(-1)} className="p-1 hover:bg-zinc-700 rounded text-white"><ChevronLeft size={20} /></button>
@@ -280,7 +279,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
                         className={`
                                         h-10 rounded-lg text-sm font-bold transition-all flex items-center justify-center
                                         ${selected
-                            ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20 scale-105'
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105'
                             : isAvailable
                               ? 'bg-zinc-800/50 text-white hover:bg-zinc-700 hover:scale-105'
                               : 'text-zinc-700 cursor-not-allowed'}
@@ -297,8 +296,8 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
             {/* 2. Time Selection (Slots Grid) */}
             <div className={`space-y-4 transition-all duration-300 ${!formData.date ? 'opacity-50 grayscale pointer-events-none' : 'opacity-100'}`}>
               <label className="flex items-center gap-2 text-white font-bold text-lg">
-                <Clock size={20} className="text-yellow-500" />
-                <span>{lang === 'en' ? 'Select Time' : lang === 'ru' ? 'Выберите время' : 'اختر الوقت'}</span>
+                <Clock size={20} className="text-primary" />
+                <span>{lang === 'en' ? 'Select Time' : lang === 'ru' ? 'Выберите время' : lang === 'vn' ? 'Chọn giờ' : 'اختر الوقت'}</span>
               </label>
 
               {isLoadingSlots ? (
@@ -318,7 +317,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
                                     ${formData.time === slot.time
                           ? 'bg-white text-black border-white shadow-lg scale-105'
                           : slot.available
-                            ? 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-yellow-500 hover:text-yellow-500'
+                            ? 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:border-primary hover:text-primary'
                             : 'bg-zinc-900/50 border-zinc-800 text-zinc-700 cursor-not-allowed decoration-slice'}
                                 `}
                     >
@@ -339,7 +338,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
               <div>
                 <label className="flex items-center gap-2 text-zinc-400 text-sm mb-2">
                   <Users size={16} />
-                  <span>{lang === 'en' ? 'Guests' : lang === 'ru' ? 'Гости' : 'الضيوف'}</span>
+                  <span>{lang === 'en' ? 'Guests' : lang === 'ru' ? 'Гости' : lang === 'vn' ? 'Khách' : 'الضيوف'}</span>
                 </label>
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                   {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
@@ -350,7 +349,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
                       className={`
                             w-10 h-10 rounded-full flex-shrink-0 font-bold transition-all
                             ${formData.guests === num.toString()
-                          ? 'bg-yellow-500 text-black'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white'}
                         `}
                     >
@@ -368,7 +367,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 placeholder:text-zinc-600"
-                  placeholder={lang === 'en' ? 'Full Name' : lang === 'ru' ? 'Имя' : 'الاسم'}
+                  placeholder={lang === 'en' ? 'Full Name' : lang === 'ru' ? 'Имя' : lang === 'vn' ? 'Họ tên' : 'الاسم'}
                 />
                 <input
                   type="tel"
@@ -376,7 +375,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 placeholder:text-zinc-600"
-                  placeholder={lang === 'en' ? 'Phone' : lang === 'ru' ? 'Телефон' : 'الهاتف'}
+                  placeholder={lang === 'en' ? 'Phone' : lang === 'ru' ? 'Телефон' : lang === 'vn' ? 'Số điện thoại' : 'الهاتف'}
                 />
               </div>
               <input
@@ -392,20 +391,20 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
                 onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
                 rows={2}
                 className="w-full bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-yellow-500 resize-none placeholder:text-zinc-600"
-                placeholder={lang === 'en' ? 'Special Requests...' : lang === 'ru' ? 'Пожелания...' : 'طلبات خاصة...'}
+                placeholder={lang === 'en' ? 'Special Requests...' : lang === 'ru' ? 'Пожелания...' : lang === 'vn' ? 'Yêu cầu đặc biệt...' : 'طلبات خاصة...'}
               />
 
               {/* Promo Code Field */}
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Sparkles size={16} className="text-yellow-500" />
+                  <Sparkles size={16} className="text-primary" />
                 </div>
                 <input
                   type="text"
                   value={formData.promoCode}
                   onChange={(e) => setFormData({ ...formData, promoCode: e.target.value })}
-                  className="w-full bg-zinc-900 border border-yellow-500/30 rounded-lg pl-10 pr-4 py-3 text-yellow-500 placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500 font-mono tracking-wider"
-                  placeholder={lang === 'ru' ? 'Промокод (если есть)' : 'Promo Code (Optional)'}
+                  className="w-full bg-zinc-900 border border-primary/30 rounded-lg pl-10 pr-4 py-3 text-primary placeholder:text-zinc-600 focus:outline-none focus:border-primary font-mono tracking-wider"
+                  placeholder={lang === 'ru' ? 'Промокод (если есть)' : lang === 'vn' ? 'Mã giảm giá (nếu có)' : 'Promo Code (Optional)'}
                 />
               </div>
             </div>
@@ -423,9 +422,9 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
               <button
                 type="submit"
                 disabled={!formData.date || !formData.time || !formData.name}
-                className="flex-1 bg-yellow-500 hover:bg-yellow-400 text-black px-6 py-4 rounded-xl font-bold transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-primary hover:opacity-90 text-primary-foreground px-6 py-4 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {lang === 'en' ? 'Confirm' : lang === 'ru' ? 'Подтвердить' : 'تأكيد'}
+                {lang === 'en' ? 'Confirm' : lang === 'ru' ? 'Подтвердить' : lang === 'vn' ? 'Xác nhận' : 'تأكيد'}
               </button>
             </div>
           </form>

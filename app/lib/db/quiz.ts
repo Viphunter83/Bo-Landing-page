@@ -1,5 +1,5 @@
-import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { addDoc, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { getTenantCollection } from './tenant_db';
 
 export interface QuizPreferences {
     time: string; // 'quick' | 'relaxed'
@@ -10,14 +10,10 @@ export interface QuizPreferences {
 }
 
 export const saveQuizResult = async (prefs: QuizPreferences, userId?: string) => {
-    if (!db) {
-        console.warn('Firestore is not initialized. Quiz result not saved.');
-        return null;
-    }
-
     try {
-        // 1. Always save the raw quiz result for analytics
-        const docRef = await addDoc(collection(db, 'quiz_results'), {
+        // 1. Always save the raw quiz result for analytics in the tenant-scoped collection
+        const quizResultsRef = getTenantCollection('quiz_results');
+        const docRef = await addDoc(quizResultsRef, {
             ...prefs,
             userId: userId || null,
             createdAt: serverTimestamp(),
@@ -27,7 +23,8 @@ export const saveQuizResult = async (prefs: QuizPreferences, userId?: string) =>
 
         // 2. If we have a logged-in user, Link results to their CRM Profile
         if (userId) {
-            const userRef = doc(db, 'users', userId);
+            const usersRef = getTenantCollection('users');
+            const userRef = doc(usersRef, userId);
             await setDoc(userRef, {
                 vibe: prefs.mood,
                 spice: prefs.spice,

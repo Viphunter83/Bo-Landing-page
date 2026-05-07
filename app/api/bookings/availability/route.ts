@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
-import { db } from '../../../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getTenantCollection } from '../../../lib/db/tenant_db';
+import { query, where, getDocs } from 'firebase/firestore';
 import { DEFAULT_CONFIG, RestaurantConfig, Booking } from '../../../lib/types/booking';
 
 export const dynamic = 'force-dynamic';
@@ -17,17 +17,13 @@ export async function GET(req: Request) {
             return NextResponse.json({ success: false, error: 'Date is required' }, { status: 400 });
         }
 
-        if (!db) {
-            return NextResponse.json({ success: false, error: 'Database unavailable' }, { status: 500 });
-        }
-
         // 1. Get Config (In a real app, fetch from DB. For now, use defaults)
         const config: RestaurantConfig = DEFAULT_CONFIG;
 
         // 2. Fetch existing bookings for this date
         // Note: In a robust system, we might need to check adjacent dates if slots carry over midnight,
         // but for 12:00-23:00, checking the single date is usually sufficient.
-        const bookingsRef = collection(db, 'bookings');
+        const bookingsRef = getTenantCollection('bookings');
         const q = query(
             bookingsRef,
             where('date', '==', date)
@@ -70,6 +66,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
 }
+
 
 // Helpers
 

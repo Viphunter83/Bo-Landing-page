@@ -1,5 +1,6 @@
 import { db } from './firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { addDoc, serverTimestamp } from 'firebase/firestore'
+import { getTenantCollection } from './db/tenant_db'
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug'
 
@@ -34,7 +35,7 @@ class Logger {
         // We skip 'debug' logs in Firestore to save costs
         if (!IS_DEV && level !== 'debug' && db) {
             try {
-                await addDoc(collection(db, LOG_COLLECTION), entry)
+                await addDoc(getTenantCollection(LOG_COLLECTION), entry)
             } catch (e) {
                 console.error('Failed to write log to Firestore:', e)
             }

@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, query, orderBy, limit, onSnapshot, addDoc } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
+import { query, orderBy, limit, onSnapshot, addDoc } from 'firebase/firestore'
+import { getTenantCollection } from '@/app/lib/db/tenant_db'
 import AdminDataTable from '../components/AdminDataTable'
 import { Users, Search, Sparkles, MessageCircle, Send } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
@@ -32,9 +32,7 @@ export default function CustomersPage() {
     const { showToast } = useToast()
 
     useEffect(() => {
-        if (!db) return
-
-        const q = query(collection(db, 'users'), orderBy('lastLogin', 'desc'), limit(50))
+        const q = query(getTenantCollection('users'), orderBy('lastLogin', 'desc'), limit(50))
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const data = snapshot.docs.map(doc => {
                 const d = doc.data()
@@ -171,17 +169,12 @@ export default function CustomersPage() {
             return
         }
 
-        if (!db) {
-            showToast('Database connection missing', 'error')
-            return
-        }
-
         setSaving(true)
         try {
             // Check for existing user with same email to avoid duplicates could be added here
             // For now, allow simplified entry
 
-            await addDoc(collection(db as any, 'users'), {
+            await addDoc(getTenantCollection('users'), {
                 firstName: newGuest.firstName,
                 lastName: newGuest.lastName,
                 email: newGuest.email,

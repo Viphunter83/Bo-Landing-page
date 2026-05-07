@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { db } from '../../lib/firebase'
-import { collection, query, where, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore'
+import { getTenantCollection } from '@/app/lib/db/tenant_db'
+import { query, where, onSnapshot, orderBy, updateDoc, doc } from 'firebase/firestore'
 import { Truck, ChefHat, CheckCircle, MapPin, Phone, Clock, AlertCircle, Flame, Users } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import AdminHelp from '../components/AdminHelp'
@@ -31,10 +31,8 @@ export default function DeliveryAdminPage() {
     }, [])
 
     useEffect(() => {
-        if (!db) return
-
         const q = query(
-            collection(db, 'orders'),
+            getTenantCollection('orders'),
             where('type', 'in', ['delivery', 'pickup']), // Include Pickup
             orderBy('createdAt', 'desc')
         )
@@ -81,7 +79,6 @@ export default function DeliveryAdminPage() {
     }, [showToast])
 
     const updateOrderStatus = async (orderId: string, newStatus: string) => {
-        if (!db) return
         try {
             const updates: any = { status: newStatus }
 
@@ -90,7 +87,7 @@ export default function DeliveryAdminPage() {
             else if (newStatus === 'out_for_delivery') updates.deliveryStatus = 'out_for_delivery'
             else if (newStatus === 'completed') updates.deliveryStatus = 'delivered'
 
-            await updateDoc(doc(db, 'orders', orderId), updates)
+            await updateDoc(doc(getTenantCollection('orders'), orderId), updates)
             showToast(`Order status updated to ${newStatus}`, 'success')
         } catch (e) {
             console.error(e)
@@ -99,9 +96,8 @@ export default function DeliveryAdminPage() {
     }
 
     const assignDriver = async (orderId: string, driverId: string) => {
-        if (!db) return
         try {
-            await updateDoc(doc(db, 'orders', orderId), {
+            await updateDoc(doc(getTenantCollection('orders'), orderId), {
                 driverId: driverId
             })
             showToast("Driver assigned successfully", 'success')

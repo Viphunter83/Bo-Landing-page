@@ -1,22 +1,20 @@
 
 import { NextResponse } from 'next/server'
-import { db } from '@/app/lib/firebase'
-import { collection, query, orderBy, limit, getDocs, where, doc, updateDoc } from 'firebase/firestore'
+import { getTenantCollection } from '@/app/lib/db/tenant_db'
+import { query, orderBy, limit, getDocs, where, updateDoc } from 'firebase/firestore'
 import { createCoupon } from '@/app/lib/coupons'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
     try {
-        if (!db) throw new Error('DB not initialized')
-
         // 1. Logic: Find users whose Last Order was > 30 days ago.
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         // Safety: Only check last 500 recent orders to avoid massive reads, or query properly by user
         // Optimally we should query users collection "lastOrderAt" if it existed.
         // For MVP: Scan recent orders.
 
-        const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(200))
+        const q = query(getTenantCollection('orders'), orderBy('createdAt', 'desc'), limit(200))
         const snapshot = await getDocs(q)
 
         const userLastOrders = new Map<string, { date: Date, name: string, userId?: string, email?: string }>()
@@ -64,9 +62,9 @@ export async function POST(req: Request) {
                 if (customer.userId) {
                     // Extract numeric ID if prefixed
                     const numericId = customer.userId.includes(':') ? Number(customer.userId.split(':')[1]) : Number(customer.userId)
-                    userQ = query(collection(db, 'users'), where('telegramId', '==', numericId))
+                    userQ = query(getTenantCollection('users'), where('telegramId', '==', numericId))
                 } else if (customer.email) {
-                    userQ = query(collection(db, 'users'), where('email', '==', customer.email))
+                    userQ = query(getTenantCollection('users'), where('email', '==', customer.email))
                 }
 
                 if (userQ) {
@@ -139,3 +137,4 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: e.message }, { status: 500 })
     }
 }
+

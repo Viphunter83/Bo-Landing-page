@@ -1,6 +1,6 @@
-import { db } from './firebase'
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore'
+import { query, where, getDocs } from 'firebase/firestore'
 import { Ingredient } from './types/inventory'
+import { getTenantCollection } from './db/tenant_db'
 
 export interface InventoryInsight {
     ingredientId: string
@@ -13,7 +13,7 @@ export interface InventoryInsight {
  * Calculates analytics for all ingredients based on last 7 days of usage.
  */
 export async function generateInventoryInsights(ingredients: Ingredient[]): Promise<Record<string, InventoryInsight>> {
-    if (!db || ingredients.length === 0) return {}
+    if (ingredients.length === 0) return {}
 
     // 1. Define window (7 days)
     const days = 7
@@ -23,7 +23,7 @@ export async function generateInventoryInsights(ingredients: Ingredient[]): Prom
     // 2. Fetch ALL 'order' and 'waste' transactions from last 7 days
     // Optimization: Fetching one big list is better than N queries
     const q = query(
-        collection(db, 'inventory_transactions'),
+        getTenantCollection('inventory_transactions'),
         where('createdAt', '>=', startDate),
         where('type', 'in', ['order', 'waste'])
     )

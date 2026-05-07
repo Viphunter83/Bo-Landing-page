@@ -25,7 +25,7 @@ export async function generateMetadata({ params: { lang, dishId } }: PageProps) 
     const desc = lang === 'ru' ? dish.descRu : lang === 'ar' ? dish.descAr : dish.desc
 
     return {
-        title: `${name} | Bo Restaurant Dubai`,
+        title: `${name} | ${tenantConfig.brand.name}`,
         description: desc,
         openGraph: {
             title: name,
@@ -46,7 +46,7 @@ export default function DishPage({ params: { lang, dishId } }: PageProps) {
     const t = content[lang as keyof typeof content]
     const name = lang === 'ru' ? dish.nameRu : lang === 'ar' ? dish.nameAr : dish.name
     const desc = lang === 'ru' ? dish.descRu : lang === 'ar' ? dish.descAr : dish.desc
-    const currency = lang === 'en' ? 'AED' : lang === 'ru' ? 'AED' : 'د.إ'
+    const currency = tenantConfig.localization.currency.symbol
     const dir = lang === 'ar' ? 'rtl' : 'ltr'
 
     // 3. Schema.org Data (Product/MenuItem)
@@ -59,7 +59,7 @@ export default function DishPage({ params: { lang, dishId } }: PageProps) {
         "offers": {
             "@type": "Offer",
             "price": dish.price,
-            "priceCurrency": "AED",
+            "priceCurrency": tenantConfig.localization.currency.code,
             "availability": "https://schema.org/InStock"
         }
     }

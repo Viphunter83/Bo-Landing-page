@@ -1,6 +1,4 @@
-import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
-import { checkStockAvailability } from '../../lib/inventory-admin'
+import { tenantConfig } from '../../lib/config/tenant'
 
 // IMPORTANT: Use Environment Variable in Production
 const getStripe = () => {
@@ -32,14 +30,16 @@ export async function POST(req: Request) {
             }, { status: 400 })
         }
 
+        const currencyCode = tenantConfig.localization.currency.code.toLowerCase()
+
         const line_items = items.map((item: any) => ({
             price_data: {
-                currency: 'aed',
+                currency: currencyCode,
                 product_data: {
                     name: item.name,
                     // images: [item.image], // Optional, validation strictness varies
                 },
-                unit_amount: Math.round(parseFloat(item.price.replace(/[^0-9.]/g, '')) * 100), // Convert to fils
+                unit_amount: Math.round(parseFloat(item.price.replace(/[^0-9.]/g, '')) * 100), // Convert to fils/cents
             },
             quantity: item.quantity,
         }))
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         if (deliveryFee > 0) {
             line_items.push({
                 price_data: {
-                    currency: 'aed',
+                    currency: currencyCode,
                     product_data: {
                         name: `Delivery Fee (${zoneName || 'Zone'})`,
                     },
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
             // Create a one-time coupon for this specific amount
             const coupon = await stripe.coupons.create({
                 amount_off: Math.round(discount * 100),
-                currency: 'aed',
+                currency: currencyCode,
                 duration: 'once',
                 name: 'Promo Code Discount'
             })

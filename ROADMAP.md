@@ -51,10 +51,13 @@
 - [x] **Referral System**: "Пригласи друга - получи 50 AED".
 - [x] **Push Notifications**: Напоминания о забытой корзине.
 
-### 3. Scaling
-- [ ] **QR-Menu w/ Pay-at-Table**: Концепция (Research Phase).
-- [ ] **Multi-branch**: Поддержка нескольких филиалов.
-- [ ] **PWA**: Возможность установки как приложение на iOS/Android.
+### 3. Scaling & SaaS Transformation
+- [x] **Multi-tenant Core**: Базовая архитектура для поддержки нескольких брендов в одном репозитории.
+- [x] **Dynamic Tenant Routing**: Переключение контента и темы через `NEXT_PUBLIC_TENANT_ID`.
+- [ ] **Dynamic Localization**: Полная поддержка вьетнамского рынка (Luna & Co.).
+- [ ] **Universal Template**: Превращение проекта в готовое решение для экспорта в другие бизнесы.
+- [ ] **Centralized CMS**: Переход от хардкодного контента в `content.ts` к динамическому управлению через Firestore/Dashboard.
+- [ ] **Custom Domain Automation**: Автоматическое подключение доменов для новых тенентов.
 
 ---
 

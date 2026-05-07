@@ -16,12 +16,12 @@ import BookingModal from '../components/BookingModal'
 import FullMenuModal from '../components/FullMenuModal'
 import DishModal from '../components/DishModal'
 import JsonLd from '../components/JsonLd'
-import DubaiPulseTicker from '../components/DubaiPulseTicker'
+import PulseTicker from '../components/PulseTicker'
 import CartDrawer from '../components/CartDrawer'
 import CartTrigger from '../components/CartTrigger'
+import { tenantConfig } from '../lib/config/tenant'
 
 import { content } from '../data/content'
-import { faqData } from '../data/faqData'
 import { getMenuItemById } from '../data/menuData'
 
 export default function Home({
@@ -66,12 +66,12 @@ export default function Home({
     }
   }, [])
 
-  // Fetch Site Settings
+  // Fetch Site Settings (Tenant Aware)
   useEffect(() => {
     if (!db) return
     const fetchSettings = async () => {
       try {
-        const docRef = doc(db!, 'site_settings', 'general')
+        const docRef = doc(db!, 'site_settings', tenantConfig.id)
         const snap = await getDoc(docRef)
         if (snap.exists()) {
           setSiteSettings(snap.data())
@@ -105,17 +105,18 @@ export default function Home({
     window.history.pushState({}, '', url)
   }
 
-  // Generate FAQ Schema
-  const currentFaq = faqData[lang as keyof typeof faqData] || faqData.en
+  // Generate FAQ Schema from tenantConfig
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    "mainEntity": currentFaq.map(item => ({
+    "mainEntity": tenantConfig.content.faq.map(item => ({
       "@type": "Question",
-      "name": item.question,
+      // @ts-ignore
+      "name": item.question[lang] || item.question.en,
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": item.answer
+        // @ts-ignore
+        "text": item.answer[lang] || item.answer.en
       }
     }))
   }
@@ -123,11 +124,11 @@ export default function Home({
   return (
 
     <>
-      <div className={`min-h-screen bg-black text-white font-sans selection:bg-red-600 selection:text-white`} dir={dir}>
+      <div className={`min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-primary-foreground`} dir={dir}>
         <CartDrawer lang={lang} />
         <CartTrigger />
         <JsonLd data={faqSchema} />
-        <DubaiPulseTicker lang={lang} />
+        <PulseTicker lang={lang} />
         <Navbar
           lang={lang}
           t={content[lang as keyof typeof content]}
@@ -172,7 +173,7 @@ export default function Home({
           <button
             onClick={handleBookClick}
             data-booking-trigger
-            className="w-full bg-red-600 text-white py-4 rounded-full font-bold shadow-2xl shadow-red-900/50 flex items-center justify-center gap-2"
+            className="w-full bg-primary text-primary-foreground py-4 rounded-full font-bold shadow-2xl shadow-primary/50 flex items-center justify-center gap-2"
           >
             <Utensils size={18} /> {content[lang as keyof typeof content].nav.book}
           </button>

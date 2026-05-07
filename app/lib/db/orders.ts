@@ -1,5 +1,6 @@
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { addDoc, serverTimestamp, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { getTenantCollection } from './tenant_db';
 
 export interface OrderItem {
     id: string;
@@ -44,7 +45,7 @@ export const createOrder = async (order: OrderData) => {
     }
 
     try {
-        const docRef = await addDoc(collection(db, 'orders'), {
+        const docRef = await addDoc(getTenantCollection('orders'), {
             ...order,
             type: order.type || 'dine_in', // Default
             createdAt: serverTimestamp(),
@@ -80,7 +81,7 @@ export async function getOrders(startDate: Date, endDate: Date) {
     if (!db) return []
 
     const q = query(
-        collection(db, 'orders'),
+        getTenantCollection('orders'),
         where('createdAt', '>=', Timestamp.fromDate(startDate)),
         where('createdAt', '<=', Timestamp.fromDate(endDate)),
         orderBy('createdAt', 'desc')

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
+import { getTenantCollection } from '@/app/lib/db/tenant_db'
 import { Edit2, Plus, Trash2, Scale } from 'lucide-react'
 import Image from 'next/image'
 import ImageUpload from '../../components/ImageUpload'
@@ -23,16 +23,14 @@ export default function MenuManager() {
     const { showToast } = useToast()
 
     useEffect(() => {
-        if (!db) return
-
         // Fetch Menu Items
-        const qMenu = query(collection(db, 'menu_items'), orderBy('category'))
+        const qMenu = query(getTenantCollection('menu_items'), orderBy('category'))
         const unsubMenu = onSnapshot(qMenu, (snapshot) => {
             setItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
         })
 
         // Fetch Ingredients for Recipe Editor
-        const qIngredients = query(collection(db, 'ingredients'), orderBy('name'))
+        const qIngredients = query(getTenantCollection('ingredients'), orderBy('name'))
         const unsubIngredients = onSnapshot(qIngredients, (snapshot) => {
             setIngredients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Ingredient)))
         })
@@ -62,16 +60,12 @@ export default function MenuManager() {
     }
 
     const handleSave = async () => {
-        if (!db) {
-            showToast("Database connection failed", "error")
-            return
-        }
         try {
             if (isCreating) {
-                await addDoc(collection(db, 'menu_items'), editForm)
+                await addDoc(getTenantCollection('menu_items'), editForm)
                 setIsCreating(false)
             } else if (editingId) {
-                await updateDoc(doc(db, 'menu_items', editingId), editForm)
+                await updateDoc(doc(getTenantCollection('menu_items'), editingId), editForm)
                 setEditingId(null)
             }
             showToast("Item saved successfully", "success")
@@ -82,10 +76,9 @@ export default function MenuManager() {
     }
 
     const handleDelete = async (id: string, name: string) => {
-        if (!db) return
         if (!confirm(`Are you sure you want to delete "${name}"?`)) return
         try {
-            await deleteDoc(doc(db, 'menu_items', id))
+            await deleteDoc(doc(getTenantCollection('menu_items'), id))
             showToast("Item deleted", "success")
         } catch (e) {
             console.error("Failed to delete", e)

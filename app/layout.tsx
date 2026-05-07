@@ -4,8 +4,10 @@ import SchemaScript from './components/SchemaScript'
 import ShakeToWin from './components/ShakeToWin'
 import InstallPrompt from './components/InstallPrompt'
 
+import { tenantConfig } from './lib/config/tenant'
+
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  themeColor: tenantConfig.theme.primaryColor,
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -13,33 +15,33 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://bo-restuarant.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://bo-restaurant-dubai.vercel.app'),
   title: {
-    default: 'Bo Restaurant Dubai - Authentic Vietnamese Cuisine',
-    template: '%s | Bo Restaurant Dubai'
+    default: `${tenantConfig.brand.name} - ${tenantConfig.brand.description.en.split('.')[0]}`,
+    template: `%s | ${tenantConfig.brand.name}`
   },
-  description: 'Experience the soul of Vietnam in Dubai Festival City. Authentic Pho, Banh Mi, and more. Delivery across Dubai.',
+  description: tenantConfig.brand.description.en,
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Bo Dubai',
+    title: tenantConfig.brand.name,
   },
-  keywords: ['Vietnamese Food Dubai', 'Best Pho Dubai', 'Asian Delivery Dubai', 'Dubai Festival City Restaurants', 'Bo Dubai'],
-  authors: [{ name: 'Bo Restaurant' }],
-  creator: 'Bo Restaurant',
-  publisher: 'Bo Restaurant',
+  keywords: tenantConfig.brand.keywords,
+  authors: [{ name: tenantConfig.brand.name }],
+  creator: tenantConfig.brand.name,
+  publisher: tenantConfig.brand.name,
   openGraph: {
-    title: 'Bo Restaurant Dubai - Authentic Vietnamese Cuisine',
-    description: 'Taste the Soul of Vietnam in Dubai Festival City. From Russia with Love, to the Heart of Dubai.',
-    url: 'https://bo-restuarant.vercel.app',
-    siteName: 'Bo Restaurant Dubai',
+    title: `${tenantConfig.brand.name} - ${tenantConfig.brand.description.en}`,
+    description: tenantConfig.brand.description.en,
+    url: process.env.NEXT_PUBLIC_BASE_URL || 'https://bo-restaurant-dubai.vercel.app',
+    siteName: tenantConfig.brand.name,
     images: [
       {
-        url: '/images/og-image.jpg',
+        url: tenantConfig.brand.ogImage,
         width: 1200,
         height: 630,
-        alt: 'Bo Restaurant Dubai',
+        alt: tenantConfig.brand.name,
       }
     ],
     locale: 'en_US',
@@ -47,9 +49,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Bo Restaurant Dubai',
-    description: 'Authentic Vietnamese Cuisine in Dubai Festival City',
-    images: ['/images/og-image.jpg'],
+    title: tenantConfig.brand.name,
+    description: tenantConfig.brand.description.en,
+    images: [tenantConfig.brand.ogImage],
   },
   robots: {
     index: true,
@@ -63,8 +65,8 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'verification_token',
-    yandex: 'yandex_verification_token',
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
   },
 }
 
@@ -79,8 +81,38 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const { tokens } = tenantConfig.theme;
+  
+  const dynamicStyles = `
+    :root {
+      --background: ${tokens.background};
+      --foreground: ${tokens.foreground};
+      --card: ${tokens.card};
+      --card-foreground: ${tokens.cardForeground};
+      --popover: ${tokens.popover};
+      --popover-foreground: ${tokens.popoverForeground};
+      --primary: ${tokens.primary};
+      --primary-foreground: ${tokens.primaryForeground};
+      --secondary: ${tokens.secondary};
+      --secondary-foreground: ${tokens.secondaryForeground};
+      --muted: ${tokens.muted};
+      --muted-foreground: ${tokens.mutedForeground};
+      --accent: ${tokens.accent};
+      --accent-foreground: ${tokens.accentForeground};
+      --destructive: ${tokens.destructive};
+      --destructive-foreground: ${tokens.destructiveForeground};
+      --border: ${tokens.border};
+      --input: ${tokens.input};
+      --ring: ${tokens.ring};
+      --radius: ${tokens.radius};
+    }
+  `;
+
   return (
-    <html lang="en">
+    <html lang={tenantConfig.localization.defaultLang} className={tenantConfig.theme.mode === 'dark' ? 'dark' : ''}>
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: dynamicStyles }} />
+      </head>
       <body className="antialiased">
         <TelegramProvider>
           <CartProvider>
@@ -90,7 +122,6 @@ export default function RootLayout({
             </Suspense>
             <InstallPrompt />
             <SchemaScript />
-            {/* Global Providers can go here */}
             {children}
           </CartProvider>
         </TelegramProvider>

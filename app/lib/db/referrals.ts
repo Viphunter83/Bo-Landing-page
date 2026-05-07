@@ -1,5 +1,6 @@
 import { db } from '../firebase'
-import { doc, getDoc, updateDoc, serverTimestamp, increment, collection, query, where, getDocs } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, serverTimestamp, increment, query, where, getDocs } from 'firebase/firestore'
+import { getTenantCollection } from './tenant_db'
 import { createCoupon } from '../coupons'
 
 /**
@@ -9,7 +10,7 @@ import { createCoupon } from '../coupons'
 export async function getOrCreateReferralCode(userId: string, userName: string = 'FRIEND'): Promise<string> {
     if (!db) throw new Error("Database not initialized")
 
-    const userRef = doc(db, 'customers', userId)
+    const userRef = doc(getTenantCollection('customers'), userId)
 
     // 1. Check if already has code
     const snapshot = await getDoc(userRef)
@@ -31,7 +32,7 @@ export async function getOrCreateReferralCode(userId: string, userName: string =
         code = `BO-${cleanName}-${suffix}`
 
         // We check uniqueness against COUPONS collection now, as that's the source of truth for redeeming
-        const q = query(collection(db, 'coupons'), where('code', '==', code))
+        const q = query(getTenantCollection('coupons'), where('code', '==', code))
         const qSnap = await getDocs(q)
         if (qSnap.empty) {
             isUnique = true
@@ -70,7 +71,7 @@ export async function resolveReferralCode(code: string): Promise<string | null> 
     // Format normalization ?? Maybe strictly uppercase
     const cleanCode = code.trim().toUpperCase()
 
-    const q = query(collection(db, 'customers'), where('referralCode', '==', cleanCode))
+    const q = query(getTenantCollection('customers'), where('referralCode', '==', cleanCode))
     const snapshot = await getDocs(q)
 
     if (snapshot.empty) return null
@@ -85,7 +86,7 @@ export async function resolveReferralCode(code: string): Promise<string | null> 
 export async function rewardReferrer(referrerId: string, amount: number) {
     if (!db) return
 
-    const referrerRef = doc(db, 'customers', referrerId)
+    const referrerRef = doc(getTenantCollection('customers'), referrerId)
 
     try {
         await updateDoc(referrerRef, {

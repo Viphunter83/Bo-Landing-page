@@ -1,6 +1,4 @@
-import { NextResponse } from 'next/server'
-import { getAIClient } from '../../../lib/ai/client'
-import { fullMenu, MenuItem } from '../../../data/menuData'
+import { tenantConfig } from '../../../lib/config/tenant'
 
 export async function POST(req: Request) {
     try {
@@ -23,7 +21,7 @@ export async function POST(req: Request) {
             contextInfo = `
             DISH DETAILS:
             - Name: ${menuItem.name}
-            - Price: ${menuItem.price}
+            - Price: ${menuItem.price} ${tenantConfig.localization.currency.symbol}
             - Description: ${menuItem.desc}
             - Ingredients: ${menuItem.ingredients?.join(', ')}
             `
@@ -33,21 +31,21 @@ export async function POST(req: Request) {
 
         // 2. Build Prompt
         const systemPrompt = `
-        You are an expert Social Media Manager for "Bo Restaurant Dubai" (Vietnamese Cuisine, Premium, Modern).
+        You are an expert Social Media Manager for "${tenantConfig.brand.name}" (${tenantConfig.brand.description.en}).
         
         GOAL: Write a viral ${platform} post.
         TONE: ${tone || 'Excited'}
-        LANGUAGE: ${lang || 'en'} (If 'ru', write in Russian. If 'ar', write in Arabic).
+        LANGUAGE: ${lang || 'en'} (If 'ru', write in Russian. If 'vn', write in Vietnamese).
 
         CONTEXT:
         ${contextInfo}
 
         RULES:
         1. Start with a hook (Question or Bold Statement).
-        2. Include the Price if it's a specific dish.
+        2. Include the Price if it's a specific dish (${tenantConfig.localization.currency.symbol}).
         3. Use line breaks for readability.
         4. End with a Call to Action (e.g., "Book via link in bio").
-        5. Add 5-7 relevant hashtags (must include #BoDubai #DubaiFood).
+        5. Add 5-7 relevant hashtags (must include #${tenantConfig.brand.name.replace(/\s+/g, '')} #${tenantConfig.localization.timezone.split('/')[1]}).
         `
 
         const ai = getAIClient('proxy')

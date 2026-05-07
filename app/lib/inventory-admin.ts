@@ -1,4 +1,5 @@
 import { getAdminDb } from './firebase-admin'
+import { getAdminTenantCollection } from './db/tenant_db_admin'
 import { FieldValue, FieldPath } from 'firebase-admin/firestore'
 import { RecipeItem } from './types/inventory'
 
@@ -18,7 +19,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
 
             // Note: 'in' queries limited to 10.
             const menuSnapshot = await transaction.get(
-                db.collection('menu_items').where('name', 'in', itemNames)
+                getAdminTenantCollection('menu_items').where('name', 'in', itemNames)
             )
 
             const menuMap = new Map()
@@ -43,7 +44,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
             // 3. Fetch Ingredients to Check Stock
             // We use standard reads here (blocking)
             const ingredientIds = Array.from(ingredientUsage.keys())
-            const ingredientsRefs = ingredientIds.map(id => db.collection('ingredients').doc(id))
+            const ingredientsRefs = ingredientIds.map(id => getAdminTenantCollection('ingredients').doc(id))
             const ingredientsDocs = await transaction.getAll(...ingredientsRefs)
 
             const depletedIngredientIds: string[] = []
@@ -71,7 +72,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
             if (depletedIngredientIds.length > 0) {
                 // WE MUST READ before WRITING in a transaction.
 
-                const inStockMenuQuery = db.collection('menu_items').where('stock', '==', 'in_stock')
+                const inStockMenuQuery = getAdminTenantCollection('menu_items').where('stock', '==', 'in_stock')
                 const inStockMenuSnap = await transaction.get(inStockMenuQuery)
 
                 inStockMenuSnap.docs.forEach(menuDoc => {
@@ -101,7 +102,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
                 })
 
                 // Log Transaction
-                const txRef = db.collection('inventory_transactions').doc()
+                const txRef = getAdminTenantCollection('inventory_transactions').doc()
                 transaction.set(txRef, {
                     ingredientId: update.id,
                     type: 'order',
@@ -133,7 +134,7 @@ export async function checkStockAvailability(items: { name: string, quantity: nu
     try {
         // 1. Fetch Recipes
         const itemNames = items.map(i => i.name)
-        const menuSnap = await db.collection('menu_items').where('name', 'in', itemNames).get()
+        const menuSnap = await getAdminTenantCollection('menu_items').where('name', 'in', itemNames).get()
         const menuMap = new Map()
         menuSnap.docs.forEach(d => menuMap.set(d.data().name, d.data()))
 
@@ -163,7 +164,7 @@ export async function checkStockAvailability(items: { name: string, quantity: nu
         const ingredientsMap = new Map<string, number>() // id -> currentStock
 
         for (const chunk of chunks) {
-            const q = await db.collection('ingredients').where(FieldPath.documentId(), 'in', chunk).get()
+            const q = await getAdminTenantCollection('ingredients').where(FieldPath.documentId(), 'in', chunk).get()
             q.docs.forEach(d => ingredientsMap.set(d.id, d.data().currentStock || 0))
         }
 

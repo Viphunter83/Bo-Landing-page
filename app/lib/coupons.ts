@@ -1,5 +1,6 @@
 import { db } from './firebase'
-import { collection, addDoc, query, where, getDocs, updateDoc, doc, serverTimestamp, getDoc, orderBy } from 'firebase/firestore'
+import { addDoc, query, where, getDocs, updateDoc, doc, serverTimestamp, getDoc, orderBy } from 'firebase/firestore'
+import { getTenantCollection } from './db/tenant_db'
 import { Coupon, CouponType, CouponSource } from './types/marketing'
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -16,7 +17,7 @@ export async function generateUniqueCode(length = 6): Promise<string> {
             code += CHARS.charAt(Math.floor(Math.random() * CHARS.length))
         }
 
-        const q = query(collection(db, 'coupons'), where('code', '==', code))
+        const q = query(getTenantCollection('coupons'), where('code', '==', code))
         const snapshot = await getDocs(q)
         if (snapshot.empty) isUnique = true
     }
@@ -50,7 +51,7 @@ export async function createCoupon(data: {
         expiresAt: expiry
     }
 
-    const docRef = await addDoc(collection(db, 'coupons'), couponData)
+    const docRef = await addDoc(getTenantCollection('coupons'), couponData)
 
     // Return with ID
     return {
@@ -66,7 +67,7 @@ export async function createCoupon(data: {
 export async function getCouponByCode(code: string): Promise<Coupon | null> {
     if (!db) return null
     const cleanCode = code.toUpperCase().trim()
-    const q = query(collection(db, 'coupons'), where('code', '==', cleanCode))
+    const q = query(getTenantCollection('coupons'), where('code', '==', cleanCode))
     const snapshot = await getDocs(q)
 
     if (snapshot.empty) return null
@@ -86,7 +87,7 @@ export async function getUserCoupons(userId: string): Promise<Coupon[]> {
     if (!db) return []
 
     const q = query(
-        collection(db, 'coupons'),
+        getTenantCollection('coupons'),
         where('userId', '==', userId),
         where('status', '==', 'active'),
         orderBy('createdAt', 'desc')
@@ -108,7 +109,7 @@ export async function getUserCoupons(userId: string): Promise<Coupon[]> {
 
 export async function redeemCoupon(couponId: string) {
     if (!db) throw new Error('DB not initialized')
-    const ref = doc(db, 'coupons', couponId)
+    const ref = doc(getTenantCollection('coupons'), couponId)
     await updateDoc(ref, {
         status: 'used',
         redeemedAt: serverTimestamp()

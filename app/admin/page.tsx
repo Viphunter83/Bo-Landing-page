@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, query, orderBy, limit, onSnapshot, doc, updateDoc } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { doc, updateDoc, onSnapshot, query, orderBy, limit } from 'firebase/firestore'
+import { getTenantCollection } from '../lib/db/tenant_db'
 import AdminHelp from './components/AdminHelp'
 import AdminOrderModal from '../components/AdminOrderModal'
 import AdminDataTable from './components/AdminDataTable'
@@ -23,61 +23,66 @@ export default function AdminDashboard() {
     const [rawOrders, setRawOrders] = useState<UnifiedOrder[]>([])
 
     useEffect(() => {
-        if (!db) return
+        try {
+            const bookingsCol = getTenantCollection('bookings')
+            const ordersCol = getTenantCollection('orders')
 
-        // 1. Subscribe to Bookings
-        const qBookings = query(collection(db, 'bookings'), orderBy('createdAt', 'desc'), limit(50))
-        const unsubBookings = onSnapshot(qBookings, (snapshot) => {
-            const data = snapshot.docs.map(doc => {
-                const d = doc.data()
-                return {
-                    id: doc.id,
-                    dataSource: 'booking',
-                    type: d.type || 'dine_in',
-                    status: d.status || 'pending',
-                    name: d.name || 'Unknown',
-                    phone: d.phone || '',
-                    date: d.date || '',
-                    time: d.time || '',
-                    guests: d.guests,
-                    specialRequests: d.specialRequests,
-                    items: d.items, // might be string or array
-                    createdAt: d.createdAt
-                } as UnifiedOrder
+            // 1. Subscribe to Bookings
+            const qBookings = query(bookingsCol, orderBy('createdAt', 'desc'), limit(50))
+            const unsubBookings = onSnapshot(qBookings, (snapshot) => {
+                const data = snapshot.docs.map(doc => {
+                    const d = doc.data()
+                    return {
+                        id: doc.id,
+                        dataSource: 'booking',
+                        type: d.type || 'dine_in',
+                        status: d.status || 'pending',
+                        name: d.name || 'Unknown',
+                        phone: d.phone || '',
+                        date: d.date || '',
+                        time: d.time || '',
+                        guests: d.guests,
+                        specialRequests: d.specialRequests,
+                        items: d.items, // might be string or array
+                        createdAt: d.createdAt
+                    } as UnifiedOrder
+                })
+                setRawBookings(data)
             })
-            setRawBookings(data)
-        })
 
-        // 2. Subscribe to Orders
-        const qOrders = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50))
-        const unsubOrders = onSnapshot(qOrders, (snapshot) => {
-            const data = snapshot.docs.map(doc => {
-                const d = doc.data()
-                const dateObj = d.createdAt?.toDate ? d.createdAt.toDate() : new Date()
-                return {
-                    id: doc.id,
-                    dataSource: 'order',
-                    type: d.type || 'online_order',
-                    status: d.status || 'new',
-                    name: d.name || 'Guest',
-                    phone: d.phone || '',
-                    address: d.address ? `${d.address}${d.apartment ? ', ' + d.apartment : ''}` : undefined,
-                    date: dateObj.toLocaleDateString(),
-                    time: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    items: d.items,
-                    notes: d.notes,
-                    total: d.total,
-                    promoCode: d.promoCode,
-                    discount: d.discount,
-                    createdAt: d.createdAt
-                } as UnifiedOrder
+            // 2. Subscribe to Orders
+            const qOrders = query(ordersCol, orderBy('createdAt', 'desc'), limit(50))
+            const unsubOrders = onSnapshot(qOrders, (snapshot) => {
+                const data = snapshot.docs.map(doc => {
+                    const d = doc.data()
+                    const dateObj = d.createdAt?.toDate ? d.createdAt.toDate() : new Date()
+                    return {
+                        id: doc.id,
+                        dataSource: 'order',
+                        type: d.type || 'online_order',
+                        status: d.status || 'new',
+                        name: d.name || 'Guest',
+                        phone: d.phone || '',
+                        address: d.address ? `${d.address}${d.apartment ? ', ' + d.apartment : ''}` : undefined,
+                        date: dateObj.toLocaleDateString(),
+                        time: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        items: d.items,
+                        notes: d.notes,
+                        total: d.total,
+                        promoCode: d.promoCode,
+                        discount: d.discount,
+                        createdAt: d.createdAt
+                    } as UnifiedOrder
+                })
+                setRawOrders(data)
             })
-            setRawOrders(data)
-        })
 
-        return () => {
-            unsubBookings()
-            unsubOrders()
+            return () => {
+                unsubBookings()
+                unsubOrders()
+            }
+        } catch (e) {
+            console.error("Failed to subscribe to data:", e)
         }
     }, [])
 
@@ -104,10 +109,10 @@ export default function AdminDashboard() {
     }, [rawBookings, rawOrders])
 
     const updateStatus = async (id: string, status: string, dataSource: string) => {
-        if (!db) return
         const collectionName = dataSource === 'order' ? 'orders' : 'bookings'
         try {
-            await updateDoc(doc(db, collectionName, id), { status })
+            const col = getTenantCollection(collectionName)
+            await updateDoc(doc(col, id), { status })
             showToast(`Status updated to ${status}`, 'success')
         } catch (e) {
             console.error(e)

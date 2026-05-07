@@ -1,6 +1,5 @@
 import { db } from '../firebase'
 import {
-    collection,
     addDoc,
     getDocs,
     query,
@@ -11,6 +10,7 @@ import {
     doc,
     limit
 } from 'firebase/firestore'
+import { getTenantCollection } from './tenant_db'
 
 export type ExpenseCategory = 'COGS' | 'Labor' | 'Rent' | 'Marketing' | 'Utilities' | 'Maintenance' | 'Other'
 
@@ -35,14 +35,14 @@ export async function addExpense(expense: Omit<Expense, 'id'>) {
         createdAt: Timestamp.now()
     }
 
-    return addDoc(collection(db, COLLECTION), data)
+    return addDoc(getTenantCollection(COLLECTION), data)
 }
 
 export async function getExpenses(startDate: Date, endDate: Date) {
     if (!db) return []
 
     const q = query(
-        collection(db, COLLECTION),
+        getTenantCollection(COLLECTION),
         where('date', '>=', Timestamp.fromDate(startDate)),
         where('date', '<=', Timestamp.fromDate(endDate)),
         orderBy('date', 'desc')
@@ -61,5 +61,5 @@ export async function getExpenses(startDate: Date, endDate: Date) {
 
 export async function deleteExpense(id: string) {
     if (!db) throw new Error('Firestore not initialized')
-    return deleteDoc(doc(db, COLLECTION, id))
+    return deleteDoc(doc(getTenantCollection(COLLECTION), id))
 }

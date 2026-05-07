@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, where } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
+import { query, orderBy, onSnapshot, doc, updateDoc, where } from 'firebase/firestore'
+import { getTenantCollection } from '@/app/lib/db/tenant_db'
 import AdminHelp from '../components/AdminHelp'
 import { Clock, CheckCircle, Flame, Bell, Utensils, Truck, Users, MapPin, Phone, AlertCircle, Volume2, VolumeX, Filter } from 'lucide-react'
 
@@ -70,11 +70,9 @@ export default function KitchenDisplaySystem() {
     }, [orders.length, audioAllowed])
 
     useEffect(() => {
-        if (!db) return
-
         // 1. Listen to Bookings (Hall)
         const qBookings = query(
-            collection(db, 'bookings'),
+            getTenantCollection('bookings'),
             where('status', 'in', ['pending', 'confirmed', 'preparing', 'ready'])
         )
 
@@ -93,7 +91,8 @@ export default function KitchenDisplaySystem() {
                     bookingDateTime: docData.bookingDateTime,
                     notes: docData.notes,
                     guests: docData.guests,
-                    phone: docData.phone
+                    phone: docData.phone,
+                    table: docData.table
                 } as UnifiedOrder
             })
             setHallData(data)
@@ -103,7 +102,7 @@ export default function KitchenDisplaySystem() {
 
         // 2. Listen to Orders (Delivery)
         const qOrders = query(
-            collection(db, 'orders'),
+            getTenantCollection('orders'),
             where('status', 'in', ['new', 'confirmed', 'cooking', 'ready'])
         )
 
@@ -142,8 +141,6 @@ export default function KitchenDisplaySystem() {
 
 
     const updateStatus = async (order: UnifiedOrder, newStatus: string) => {
-        if (!db) return
-
         const collectionName = order.source === 'booking' ? 'bookings' : 'orders'
         const updatePayload: any = { status: newStatus }
 
@@ -153,7 +150,7 @@ export default function KitchenDisplaySystem() {
         }
 
         try {
-            await updateDoc(doc(db, collectionName, order.firebaseId), updatePayload)
+            await updateDoc(doc(getTenantCollection(collectionName), order.firebaseId), updatePayload)
         } catch (e) {
             console.error("Error updating status:", e)
         }

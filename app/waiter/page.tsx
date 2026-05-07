@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { addDoc, serverTimestamp } from 'firebase/firestore'
+import { getTenantCollection } from '../lib/db/tenant_db'
 import { fullMenu, getMenuByCategory } from '../data/menuData'
 import { LogOut, Grid, Utensils, ShoppingBag, Plus, Minus, ChevronLeft, Send, CheckCircle } from 'lucide-react'
 
@@ -90,14 +90,14 @@ export default function WaiterApp() {
 
     // Submit Order
     const fireOrder = async () => {
-        if (!selectedTable || !db) return
+        if (!selectedTable) return
         const tableId = selectedTable.toString()
         const items = cart[tableId] || []
         if (items.length === 0) return
 
         setSubmitting(true)
         try {
-            await addDoc(collection(db, 'orders'), {
+            await addDoc(getTenantCollection('orders'), {
                 source: 'waiter',
                 tableId: tableId,
                 status: 'new', // KDS will pick this up (mapped to 'pending')

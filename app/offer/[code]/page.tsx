@@ -154,47 +154,81 @@ export default function OfferPage() {
     const isActive = coupon.status === 'active'
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-white font-sans selection:bg-red-500/30">
+        <div 
+            className="min-h-screen text-white font-sans selection:bg-primary/30"
+            style={{ 
+                backgroundColor: `hsl(${tenantConfig.theme.tokens.background})`,
+                color: `hsl(${tenantConfig.theme.tokens.foreground})`
+            }}
+        >
             <main className="max-w-md mx-auto min-h-screen flex flex-col relative overflow-hidden">
                 {/* Background Blobs */}
-                <div className="absolute top-[-10%] left-[-20%] w-[300px] h-[300px] bg-red-600/20 blur-[100px] rounded-full" />
-                <div className="absolute bottom-[-10%] right-[-20%] w-[300px] h-[300px] bg-yellow-500/10 blur-[100px] rounded-full" />
+                <div 
+                    className="absolute top-[-10%] left-[-20%] w-[300px] h-[300px] blur-[100px] rounded-full" 
+                    style={{ backgroundColor: `hsl(${tenantConfig.theme.tokens.primary} / 0.2)` }}
+                />
+                <div 
+                    className="absolute bottom-[-10%] right-[-20%] w-[300px] h-[300px] blur-[100px] rounded-full" 
+                    style={{ backgroundColor: `hsl(${tenantConfig.theme.tokens.accent} / 0.1)` }}
+                />
 
                 <div className="relative z-10 flex flex-col flex-1 p-6">
                     {/* Header */}
                     <div className="text-center mb-8 pt-8">
-                        <div className="inline-block px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-medium text-zinc-400 mb-4">
-                            Bo Restaurant Exclusive
+                        <div 
+                            className="inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 border"
+                            style={{ 
+                                backgroundColor: `hsl(${tenantConfig.theme.tokens.muted})`,
+                                borderColor: `hsl(${tenantConfig.theme.tokens.border})`,
+                                color: `hsl(${tenantConfig.theme.tokens.mutedForeground})`
+                            }}
+                        >
+                            {tenantConfig.brand.name} Exclusive
                         </div>
-                        <h1 className="text-3xl font-black text-white leading-tight uppercase tracking-tight">
+                        <h1 className="text-3xl font-black leading-tight uppercase tracking-tight">
                             Your Special<br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500">
+                            <span 
+                                className="text-transparent bg-clip-text"
+                                style={{ backgroundImage: `linear-gradient(to right, hsl(${tenantConfig.theme.tokens.primary}), hsl(${tenantConfig.theme.tokens.accent}))` }}
+                            >
                                 Reward
                             </span>
                         </h1>
                     </div>
 
                     {/* Card */}
-                    <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-3xl p-8 shadow-2xl flex flex-col items-center justify-center flex-1 min-h-[400px] relative overflow-hidden group">
+                    <div 
+                        className="backdrop-blur-xl border rounded-3xl p-8 shadow-2xl flex flex-col items-center justify-center flex-1 min-h-[400px] relative overflow-hidden group"
+                        style={{ 
+                            backgroundColor: `hsl(${tenantConfig.theme.tokens.card} / 0.8)`,
+                            borderColor: `hsl(${tenantConfig.theme.tokens.border})`
+                        }}
+                    >
 
                         {/* Status Overlay */}
                         {isExpired && (
                             <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20 backdrop-blur-sm">
-                                <AlertTriangle className="text-red-500 w-16 h-16 mb-4" />
-                                <h2 className="text-2xl font-bold text-zinc-300 uppercase">Expired</h2>
-                                <p className="text-zinc-500 text-sm mt-2">This offer is no longer valid.</p>
+                                <AlertTriangle className="text-destructive w-16 h-16 mb-4" />
+                                <h2 className="text-2xl font-bold uppercase" style={{ color: `hsl(${tenantConfig.theme.tokens.mutedForeground})` }}>Expired</h2>
+                                <p className="text-sm mt-2" style={{ color: `hsl(${tenantConfig.theme.tokens.mutedForeground})` }}>This offer is no longer valid.</p>
                             </div>
                         )}
 
                         {isUsedRecently && (
-                            <div className="absolute inset-0 bg-green-500/10 flex flex-col items-center justify-center z-20 backdrop-blur-sm animate-pulse">
-                                <CheckCircle className="text-green-500 w-20 h-20 mb-6 drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center z-20 backdrop-blur-sm animate-pulse" style={{ backgroundColor: `hsl(${tenantConfig.theme.tokens.primary} / 0.1)` }}>
+                                <CheckCircle 
+                                    className="w-20 h-20 mb-6" 
+                                    style={{ 
+                                        color: `hsl(${tenantConfig.theme.tokens.primary})`,
+                                        filter: `drop-shadow(0 0 15px hsl(${tenantConfig.theme.tokens.primary} / 0.5))`
+                                    }} 
+                                />
                                 <div className="text-center">
-                                    <h2 className="text-3xl font-black text-white mb-2">VALID</h2>
-                                    <p className="text-green-300 font-bold text-5xl font-mono tracking-wider">
+                                    <h2 className="text-3xl font-black mb-2">VALID</h2>
+                                    <p className="font-bold text-5xl font-mono tracking-wider" style={{ color: `hsl(${tenantConfig.theme.tokens.primary})` }}>
                                         {formatTime(timeLeft!)}
                                     </p>
-                                    <p className="text-zinc-400 text-xs mt-4 uppercase tracking-widest">Show this to staff</p>
+                                    <p className="text-xs mt-4 uppercase tracking-widest" style={{ color: `hsl(${tenantConfig.theme.tokens.mutedForeground})` }}>Show this to staff</p>
                                 </div>
                             </div>
                         )}
@@ -202,18 +236,30 @@ export default function OfferPage() {
 
                         {/* Offer Content */}
                         <div className={`transition-all duration-500 ${!isActive ? 'blur-sm opacity-50 grayscale' : ''}`}>
-                            <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl rotate-3 flex items-center justify-center mb-8 mx-auto shadow-lg shadow-red-500/20">
+                            <div 
+                                className="w-24 h-24 rounded-2xl rotate-3 flex items-center justify-center mb-8 mx-auto shadow-lg"
+                                style={{ 
+                                    backgroundImage: `linear-gradient(to bottom right, hsl(${tenantConfig.theme.tokens.primary}), hsl(${tenantConfig.theme.tokens.accent}))`,
+                                    boxShadow: `0 10px 15px -3px hsl(${tenantConfig.theme.tokens.primary} / 0.2)`
+                                }}
+                            >
                                 <Gift className="text-white w-12 h-12" />
                             </div>
 
                             <div className="text-center space-y-2">
-                                <h2 className="text-sm font-bold text-zinc-500 uppercase tracking-widest">You Received</h2>
-                                <div className="text-5xl font-black text-white">
+                                <h2 className="text-sm font-bold uppercase tracking-widest" style={{ color: `hsl(${tenantConfig.theme.tokens.mutedForeground})` }}>You Received</h2>
+                                <div className="text-5xl font-black">
                                     {coupon.type === 'discount_percentage' ? `${coupon.value}% OFF` :
-                                        coupon.type === 'discount_fixed' ? `$${coupon.value} OFF` :
+                                        coupon.type === 'discount_fixed' ? `${tenantConfig.localization.currency.symbol}${coupon.value} OFF` :
                                             coupon.value}
                                 </div>
-                                <p className="text-yellow-500 font-medium text-lg pt-2 border-t border-zinc-800 mt-6 inline-block w-full">
+                                <p 
+                                    className="font-medium text-lg pt-2 border-t mt-6 inline-block w-full"
+                                    style={{ 
+                                        color: `hsl(${tenantConfig.theme.tokens.accent})`,
+                                        borderColor: `hsl(${tenantConfig.theme.tokens.border})`
+                                    }}
+                                >
                                     Valid for Dine-in Only
                                 </p>
                             </div>
@@ -224,9 +270,15 @@ export default function OfferPage() {
                     <div className="mt-8">
                         {isActive && (
                             <div className="space-y-4">
-                                <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-xl flex items-start gap-3">
-                                    <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={18} />
-                                    <p className="text-xs text-red-200 leading-relaxed">
+                                <div 
+                                    className="p-4 border rounded-xl flex items-start gap-3"
+                                    style={{ 
+                                        backgroundColor: `hsl(${tenantConfig.theme.tokens.destructive} / 0.1)`,
+                                        borderColor: `hsl(${tenantConfig.theme.tokens.destructive} / 0.3)`
+                                    }}
+                                >
+                                    <AlertTriangle className="text-destructive shrink-0 mt-0.5" size={18} />
+                                    <p className="text-xs leading-relaxed" style={{ color: `hsl(${tenantConfig.theme.tokens.destructiveForeground})` }}>
                                         <strong>Stop!</strong> Only activate this button when you are at the restaurant and ready to pay. The coupon will expire 5 minutes after activation.
                                     </p>
                                 </div>
@@ -234,7 +286,11 @@ export default function OfferPage() {
                                 <button
                                     onClick={handleRedeem}
                                     disabled={isRedeeming}
-                                    className="w-full bg-white text-black font-black py-5 rounded-2xl text-xl hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-wait"
+                                    className="w-full font-black py-5 rounded-2xl text-xl hover:scale-[1.02] active:scale-95 transition-all shadow-2xl disabled:opacity-50 disabled:cursor-wait"
+                                    style={{ 
+                                        backgroundColor: `hsl(${tenantConfig.theme.tokens.primaryForeground})`,
+                                        color: `hsl(${tenantConfig.theme.tokens.primary})`,
+                                    }}
                                 >
                                     {isRedeeming ? 'Validating...' : 'ACTIVATE NOW'}
                                 </button>
@@ -242,14 +298,21 @@ export default function OfferPage() {
                         )}
 
                         {!isActive && !isUsedRecently && (
-                            <button className="w-full bg-zinc-900 text-zinc-500 font-bold py-4 rounded-xl cursor-not-allowed">
+                            <button 
+                                className="w-full font-bold py-4 rounded-xl cursor-not-allowed border"
+                                style={{ 
+                                    backgroundColor: `hsl(${tenantConfig.theme.tokens.muted})`,
+                                    borderColor: `hsl(${tenantConfig.theme.tokens.border})`,
+                                    color: `hsl(${tenantConfig.theme.tokens.mutedForeground})`
+                                }}
+                            >
                                 Offer Closed
                             </button>
                         )}
                     </div>
 
                     <div className="mt-8 text-center">
-                        <p className="text-[10px] text-zinc-600 uppercase font-mono tracking-widest">
+                        <p className="text-[10px] uppercase font-mono tracking-widest" style={{ color: `hsl(${tenantConfig.theme.tokens.mutedForeground})` }}>
                             Code: {coupon.code} • ID: {coupon.id.slice(0, 6)}
                         </p>
                     </div>

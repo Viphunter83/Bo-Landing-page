@@ -2,8 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { db } from '../../lib/firebase'
-import { collection, query, getDocs, where } from 'firebase/firestore'
+import { getTenantCollection } from '../../lib/db/tenant_db'
+import { query, getDocs, where } from 'firebase/firestore'
 import Link from 'next/link'
 import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon, Clock, Coins } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
@@ -49,9 +49,8 @@ function MarketingContent() {
 
     // 1. Initial Fetch of Standard Leads
     useEffect(() => {
-        if (!db) return
         const fetchStandard = async () => {
-            const q = query(collection(db!, 'quiz_results'))
+            const q = query(getTenantCollection('quiz_results'))
             const snap = await getDocs(q)
             const valid: Lead[] = []
             snap.forEach(doc => {
@@ -115,7 +114,7 @@ function MarketingContent() {
     useEffect(() => {
         const fetchAdhoc = async () => {
             const paramLeadId = searchParams.get('leadId')
-            if (!db || !paramLeadId) return
+            if (!paramLeadId) return
 
             // If standard leads are still loading, wait.
             if (loading) return
@@ -135,11 +134,11 @@ function MarketingContent() {
 
             console.log('Fetching ad-hoc user:', paramLeadId)
             try {
-                let userQ = query(collection(db!, 'users'), where('email', '==', paramLeadId))
+                let userQ = query(getTenantCollection('users'), where('email', '==', paramLeadId))
                 let userSnap = await getDocs(userQ)
-
+ 
                 if (userSnap.empty && !isNaN(Number(paramLeadId))) {
-                    userQ = query(collection(db!, 'users'), where('telegramId', '==', Number(paramLeadId)))
+                    userQ = query(getTenantCollection('users'), where('telegramId', '==', Number(paramLeadId)))
                     userSnap = await getDocs(userQ)
                 }
 

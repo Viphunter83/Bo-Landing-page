@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = 'https://bo-restuarant.vercel.app'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://bo-restuarant.vercel.app'
 
     // Static routes
     const routes = [

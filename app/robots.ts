@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/admin/', '/api/'],
         },
-        sitemap: 'https://bo-restuarant.vercel.app/sitemap.xml',
+        sitemap: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://bo-restuarant.vercel.app'}/sitemap.xml`,
     }
 }

@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+import { tenantConfig } from '../lib/config/tenant'
+
 interface LanguageSwitcherProps {
   current: string
 }
@@ -18,14 +20,14 @@ export default function LanguageSwitcher({ current }: LanguageSwitcherProps) {
   }
 
   return (
-    <div className="flex gap-2 bg-white/10 backdrop-blur-md p-1 rounded-full border border-yellow-500/30">
-      {['en', 'ru', 'ar'].map((lang) => (
+    <div className="flex gap-2 bg-white/10 backdrop-blur-md p-1 rounded-full border border-primary/30">
+      {tenantConfig.localization.languages.map((lang) => (
         <Link
           key={lang}
           href={redirectedPathName(lang)}
           className={`px-3 py-1 rounded-full text-xs font-bold transition-all uppercase ${current === lang
-              ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20'
-              : 'text-white hover:text-yellow-400'
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+              : 'text-white hover:text-primary'
             }`}
         >
           {lang}

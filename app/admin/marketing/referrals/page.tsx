@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { db } from '../../../lib/firebase'
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore'
+import { getTenantCollection } from '../../../lib/db/tenant_db'
+import { query, where, orderBy, limit, getDocs } from 'firebase/firestore'
 import { Customer } from '../../../lib/db/customers'
 import Link from 'next/link'
 import { ArrowLeft, Users, Trophy, Coins } from 'lucide-react'
@@ -16,7 +16,6 @@ export default function ReferralAdminPage() {
     }, [])
 
     const loadData = async () => {
-        if (!db) return
         try {
             // Fetch customers with > 0 referrals
             // Note: Requires compound index on totalReferrals probably. 
@@ -24,7 +23,7 @@ export default function ReferralAdminPage() {
             // Using a simple query for now.
 
             const q = query(
-                collection(db, 'customers'),
+                getTenantCollection('customers'),
                 where('totalReferrals', '>', 0),
                 orderBy('totalReferrals', 'desc'),
                 limit(50)

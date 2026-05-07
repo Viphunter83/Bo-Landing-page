@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
+import { getTenantCollection } from '../../lib/db/tenant_db'
 import { Save, Image as ImageIcon, Instagram, Link as LinkIcon, AlertCircle, Users } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
 import AdminHelp from '../components/AdminHelp'
@@ -30,10 +30,10 @@ export default function SettingsPage() {
     const { showToast } = useToast()
 
     useEffect(() => {
-        if (!db) return
         const fetchSettings = async () => {
             try {
-                const docRef = doc(db!, 'site_settings', 'general')
+                const col = getTenantCollection('site_settings')
+                const docRef = doc(col, 'general')
                 const snap = await getDoc(docRef)
                 if (snap.exists()) {
                     setSettings(prev => ({ ...prev, ...snap.data() }))
@@ -62,10 +62,10 @@ export default function SettingsPage() {
     }, [])
 
     const handleSave = async () => {
-        if (!db) return
         setSaving(true)
         try {
-            await updateDoc(doc(db!, 'site_settings', 'general'), { ...settings })
+            const col = getTenantCollection('site_settings')
+            await updateDoc(doc(col, 'general'), { ...settings })
             showToast('Settings saved successfully! 💾', 'success')
         } catch (e) {
             console.error('Error saving:', e)
