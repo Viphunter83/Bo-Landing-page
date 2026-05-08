@@ -7,6 +7,7 @@ import { content } from '../../../data/content'
 import JsonLd from '../../../components/JsonLd'
 import Navbar from '../../../components/Navbar' // Reusing Navbar for consistency
 import Footer from '../../../components/Footer' // Reusing Footer
+import { tenantConfig } from '../../../lib/config/tenant'
 
 interface PageProps {
     params: {
@@ -21,8 +22,8 @@ export async function generateMetadata({ params: { lang, dishId } }: PageProps) 
     if (!dish) return {}
 
     const t = content[lang as keyof typeof content]
-    const name = lang === 'ru' ? dish.nameRu : lang === 'ar' ? dish.nameAr : dish.name
-    const desc = lang === 'ru' ? dish.descRu : lang === 'ar' ? dish.descAr : dish.desc
+    const name = (lang === 'ru' ? dish.nameRu : lang === 'ar' ? dish.nameAr : dish.name) || dish.name
+    const desc = (lang === 'ru' ? dish.descRu : lang === 'ar' ? dish.descAr : dish.desc) || dish.desc
 
     return {
         title: `${name} | ${tenantConfig.brand.name}`,
@@ -44,8 +45,8 @@ export default function DishPage({ params: { lang, dishId } }: PageProps) {
     }
 
     const t = content[lang as keyof typeof content]
-    const name = lang === 'ru' ? dish.nameRu : lang === 'ar' ? dish.nameAr : dish.name
-    const desc = lang === 'ru' ? dish.descRu : lang === 'ar' ? dish.descAr : dish.desc
+    const name = (lang === 'ru' ? dish.nameRu : lang === 'ar' ? dish.nameAr : dish.name) || dish.name
+    const desc = (lang === 'ru' ? dish.descRu : lang === 'ar' ? dish.descAr : dish.desc) || dish.desc
     const currency = tenantConfig.localization.currency.symbol
     const dir = lang === 'ar' ? 'rtl' : 'ltr'
 

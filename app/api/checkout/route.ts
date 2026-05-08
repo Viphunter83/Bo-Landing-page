@@ -1,4 +1,7 @@
 import { tenantConfig } from '../../lib/config/tenant'
+import { NextResponse } from 'next/server'
+import Stripe from 'stripe'
+import { checkAvailability } from '../../lib/inventory'
 
 // IMPORTANT: Use Environment Variable in Production
 const getStripe = () => {
@@ -22,7 +25,7 @@ export async function POST(req: Request) {
         }
 
         // 1. Validate Stock
-        const stockCheck = await checkStockAvailability(items)
+        const stockCheck = await checkAvailability(items)
         if (!stockCheck.success) {
             return NextResponse.json({
                 error: `Some items are out of stock: ${stockCheck.missingItems.join(', ')}`,

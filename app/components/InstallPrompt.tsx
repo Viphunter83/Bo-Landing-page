@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Share, PlusSquare, Download } from 'lucide-react'
+import Image from 'next/image'
 
 export default function InstallPrompt() {
     const [showPrompt, setShowPrompt] = useState(false)
@@ -87,7 +88,7 @@ export default function InstallPrompt() {
 
                 <div className="flex gap-4 pr-8">
                     <div className="w-14 h-14 bg-yellow-500 rounded-xl flex items-center justify-center font-black text-black text-xl flex-shrink-0 shadow-lg overflow-hidden">
-                        <img src="/icons/icon-192x192.png" alt="App Icon" className="w-full h-full object-cover" />
+                        <Image src="/icons/icon-192x192.png" alt="App Icon" width={56} height={56} className="w-full h-full object-cover" />
                     </div>
                     <div>
                         <h3 className="font-bold text-white text-base flex items-center gap-2">

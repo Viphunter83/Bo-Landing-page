@@ -6,6 +6,7 @@ import { db } from '../../lib/firebase'
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
 import confetti from 'canvas-confetti'
 import { Timer, AlertTriangle, CheckCircle, Gift } from 'lucide-react'
+import { tenantConfig } from '../../lib/config/tenant'
 
 // Basic types for the page
 interface CouponData {

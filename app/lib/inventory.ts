@@ -88,10 +88,57 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
 
 /**
  * Checks if stock is sufficient for an order.
- * Returns array of missing items.
  */
 export async function checkAvailability(orderItems: any[]) {
-    // Similar logic to above but readonly and returns missing stuff
-    // To be implemented for "Pre-checkout" validation
-    return true
+    if (!orderItems || orderItems.length === 0) return { success: true, missingItems: [] }
+
+    try {
+        const itemNames = orderItems.map(i => i.name)
+        const menuQuery = query(getTenantCollection('menu_items'), where('name', 'in', itemNames))
+        const menuSnap = await getDocs(menuQuery)
+
+        const menuMap = new Map()
+        menuSnap.docs.forEach(d => {
+            menuMap.set(d.data().name, d.data())
+        })
+
+        const ingredientUsage = new Map<string, number>()
+        for (const item of orderItems) {
+            const menuItem = menuMap.get(item.name)
+            if (!menuItem || !menuItem.recipe) continue
+
+            const qty = item.quantity || 1
+            for (const recipeItem of menuItem.recipe as RecipeItem[]) {
+                const totalNeeded = recipeItem.quantity * qty
+                const current = ingredientUsage.get(recipeItem.ingredientId) || 0
+                ingredientUsage.set(recipeItem.ingredientId, current + totalNeeded)
+            }
+        }
+
+        if (ingredientUsage.size === 0) return { success: true, missingItems: [] }
+
+        const missingItems: string[] = []
+        const usageEntries = Array.from(ingredientUsage.entries())
+
+        for (const [ingId, amount] of usageEntries) {
+            const ingRef = doc(getTenantCollection('ingredients'), ingId)
+            const ingDoc = await getDoc(ingRef)
+
+            if (!ingDoc.exists()) continue
+
+            const currentStock = ingDoc.data().currentStock || 0
+            if (currentStock < amount) {
+                missingItems.push(ingDoc.data().name || ingId)
+            }
+        }
+
+        return {
+            success: missingItems.length === 0,
+            missingItems
+        }
+    } catch (error) {
+        console.error("Availability check error:", error)
+        // Fallback to true if something fails so we don't block orders if DB is flaky
+        return { success: true, missingItems: [] }
+    }
 }

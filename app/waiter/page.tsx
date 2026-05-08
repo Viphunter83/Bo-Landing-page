@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { addDoc, serverTimestamp } from 'firebase/firestore'
 import { getTenantCollection } from '../lib/db/tenant_db'
 import { fullMenu, getMenuByCategory } from '../data/menuData'
@@ -197,8 +198,7 @@ export default function WaiterApp() {
                     <div className="space-y-4">
                         {getMenuByCategory(activeCategory).map(item => (
                             <div key={item.id} className="bg-zinc-900/50 rounded-xl p-3 flex gap-4 active:bg-zinc-800 transition-colors" onClick={() => addToCart(item)}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover bg-zinc-800" />
+                                <Image src={item.image} alt={item.name} width={80} height={80} className="w-20 h-20 rounded-lg object-cover bg-zinc-800" />
                                 <div className="flex-1 py-1">
                                     <h3 className="font-bold leading-tight">{item.name}</h3>
                                     <p className="text-zinc-500 text-xs mt-1 line-clamp-1">{item.desc}</p>

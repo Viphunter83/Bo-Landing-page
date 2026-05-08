@@ -1,4 +1,7 @@
 import { tenantConfig } from '../../../lib/config/tenant'
+import { NextResponse } from 'next/server'
+import { fullMenu } from '../../../data/menuData'
+import { getAIClient } from '../../../lib/ai/client'
 
 export async function POST(req: Request) {
     try {

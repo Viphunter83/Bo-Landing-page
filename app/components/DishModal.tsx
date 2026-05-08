@@ -19,9 +19,9 @@ export default function DishModal({ isOpen, onClose, dish, lang }: DishModalProp
   if (!isOpen || !dish) return null
 
   const isRTL = lang === 'ar'
-  const name = lang === 'en' ? dish.name : lang === 'ru' ? dish.nameRu : dish.nameAr
-  const desc = lang === 'en' ? dish.desc : lang === 'ru' ? dish.descRu : dish.descAr
-  const tag = dish.tag && (lang === 'en' ? dish.tag : lang === 'ru' ? dish.tagRu : dish.tagAr)
+  const name = (lang === 'en' ? dish.name : lang === 'ru' ? dish.nameRu : dish.nameAr) || dish.name
+  const desc = (lang === 'en' ? dish.desc : lang === 'ru' ? dish.descRu : dish.descAr) || dish.desc
+  const tag = dish.tag && (lang === 'en' ? dish.tag : lang === 'ru' ? dish.tagRu : dish.tagAr) || undefined
 
   const handleAddToCart = () => {
     addToCart(dish, quantity)

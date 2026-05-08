@@ -100,9 +100,9 @@ export default function FullMenuModal({ isOpen, onClose, lang, activeVibe }: Ful
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredMenu.map(item => {
-                    const name = lang === 'en' ? item.name : lang === 'ru' ? item.nameRu : item.nameAr
-                    const desc = lang === 'en' ? item.desc : lang === 'ru' ? item.descRu : item.descAr
-                    const tag = item.tag && (lang === 'en' ? item.tag : lang === 'ru' ? item.tagRu : item.tagAr)
+                    const name = (lang === 'en' ? item.name : lang === 'ru' ? item.nameRu : item.nameAr) || item.name
+                    const desc = (lang === 'en' ? item.desc : lang === 'ru' ? item.descRu : item.descAr) || item.desc
+                    const tag = item.tag && (lang === 'en' ? item.tag : lang === 'ru' ? item.tagRu : item.tagAr) || undefined
 
                     return (
                       <button
