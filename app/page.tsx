@@ -1,4 +1,4 @@
-import Home from './[lang]/page'
+import HomePage from './components/HomePage'
 
 export default function RootPage({
     searchParams
@@ -7,12 +7,5 @@ export default function RootPage({
 }) {
     // Directly render the English version on root to preserve Telegram Hash Params.
     // We mock the params to 'en'.
-    return (
-        <div lang="en" dir="ltr">
-            <Home
-                params={{ lang: 'en' }}
-                searchParams={searchParams}
-            />
-        </div>
-    )
+    return <HomePage lang="en" searchParams={searchParams} />
 }
