@@ -15,7 +15,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://bo-restaurant-dubai.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://luna-co-hcmc.vercel.app')),
   title: {
     default: `${tenantConfig.brand.name} - ${tenantConfig.brand.description.en.split('.')[0]}`,
     template: `%s | ${tenantConfig.brand.name}`
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `${tenantConfig.brand.name} - ${tenantConfig.brand.description.en}`,
     description: tenantConfig.brand.description.en,
-    url: process.env.NEXT_PUBLIC_BASE_URL || 'https://bo-restaurant-dubai.vercel.app',
+    url: process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://luna-co-hcmc.vercel.app'),
     siteName: tenantConfig.brand.name,
     images: [
       {

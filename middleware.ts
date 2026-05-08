@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { tenantConfig } from './app/lib/config/tenant'
 
 export function middleware(request: NextRequest) {
-    const { pathname, search } = request.nextUrl
+    const url = request.nextUrl.clone()
+    const { pathname } = url
 
     // 1. Handle root path redirection to default language
     if (pathname === '/') {
-        // We can detect browser language or just use 'en' as default
-        // To be safe and consistent with the previous logic, we use 'en'
-        const url = new URL(`/en${search}`, request.url)
+        const defaultLang = tenantConfig.localization.defaultLang || 'en'
+        url.pathname = `/${defaultLang}`
         return NextResponse.redirect(url)
     }
 
@@ -17,9 +18,9 @@ export function middleware(request: NextRequest) {
         const session = request.cookies.get('bo_session')
 
         if (!session && pathname !== '/admin/login') {
-            const loginUrl = new URL('/admin/login', request.url)
-            loginUrl.searchParams.set('redirect', pathname)
-            return NextResponse.redirect(loginUrl)
+            url.pathname = '/admin/login'
+            url.searchParams.set('redirect', pathname)
+            return NextResponse.redirect(url)
         }
     }
 

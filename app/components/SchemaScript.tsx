@@ -1,60 +1,54 @@
 'use client'
 
-import { CONTACT_INFO } from '../data/contact'
+import { tenantConfig } from '../lib/config/tenant'
+import { useEffect, useState } from 'react'
 
 const SchemaScript = () => {
+    const [baseUrl, setBaseUrl] = useState('https://luna-co-hcmc.vercel.app')
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setBaseUrl(window.location.origin)
+        }
+    }, [])
+
     const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Restaurant",
-        "name": "Bo Restaurant Dubai",
+        "name": tenantConfig.brand.name,
         "image": [
-            "https://bo-restaurant-dubai.vercel.app/images/hero-bg.jpg",
-            "https://bo-restaurant-dubai.vercel.app/images/og-image.jpg"
+            `${baseUrl}${tenantConfig.brand.ogImage}`,
         ],
-        "@id": "https://bo-restaurant-dubai.vercel.app",
-        "url": "https://bo-restaurant-dubai.vercel.app",
-        "telephone": `+${CONTACT_INFO.whatsapp}`, // Using WhatsApp as primary contact for now
-        "menu": "https://bo-restaurant-dubai.vercel.app",
-        "servesCuisine": ["Vietnamese", "Healthy", "Fusion", "Asian"],
+        "@id": baseUrl,
+        "url": baseUrl,
+        "telephone": tenantConfig.contact.phone,
+        "menu": baseUrl,
+        "servesCuisine": ["Vietnamese", "Cocktails", "Asian"],
         "priceRange": "$$",
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Dubai Festival City",
-            "addressLocality": "Dubai",
-            "addressRegion": "Dubai",
-            "addressCountry": "AE"
-        },
-        "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": 25.2216, // Approx DFC coordinates
-            "longitude": 55.3512
+            "streetAddress": tenantConfig.contact.address,
+            "addressLocality": tenantConfig.id === 'luna_hcmc' ? "Ho Chi Minh City" : "Dubai",
+            "addressRegion": tenantConfig.id === 'luna_hcmc' ? "Ho Chi Minh City" : "Dubai",
+            "addressCountry": tenantConfig.id === 'luna_hcmc' ? "VN" : "AE"
         },
         "openingHoursSpecification": [
             {
                 "@type": "OpeningHoursSpecification",
                 "dayOfWeek": [
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday",
-                    "Sunday"
+                    "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
                 ],
                 "opens": "12:00",
                 "closes": "23:00"
             }
         ],
-        "sameAs": [
-            "https://instagram.com/bo.restaurant.dubai",
-            `https://t.me/${CONTACT_INFO.telegram}`
-        ],
+        "sameAs": Object.values(tenantConfig.contact.socials).filter(Boolean),
         "potentialAction": {
             "@type": "OrderAction",
             "target": {
                 "@type": "EntryPoint",
-                "urlTemplate": "https://bo-restaurant-dubai.vercel.app",
-                "inLanguage": "en-US",
+                "urlTemplate": baseUrl,
+                "inLanguage": tenantConfig.localization.defaultLang,
                 "actionPlatform": [
                     "http://schema.org/DesktopWebPlatform",
                     "http://schema.org/IOSPlatform",
