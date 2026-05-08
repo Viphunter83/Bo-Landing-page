@@ -1,6 +1,6 @@
 import { fullMenu, MenuItem } from '../../data/menuData';
 import { UserPreferences } from '../../components/LunchQuizModal';
-import { tenantConfig } from './config/tenant';
+import { tenantConfig } from '../config/tenant';
 
 interface ChatContext {
     activeVibe?: string;

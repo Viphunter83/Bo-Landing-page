@@ -3,7 +3,8 @@
 import { ChevronRight } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getMenuItemById, getMenuByCategory } from '../data/menuData'
+import { getMenuItemById, getMenuByCategory, fullMenu } from '../data/menuData'
+import { Flame } from 'lucide-react'
 
 interface SmartMenuProps {
   t: any
@@ -37,6 +38,8 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
     return () => unsubscribe()
   }, [])
   // Get featured dishes based on active vibe or show default
+  const featuredDishes = activeVibe 
+    ? fullMenu.filter(item => item.category === activeVibe).slice(0, 3)
     : fullMenu.slice(0, 3)
 
   return (
