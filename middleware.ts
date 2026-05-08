@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { tenantConfig } from './app/lib/config/tenant'
-
 export function middleware(request: NextRequest) {
     try {
         const url = request.nextUrl.clone()
@@ -10,11 +8,10 @@ export function middleware(request: NextRequest) {
         // Diagnostic logs
         console.log(`[Middleware] Path: ${pathname}`);
         console.log(`[Middleware] NEXT_PUBLIC_TENANT_ID: ${process.env.NEXT_PUBLIC_TENANT_ID}`);
-        console.log(`[Middleware] tenantConfig ID: ${tenantConfig?.id}`);
-
+        
         // 1. Handle root path redirection to default language
         if (pathname === '/') {
-            const defaultLang = tenantConfig?.localization?.defaultLang || 'en'
+            const defaultLang = 'en' // Hardcoded for diagnostic
             console.log(`[Middleware] Redirecting root to /${defaultLang}`);
             url.pathname = `/${defaultLang}`
             return NextResponse.redirect(url)
