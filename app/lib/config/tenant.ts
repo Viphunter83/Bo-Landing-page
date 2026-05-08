@@ -62,6 +62,7 @@ export interface TenantConfig {
     contact: {
         email: string;
         phone: string;
+        whatsapp: string; // Format: International format without '+' (e.g. 971500000000)
         address: string;
         googleMapsLink: string;
         socials: {
@@ -131,6 +132,7 @@ export const boConfig: TenantConfig = {
     contact: {
         email: 'hello@bo-restaurant.com',
         phone: '+971 50 123 4567',
+        whatsapp: '971501234567',
         address: 'Dubai Festival City Mall, Waterfront, Dubai, UAE',
         googleMapsLink: 'https://maps.app.goo.gl/example',
         socials: {
@@ -228,6 +230,7 @@ export const lunaConfig: TenantConfig = {
     contact: {
         email: 'hello@luna-hcmc.com',
         phone: '+84 123 456 789',
+        whatsapp: '84123456789',
         address: 'District 1, Ho Chi Minh City, Vietnam',
         googleMapsLink: 'https://maps.app.goo.gl/luna-example',
         socials: {
