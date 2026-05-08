@@ -3,28 +3,40 @@ import type { NextRequest } from 'next/server'
 import { tenantConfig } from './app/lib/config/tenant'
 
 export function middleware(request: NextRequest) {
-    const url = request.nextUrl.clone()
-    const { pathname } = url
+    try {
+        const url = request.nextUrl.clone()
+        const { pathname } = url
 
-    // 1. Handle root path redirection to default language
-    if (pathname === '/') {
-        const defaultLang = tenantConfig.localization.defaultLang || 'en'
-        url.pathname = `/${defaultLang}`
-        return NextResponse.redirect(url)
-    }
+        // Diagnostic logs
+        console.log(`[Middleware] Path: ${pathname}`);
+        console.log(`[Middleware] NEXT_PUBLIC_TENANT_ID: ${process.env.NEXT_PUBLIC_TENANT_ID}`);
+        console.log(`[Middleware] tenantConfig ID: ${tenantConfig?.id}`);
 
-    // 2. Protect /admin routes
-    if (pathname.startsWith('/admin')) {
-        const session = request.cookies.get('bo_session')
-
-        if (!session && pathname !== '/admin/login') {
-            url.pathname = '/admin/login'
-            url.searchParams.set('redirect', pathname)
+        // 1. Handle root path redirection to default language
+        if (pathname === '/') {
+            const defaultLang = tenantConfig?.localization?.defaultLang || 'en'
+            console.log(`[Middleware] Redirecting root to /${defaultLang}`);
+            url.pathname = `/${defaultLang}`
             return NextResponse.redirect(url)
         }
-    }
 
-    return NextResponse.next()
+        // 2. Protect /admin routes
+        if (pathname.startsWith('/admin')) {
+            const session = request.cookies.get('bo_session')
+
+            if (!session && pathname !== '/admin/login') {
+                url.pathname = '/admin/login'
+                url.searchParams.set('redirect', pathname)
+                return NextResponse.redirect(url)
+            }
+        }
+
+        return NextResponse.next()
+    } catch (error) {
+        console.error('[Middleware Error]:', error);
+        // Fallback to avoid 500 error
+        return NextResponse.next();
+    }
 }
 
 export const config = {
