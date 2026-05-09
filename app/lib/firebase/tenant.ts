@@ -1,5 +1,5 @@
 import { getAdminDb } from '../firebase-admin';
-import { TenantConfig } from '../config/tenant';
+import { TenantConfig, boConfig, lunaConfig } from '../config/tenant';
 import { unstable_cache } from 'next/cache';
 
 /**
@@ -13,14 +13,15 @@ export const getTenantConfig = unstable_cache(
             const doc = await db.collection('tenants').doc(tenantId).get();
             
             if (!doc.exists) {
-                console.error(`Tenant config not found for ID: ${tenantId}`);
-                return null;
+                console.warn(`[Tenant] Config not found in Firestore for: ${tenantId}. Using static fallback.`);
+                return tenantId === 'luna_hcmc' ? lunaConfig : boConfig;
             }
 
             return doc.data() as TenantConfig;
         } catch (error) {
-            console.error('Error fetching tenant config:', error);
-            return null;
+            console.error('[Tenant] Firestore fetch failed. Using static fallback. Error:', error);
+            // Return static fallback even on error to keep the site running
+            return tenantId === 'luna_hcmc' ? lunaConfig : boConfig;
         }
     },
     ['tenant-config'],
