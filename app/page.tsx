@@ -5,7 +5,8 @@ export default function RootPage({
 }: {
     searchParams: { vibe?: string, promoCode?: string }
 }) {
-    // Directly render the English version on root to preserve Telegram Hash Params.
-    // We mock the params to 'en'.
-    return <HomePage lang="en" searchParams={searchParams} />
+    const tenantId = process.env.NEXT_PUBLIC_TENANT_ID;
+    const defaultLang = tenantId === 'luna_hcmc' ? 'vn' : 'en';
+
+    return <HomePage lang={defaultLang as any} searchParams={searchParams} />
 }

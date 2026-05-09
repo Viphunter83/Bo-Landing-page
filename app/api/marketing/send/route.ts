@@ -2,10 +2,18 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplates } from '../../../lib/email/templates'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const getResend = () => {
+    const key = process.env.RESEND_API_KEY
+    if (!key) {
+        console.warn('RESEND_API_KEY is not defined. Email functionality will be disabled.')
+        return null
+    }
+    return new Resend(key)
+}
 
 export async function POST(req: Request) {
     try {
+        const resend = getResend()
         const body = await req.json()
         const { segment } = body
 
