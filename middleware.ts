@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
         const url = request.nextUrl.clone()
         const { pathname } = url
 
-        // console.log(`[Middleware] Request path: ${pathname}`)
+        console.log(`[Middleware] Request path: ${pathname}`)
 
         // 1. Handle root path by rewriting to default language
         if (pathname === '/') {
