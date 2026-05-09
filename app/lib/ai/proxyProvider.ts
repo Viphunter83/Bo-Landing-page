@@ -1,5 +1,5 @@
 import { AIProvider, ChatMessage } from './types'
-import { fullMenu } from '../../data/menuData'
+import { MenuItem } from '../../data/menuData'
 
 export class ProxyAIProvider implements AIProvider {
     private apiKey: string
@@ -27,8 +27,9 @@ export class ProxyAIProvider implements AIProvider {
 
         console.log('Using ProxyAPI Key:', this.apiKey.substring(0, 8) + '...')
 
-        // 1. Build System Prompt with Menu Context
-        const menuContext = fullMenu.map(d => `
+        // 1. Build Menu Context
+        const menu: MenuItem[] = context?.menu || []
+        const menuContext = menu.map(d => `
         - ID: ${d.id}
           English: ${d.name} (${d.desc})
           Russian: ${d.nameRu} (${d.descRu})

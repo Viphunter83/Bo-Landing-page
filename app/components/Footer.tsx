@@ -5,7 +5,7 @@ import Image from 'next/image'
 import DeliveryServices from './DeliveryServices'
 import { useTelegram } from '../context/TelegramContext'
 
-import { tenantConfig } from '../lib/config/tenant'
+import { useTenant } from '../context/TenantContext'
 
 interface FooterProps {
   t: any
@@ -14,6 +14,7 @@ interface FooterProps {
 
 export default function Footer({ t, lang }: FooterProps) {
   const { isTelegram } = useTelegram()
+  const tenantConfig = useTenant()
 
   const getDirectionsText = {
     en: 'Get Directions',

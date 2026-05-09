@@ -1,11 +1,12 @@
 import { db } from '../firebase'
 import { doc, getDoc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { getTenantCollection } from './tenant_db'
 import { GameStats } from '../types/marketing'
 
-export async function checkCooldown(userId: string, gameId: 'shake_game' | 'lunch_quiz'): Promise<{ allowed: boolean, remainingMs: number }> {
+export async function checkCooldown(userId: string, gameId: 'shake_game' | 'lunch_quiz', tenantId?: string): Promise<{ allowed: boolean, remainingMs: number }> {
     if (!db) return { allowed: true, remainingMs: 0 }
 
-    const docRef = doc(db, 'users', userId, 'game_stats', gameId)
+    const docRef = doc(getTenantCollection('users', tenantId), userId, 'game_stats', gameId)
     const snap = await getDoc(docRef)
 
     if (!snap.exists()) {
@@ -28,10 +29,10 @@ export async function checkCooldown(userId: string, gameId: 'shake_game' | 'lunc
     return { allowed: true, remainingMs: 0 }
 }
 
-export async function recordGamePlay(userId: string, gameId: 'shake_game' | 'lunch_quiz', won: boolean, prize?: string) {
+export async function recordGamePlay(userId: string, gameId: 'shake_game' | 'lunch_quiz', won: boolean, prize?: string, tenantId?: string) {
     if (!db) return
 
-    const docRef = doc(db, 'users', userId, 'game_stats', gameId)
+    const docRef = doc(getTenantCollection('users', tenantId), userId, 'game_stats', gameId)
     const snap = await getDoc(docRef)
     const now = serverTimestamp()
 

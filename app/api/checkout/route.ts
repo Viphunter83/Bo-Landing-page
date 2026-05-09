@@ -1,4 +1,4 @@
-import { tenantConfig } from '../../lib/config/tenant'
+import { getTenantConfig } from '../../lib/firebase/tenant'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { checkAvailability } from '../../lib/inventory'
@@ -17,6 +17,13 @@ const getStripe = () => {
 export async function POST(req: Request) {
     try {
         const stripe = getStripe()
+        const tenantId = req.headers.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'bo_dubai'
+        const tenantConfig = await getTenantConfig(tenantId);
+        
+        if (!tenantConfig) {
+            return NextResponse.json({ error: 'Tenant configuration not found' }, { status: 404 })
+        }
+
         const body = await req.json()
         const { items, deliveryFee, zoneName, orderId, email, discount, table } = body
 
@@ -25,7 +32,7 @@ export async function POST(req: Request) {
         }
 
         // 1. Validate Stock
-        const stockCheck = await checkAvailability(items)
+        const stockCheck = await checkAvailability(items, tenantId)
         if (!stockCheck.success) {
             return NextResponse.json({
                 error: `Some items are out of stock: ${stockCheck.missingItems.join(', ')}`,
@@ -34,6 +41,7 @@ export async function POST(req: Request) {
         }
 
         const currencyCode = tenantConfig.localization.currency.code.toLowerCase()
+
 
         const line_items = items.map((item: any) => ({
             price_data: {
@@ -72,6 +80,7 @@ export async function POST(req: Request) {
             cancel_url: `${req.headers.get('origin')}/?payment=cancelled`,
             metadata: {
                 orderId,
+                tenantId,
                 type: table ? 'dine_in' : (deliveryFee > 0 ? 'delivery' : 'pickup'),
                 table: table || ''
             }

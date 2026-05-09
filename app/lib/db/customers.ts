@@ -44,7 +44,7 @@ export const upsertCustomer = async (data: {
     orderTotal: number;
     preferences?: CustomerPreferences;
     promoCode?: string;
-}) => {
+}, tenantId?: string) => {
     if (!db) return;
 
     // Normalize phone: remove spaces, dashes. Ensure international format if possible.
@@ -53,7 +53,7 @@ export const upsertCustomer = async (data: {
 
     if (!cleanPhone) return;
 
-    const customerRef = doc(getTenantCollection('customers'), cleanPhone);
+    const customerRef = doc(getTenantCollection('customers', tenantId), cleanPhone);
 
     try {
         const snapshot = await getDoc(customerRef);

@@ -1,0 +1,943 @@
+{
+  "bo_dubai": {
+    "fields": {
+      "id": {
+        "stringValue": "bo_dubai"
+      },
+      "brand": {
+        "mapValue": {
+          "fields": {
+            "name": {
+              "stringValue": "Bo Restaurant"
+            },
+            "legalName": {
+              "stringValue": "Bo Restaurant Dubai"
+            },
+            "description": {
+              "mapValue": {
+                "fields": {
+                  "en": {
+                    "stringValue": "Experience the soul of Vietnam in Dubai Festival City. Authentic Pho, Banh Mi, and more."
+                  },
+                  "ru": {
+                    "stringValue": "Попробуйте душу Вьетнама в Dubai Festival City. Аутентичный Фо, Бан Ми и многое другое."
+                  },
+                  "vn": {
+                    "stringValue": "Trải nghiệm linh hồn của Việt Nam tại Dubai Festival City. Phở, Bánh Mì chính hiệu và hơn thế nữa."
+                  }
+                }
+              }
+            },
+            "logo": {
+              "stringValue": "/logo.png"
+            },
+            "ogImage": {
+              "stringValue": "/images/og-image.jpg"
+            },
+            "keywords": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "Vietnamese Food Dubai"
+                  },
+                  {
+                    "stringValue": "Best Pho Dubai"
+                  },
+                  {
+                    "stringValue": "Asian Delivery Dubai"
+                  },
+                  {
+                    "stringValue": "Dubai Festival City Restaurants"
+                  },
+                  {
+                    "stringValue": "Bo Dubai"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "localization": {
+        "mapValue": {
+          "fields": {
+            "defaultLang": {
+              "stringValue": "en"
+            },
+            "languages": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "en"
+                  },
+                  {
+                    "stringValue": "ru"
+                  },
+                  {
+                    "stringValue": "vn"
+                  }
+                ]
+              }
+            },
+            "currency": {
+              "mapValue": {
+                "fields": {
+                  "code": {
+                    "stringValue": "AED"
+                  },
+                  "symbol": {
+                    "stringValue": "AED"
+                  },
+                  "precision": {
+                    "doubleValue": 2
+                  }
+                }
+              }
+            },
+            "timezone": {
+              "stringValue": "Asia/Dubai"
+            }
+          }
+        }
+      },
+      "features": {
+        "mapValue": {
+          "fields": {
+            "enableDelivery": {
+              "booleanValue": true
+            },
+            "enablePickup": {
+              "booleanValue": true
+            },
+            "enableTableQR": {
+              "booleanValue": true
+            },
+            "enableBooking": {
+              "booleanValue": true
+            },
+            "enableShakeToWin": {
+              "booleanValue": true
+            },
+            "enableAIWaiter": {
+              "booleanValue": true
+            },
+            "enableReferral": {
+              "booleanValue": true
+            }
+          }
+        }
+      },
+      "contact": {
+        "mapValue": {
+          "fields": {
+            "email": {
+              "stringValue": "hello@bo-restaurant.com"
+            },
+            "phone": {
+              "stringValue": "+971 50 123 4567"
+            },
+            "whatsapp": {
+              "stringValue": "971501234567"
+            },
+            "address": {
+              "stringValue": "Dubai Festival City Mall, Waterfront, Dubai, UAE"
+            },
+            "googleMapsLink": {
+              "stringValue": "https://maps.app.goo.gl/example"
+            },
+            "socials": {
+              "mapValue": {
+                "fields": {
+                  "instagram": {
+                    "stringValue": "https://instagram.com/bo.dubai"
+                  },
+                  "telegram": {
+                    "stringValue": "https://t.me/bo_dubai"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "theme": {
+        "mapValue": {
+          "fields": {
+            "mode": {
+              "stringValue": "dark"
+            },
+            "primaryColor": {
+              "stringValue": "#e11d48"
+            },
+            "tokens": {
+              "mapValue": {
+                "fields": {
+                  "background": {
+                    "stringValue": "0 0% 3.9%"
+                  },
+                  "foreground": {
+                    "stringValue": "0 0% 98%"
+                  },
+                  "card": {
+                    "stringValue": "0 0% 3.9%"
+                  },
+                  "cardForeground": {
+                    "stringValue": "0 0% 98%"
+                  },
+                  "popover": {
+                    "stringValue": "0 0% 3.9%"
+                  },
+                  "popoverForeground": {
+                    "stringValue": "0 0% 98%"
+                  },
+                  "primary": {
+                    "stringValue": "346.8 77.2% 49.8%"
+                  },
+                  "primaryForeground": {
+                    "stringValue": "355.7 100% 97.3%"
+                  },
+                  "secondary": {
+                    "stringValue": "0 0% 14.9%"
+                  },
+                  "secondaryForeground": {
+                    "stringValue": "0 0% 98%"
+                  },
+                  "muted": {
+                    "stringValue": "0 0% 14.9%"
+                  },
+                  "mutedForeground": {
+                    "stringValue": "0 0% 63.9%"
+                  },
+                  "accent": {
+                    "stringValue": "0 0% 14.9%"
+                  },
+                  "accentForeground": {
+                    "stringValue": "0 0% 98%"
+                  },
+                  "destructive": {
+                    "stringValue": "0 62.8% 30.6%"
+                  },
+                  "destructiveForeground": {
+                    "stringValue": "0 0% 98%"
+                  },
+                  "border": {
+                    "stringValue": "0 0% 14.9%"
+                  },
+                  "input": {
+                    "stringValue": "0 0% 14.9%"
+                  },
+                  "ring": {
+                    "stringValue": "346.8 77.2% 49.8%"
+                  },
+                  "radius": {
+                    "stringValue": "0.5rem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "content": {
+        "mapValue": {
+          "fields": {
+            "ticker": {
+              "mapValue": {
+                "fields": {
+                  "names": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "Ali"
+                        },
+                        {
+                          "stringValue": "Sarah"
+                        },
+                        {
+                          "stringValue": "Dmitry"
+                        },
+                        {
+                          "stringValue": "Elena"
+                        },
+                        {
+                          "stringValue": "Mohammed"
+                        },
+                        {
+                          "stringValue": "Jessica"
+                        },
+                        {
+                          "stringValue": "Ivan"
+                        },
+                        {
+                          "stringValue": "Zara"
+                        }
+                      ]
+                    }
+                  },
+                  "locations": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "JVC"
+                        },
+                        {
+                          "stringValue": "Marina"
+                        },
+                        {
+                          "stringValue": "Downtown"
+                        },
+                        {
+                          "stringValue": "Business Bay"
+                        },
+                        {
+                          "stringValue": "Palm Jumeirah"
+                        }
+                      ]
+                    }
+                  },
+                  "dishes": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "id": {
+                                "stringValue": "pho-bo-special"
+                              },
+                              "name": {
+                                "mapValue": {
+                                  "fields": {
+                                    "en": {
+                                      "stringValue": "Pho Bo Special"
+                                    },
+                                    "ru": {
+                                      "stringValue": "Фо Бо Спешл"
+                                    },
+                                    "vn": {
+                                      "stringValue": "Phở Bò Đặc Biệt"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "id": {
+                                "stringValue": "nem-ran"
+                              },
+                              "name": {
+                                "mapValue": {
+                                  "fields": {
+                                    "en": {
+                                      "stringValue": "Nem Ran"
+                                    },
+                                    "ru": {
+                                      "stringValue": "Нем Ран"
+                                    },
+                                    "vn": {
+                                      "stringValue": "Nem Rán"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "id": {
+                                "stringValue": "mango-shake"
+                              },
+                              "name": {
+                                "mapValue": {
+                                  "fields": {
+                                    "en": {
+                                      "stringValue": "Mango Shake"
+                                    },
+                                    "ru": {
+                                      "stringValue": "Манго Шейк"
+                                    },
+                                    "vn": {
+                                      "stringValue": "Sinh Tố Xoài"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "faq": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "mapValue": {
+                      "fields": {
+                        "question": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "Where are you located?"
+                              },
+                              "ru": {
+                                "stringValue": "Где вы находитесь?"
+                              },
+                              "vn": {
+                                "stringValue": "Bạn ở đâu?"
+                              }
+                            }
+                          }
+                        },
+                        "answer": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "We are in Dubai Festival City Mall, Waterfront."
+                              },
+                              "ru": {
+                                "stringValue": "Мы находимся в Dubai Festival City Mall, на набережной."
+                              },
+                              "vn": {
+                                "stringValue": "Chúng tôi ở Dubai Festival City Mall, Waterfront."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "mapValue": {
+                      "fields": {
+                        "question": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "Do you deliver?"
+                              },
+                              "ru": {
+                                "stringValue": "Есть ли у вас доставка?"
+                              },
+                              "vn": {
+                                "stringValue": "Bạn có giao hàng không?"
+                              }
+                            }
+                          }
+                        },
+                        "answer": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "Yes, we deliver via Talabat, Deliveroo, and Noon."
+                              },
+                              "ru": {
+                                "stringValue": "Да, мы доставляем через Talabat, Deliveroo и Noon."
+                              },
+                              "vn": {
+                                "stringValue": "Có, chúng tôi giao hàng qua Talabat, Deliveroo và Noon."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "deliveryLinks": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "mapValue": {
+                      "fields": {
+                        "platform": {
+                          "stringValue": "Talabat"
+                        },
+                        "url": {
+                          "stringValue": "https://talabat.com/bo-dubai"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "mapValue": {
+                      "fields": {
+                        "platform": {
+                          "stringValue": "Deliveroo"
+                        },
+                        "url": {
+                          "stringValue": "https://deliveroo.ae/bo-dubai"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "luna_hcmc": {
+    "fields": {
+      "id": {
+        "stringValue": "luna_hcmc"
+      },
+      "brand": {
+        "mapValue": {
+          "fields": {
+            "name": {
+              "stringValue": "Luna & Co."
+            },
+            "legalName": {
+              "stringValue": "Luna & Co. Rooftop Bar"
+            },
+            "description": {
+              "mapValue": {
+                "fields": {
+                  "en": {
+                    "stringValue": "Atmospheric rooftop space in Ho Chi Minh City. Cocktails, music, and privacy."
+                  },
+                  "ru": {
+                    "stringValue": "Атмосферное пространство на крыше в Хошимине. Коктейли, музыка и уединение."
+                  },
+                  "vn": {
+                    "stringValue": "Không gian rooftop đầy ấn tượng tại Thành phố Hồ Chí Minh. Cocktail, âm nhạc và sự riêng tư."
+                  }
+                }
+              }
+            },
+            "logo": {
+              "stringValue": "/luna-logo.png"
+            },
+            "ogImage": {
+              "stringValue": "/images/luna-og.jpg"
+            },
+            "keywords": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "Rooftop Bar HCMC"
+                  },
+                  {
+                    "stringValue": "Best Cocktails Ho Chi Minh"
+                  },
+                  {
+                    "stringValue": "Expats Lounge Vietnam"
+                  },
+                  {
+                    "stringValue": "Luna and Co"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "localization": {
+        "mapValue": {
+          "fields": {
+            "defaultLang": {
+              "stringValue": "vn"
+            },
+            "languages": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "stringValue": "en"
+                  },
+                  {
+                    "stringValue": "vn"
+                  }
+                ]
+              }
+            },
+            "currency": {
+              "mapValue": {
+                "fields": {
+                  "code": {
+                    "stringValue": "VND"
+                  },
+                  "symbol": {
+                    "stringValue": "₫"
+                  },
+                  "precision": {
+                    "doubleValue": 0
+                  }
+                }
+              }
+            },
+            "timezone": {
+              "stringValue": "Asia/Ho_Chi_Minh"
+            }
+          }
+        }
+      },
+      "features": {
+        "mapValue": {
+          "fields": {
+            "enableDelivery": {
+              "booleanValue": false
+            },
+            "enablePickup": {
+              "booleanValue": false
+            },
+            "enableTableQR": {
+              "booleanValue": true
+            },
+            "enableBooking": {
+              "booleanValue": true
+            },
+            "enableShakeToWin": {
+              "booleanValue": true
+            },
+            "enableAIWaiter": {
+              "booleanValue": true
+            },
+            "enableReferral": {
+              "booleanValue": true
+            }
+          }
+        }
+      },
+      "contact": {
+        "mapValue": {
+          "fields": {
+            "email": {
+              "stringValue": "hello@luna-hcmc.com"
+            },
+            "phone": {
+              "stringValue": "+84 123 456 789"
+            },
+            "whatsapp": {
+              "stringValue": "84123456789"
+            },
+            "address": {
+              "stringValue": "District 1, Ho Chi Minh City, Vietnam"
+            },
+            "googleMapsLink": {
+              "stringValue": "https://maps.app.goo.gl/luna-example"
+            },
+            "socials": {
+              "mapValue": {
+                "fields": {
+                  "instagram": {
+                    "stringValue": "https://instagram.com/luna.hcmc"
+                  },
+                  "zalo": {
+                    "stringValue": "https://zalo.me/luna-hcmc"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "theme": {
+        "mapValue": {
+          "fields": {
+            "mode": {
+              "stringValue": "dark"
+            },
+            "primaryColor": {
+              "stringValue": "#8b5cf6"
+            },
+            "tokens": {
+              "mapValue": {
+                "fields": {
+                  "background": {
+                    "stringValue": "260 25% 4%"
+                  },
+                  "foreground": {
+                    "stringValue": "260 10% 98%"
+                  },
+                  "card": {
+                    "stringValue": "260 25% 6%"
+                  },
+                  "cardForeground": {
+                    "stringValue": "260 10% 98%"
+                  },
+                  "popover": {
+                    "stringValue": "260 25% 6%"
+                  },
+                  "popoverForeground": {
+                    "stringValue": "260 10% 98%"
+                  },
+                  "primary": {
+                    "stringValue": "263.4 70% 50.4%"
+                  },
+                  "primaryForeground": {
+                    "stringValue": "210 40% 98%"
+                  },
+                  "secondary": {
+                    "stringValue": "260 20% 15%"
+                  },
+                  "secondaryForeground": {
+                    "stringValue": "260 10% 98%"
+                  },
+                  "muted": {
+                    "stringValue": "260 20% 15%"
+                  },
+                  "mutedForeground": {
+                    "stringValue": "260 10% 65%"
+                  },
+                  "accent": {
+                    "stringValue": "320 70% 60%"
+                  },
+                  "accentForeground": {
+                    "stringValue": "0 0% 100%"
+                  },
+                  "destructive": {
+                    "stringValue": "0 62.8% 30.6%"
+                  },
+                  "destructiveForeground": {
+                    "stringValue": "0 0% 98%"
+                  },
+                  "border": {
+                    "stringValue": "260 20% 20%"
+                  },
+                  "input": {
+                    "stringValue": "260 20% 20%"
+                  },
+                  "ring": {
+                    "stringValue": "263.4 70% 50.4%"
+                  },
+                  "radius": {
+                    "stringValue": "1rem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "content": {
+        "mapValue": {
+          "fields": {
+            "ticker": {
+              "mapValue": {
+                "fields": {
+                  "names": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "Minh"
+                        },
+                        {
+                          "stringValue": "Linh"
+                        },
+                        {
+                          "stringValue": "Anh"
+                        },
+                        {
+                          "stringValue": "Kevin"
+                        },
+                        {
+                          "stringValue": "Trang"
+                        },
+                        {
+                          "stringValue": "Vinh"
+                        },
+                        {
+                          "stringValue": "Hien"
+                        }
+                      ]
+                    }
+                  },
+                  "locations": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "District 1"
+                        },
+                        {
+                          "stringValue": "District 2"
+                        },
+                        {
+                          "stringValue": "District 7"
+                        },
+                        {
+                          "stringValue": "Thao Dien"
+                        },
+                        {
+                          "stringValue": "Binh Thanh"
+                        }
+                      ]
+                    }
+                  },
+                  "dishes": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "id": {
+                                "stringValue": "signature-cocktail"
+                              },
+                              "name": {
+                                "mapValue": {
+                                  "fields": {
+                                    "en": {
+                                      "stringValue": "Signature Cocktail"
+                                    },
+                                    "ru": {
+                                      "stringValue": "Авторский коктейль"
+                                    },
+                                    "vn": {
+                                      "stringValue": "Cocktail đặc trưng"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "id": {
+                                "stringValue": "premium-cheese-platter"
+                              },
+                              "name": {
+                                "mapValue": {
+                                  "fields": {
+                                    "en": {
+                                      "stringValue": "Premium Cheese Platter"
+                                    },
+                                    "ru": {
+                                      "stringValue": "Сырная тарелка Премиум"
+                                    },
+                                    "vn": {
+                                      "stringValue": "Khay phô mai cao cấp"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "mapValue": {
+                            "fields": {
+                              "id": {
+                                "stringValue": "sunset-sparkling"
+                              },
+                              "name": {
+                                "mapValue": {
+                                  "fields": {
+                                    "en": {
+                                      "stringValue": "Sunset Sparkling"
+                                    },
+                                    "ru": {
+                                      "stringValue": "Игристое Сансет"
+                                    },
+                                    "vn": {
+                                      "stringValue": "Vang nổ Sunset"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "faq": {
+              "arrayValue": {
+                "values": [
+                  {
+                    "mapValue": {
+                      "fields": {
+                        "question": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "Do I need a reservation?"
+                              },
+                              "ru": {
+                                "stringValue": "Нужно ли бронировать?"
+                              },
+                              "vn": {
+                                "stringValue": "Tôi có cần đặt chỗ trước không?"
+                              }
+                            }
+                          }
+                        },
+                        "answer": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "Yes, we recommend booking in advance for the best view."
+                              },
+                              "ru": {
+                                "stringValue": "Да, мы рекомендуем бронировать заранее для лучшего вида."
+                              },
+                              "vn": {
+                                "stringValue": "Có, chúng tôi khuyên bạn nên đặt chỗ trước để có tầm nhìn tốt nhất."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "mapValue": {
+                      "fields": {
+                        "question": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "Is there a dress code?"
+                              },
+                              "ru": {
+                                "stringValue": "Есть ли дресс-код?"
+                              },
+                              "vn": {
+                                "stringValue": "Có quy định về trang phục không?"
+                              }
+                            }
+                          }
+                        },
+                        "answer": {
+                          "mapValue": {
+                            "fields": {
+                              "en": {
+                                "stringValue": "Smart casual is preferred."
+                              },
+                              "ru": {
+                                "stringValue": "Предпочтителен стиль Smart Casual."
+                              },
+                              "vn": {
+                                "stringValue": "Ưu tiên trang phục lịch sự (Smart Casual)."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

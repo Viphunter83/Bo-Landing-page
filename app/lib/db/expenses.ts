@@ -25,7 +25,7 @@ export interface Expense {
 
 const COLLECTION = 'expenses'
 
-export async function addExpense(expense: Omit<Expense, 'id'>) {
+export async function addExpense(expense: Omit<Expense, 'id'>, tenantId?: string) {
     if (!db) throw new Error('Firestore not initialized')
 
     // Add createdAt metadata
@@ -35,14 +35,14 @@ export async function addExpense(expense: Omit<Expense, 'id'>) {
         createdAt: Timestamp.now()
     }
 
-    return addDoc(getTenantCollection(COLLECTION), data)
+    return addDoc(getTenantCollection(COLLECTION, tenantId), data)
 }
 
-export async function getExpenses(startDate: Date, endDate: Date) {
+export async function getExpenses(startDate: Date, endDate: Date, tenantId?: string) {
     if (!db) return []
 
     const q = query(
-        getTenantCollection(COLLECTION),
+        getTenantCollection(COLLECTION, tenantId),
         where('date', '>=', Timestamp.fromDate(startDate)),
         where('date', '<=', Timestamp.fromDate(endDate)),
         orderBy('date', 'desc')
@@ -59,7 +59,7 @@ export async function getExpenses(startDate: Date, endDate: Date) {
     })
 }
 
-export async function deleteExpense(id: string) {
+export async function deleteExpense(id: string, tenantId?: string) {
     if (!db) throw new Error('Firestore not initialized')
-    return deleteDoc(doc(getTenantCollection(COLLECTION), id))
+    return deleteDoc(doc(getTenantCollection(COLLECTION, tenantId), id))
 }

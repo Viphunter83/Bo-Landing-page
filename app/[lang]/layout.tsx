@@ -1,17 +1,27 @@
 import { Metadata } from 'next'
+import { headers } from 'next/headers'
+import { getTenantConfig } from '../lib/firebase/tenant'
 
 export async function generateMetadata({ params }: { params: { lang: string } }): Promise<Metadata> {
-    const isRu = params.lang === 'ru'
+    const headersList = headers();
+    const tenantId = headersList.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+    const tenantConfig = await getTenantConfig(tenantId);
+    
+    if (!tenantConfig) {
+        return {
+            title: 'Restaurant',
+        };
+    }
+
+    // Type-safe locale checking - support all locales from middleware
+    const lang = params.lang as 'en' | 'ru' | 'vn' | 'ar';
+    const description = (tenantConfig.brand.description as any)[lang] || tenantConfig.brand.description.en;
 
     return {
-        title: isRu
-            ? 'Bo Restaurant Dubai - Вьетнамская Кухня'
-            : 'Bo Restaurant Dubai - Vietnamese Cuisine',
-        description: isRu
-            ? 'Попробуйте душу Вьетнама в Dubai Festival City. Настоящий Фо, Бань Ми и многое другое. Доставка по всему Дубаю.'
-            : 'Taste the Soul of Vietnam in Dubai Festival City. Authentic Pho, Banh Mi, and more. Delivery across Dubai.',
+        title: `${tenantConfig.brand.name} - ${description.split('.')[0]}`,
+        description: description,
         openGraph: {
-            locale: isRu ? 'ru_RU' : 'en_US',
+            locale: params.lang === 'ru' ? 'ru_RU' : params.lang === 'vn' ? 'vi_VN' : params.lang === 'ar' ? 'ar_AR' : 'en_US',
         }
     }
 }

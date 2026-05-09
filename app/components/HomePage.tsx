@@ -19,9 +19,9 @@ import JsonLd from './JsonLd'
 import PulseTicker from './PulseTicker'
 import CartDrawer from './CartDrawer'
 import CartTrigger from './CartTrigger'
-import { tenantConfig } from '../lib/config/tenant'
-import { content } from '../data/content'
-import { getMenuItemById } from '../data/menuData'
+import { useTenant } from '../context/TenantContext'
+import { getContent } from '../data/content'
+import { getMenu, getMenuItemById } from '../data/menuData'
 
 interface HomePageProps {
   lang: string
@@ -29,19 +29,25 @@ interface HomePageProps {
 }
 
 export default function HomePage({ lang, searchParams }: HomePageProps) {
+  const tenantConfig = useTenant()
+  const menu = getMenu(tenantConfig.id)
+  const content = getContent(tenantConfig)
   const [activeVibe, setActiveVibe] = useState(searchParams?.vibe || 'classic')
   const [isBookingOpen, setIsBookingOpen] = useState(false)
   const [bookingInitialValues, setBookingInitialValues] = useState<{ promoCode?: string } | undefined>(undefined)
   const [isFullMenuOpen, setIsFullMenuOpen] = useState(false)
   const [selectedDish, setSelectedDish] = useState<string | null>(null)
 
-  // Site Settings State
-  const [siteSettings, setSiteSettings] = useState<{
-    heroImage?: string
-    heroTitle?: string
-    heroSub?: string
-    socialImages?: string[]
-  }>({})
+  const langKey = lang as keyof typeof content
+  const t = content[langKey] || content.en
+
+  // Site Settings Derived from Tenant Config
+  const siteSettings = {
+    heroImage: tenantConfig.brand.heroImage || tenantConfig.brand.ogImage,
+    heroTitle: tenantConfig.brand.heroTitle?.[lang as keyof typeof tenantConfig.brand.heroTitle] || t.hero.tagline,
+    heroSub: tenantConfig.brand.heroSub?.[lang as keyof typeof tenantConfig.brand.heroSub] || t.hero.sub,
+    socialImages: tenantConfig.brand.socialImages || [],
+  }
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
 
@@ -61,22 +67,6 @@ export default function HomePage({ lang, searchParams }: HomePageProps) {
     }
   }, [])
 
-  // Fetch Site Settings (Tenant Aware)
-  useEffect(() => {
-    if (!db) return
-    const fetchSettings = async () => {
-      try {
-        const docRef = doc(db!, 'site_settings', tenantConfig.id)
-        const snap = await getDoc(docRef)
-        if (snap.exists()) {
-          setSiteSettings(snap.data())
-        }
-      } catch (e) {
-        console.error('Failed to load site settings', e)
-      }
-    }
-    fetchSettings()
-  }, [])
 
   const handleDishClick = (dishId: string) => {
     setSelectedDish(dishId)
@@ -97,9 +87,6 @@ export default function HomePage({ lang, searchParams }: HomePageProps) {
     url.searchParams.set('vibe', vibe)
     window.history.pushState({}, '', url)
   }
-
-  const langKey = lang as keyof typeof content
-  const t = content[langKey] || content.en
 
   const faqSchema = {
     "@context": "https://schema.org",
@@ -187,7 +174,7 @@ export default function HomePage({ lang, searchParams }: HomePageProps) {
       <DishModal
         isOpen={selectedDish !== null}
         onClose={() => setSelectedDish(null)}
-        dish={selectedDish ? getMenuItemById(selectedDish) || null : null}
+        dish={selectedDish ? getMenuItemById(selectedDish, menu) || null : null}
         lang={lang}
       />
     </>

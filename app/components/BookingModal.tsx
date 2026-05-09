@@ -4,9 +4,8 @@ import React, { useState } from 'react'
 import { X, Calendar, Clock, Users, Phone, Mail, CheckCircle, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 
 import { addDoc, serverTimestamp } from 'firebase/firestore'
-import { getTenantCollection } from '../lib/db/tenant_db'
-
-import { tenantConfig } from '../lib/config/tenant'
+import { useTenant } from '../context/TenantContext'
+import { useTenantCollection } from '../hooks/useTenantCollection'
 
 interface BookingModalProps {
   isOpen: boolean
@@ -32,6 +31,8 @@ const MONTHS = {
 }
 
 export default function BookingModal({ isOpen, onClose, lang, t, initialValues }: BookingModalProps) {
+  const tenantConfig = useTenant()
+  const bookingsRef = useTenantCollection('bookings')
   const [formData, setFormData] = useState({
     date: '', // ISO YYYY-MM-DD
     time: '',
@@ -65,7 +66,11 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
 
       setIsLoadingSlots(true)
       try {
-        const res = await fetch(`/api/bookings/availability?date=${formData.date}&guests=${formData.guests}`)
+        const res = await fetch(`/api/bookings/availability?date=${formData.date}&guests=${formData.guests}`, {
+          headers: {
+            'x-tenant-id': tenantConfig.id
+          }
+        })
         const data = await res.json()
         if (data.success) {
           setAvailableSlots(data.slots)
@@ -82,7 +87,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
     }
 
     fetchSlots()
-  }, [formData.date, formData.guests])
+  }, [formData.date, formData.guests, tenantConfig.id])
 
   // Calendar Logic
   const getDaysInMonth = (date: Date) => {
@@ -129,7 +134,7 @@ export default function BookingModal({ isOpen, onClose, lang, t, initialValues }
     setIsSubmitted(true)
 
     try {
-      await addDoc(getTenantCollection('bookings'), {
+      await addDoc(bookingsRef, {
         ...formData,
         status: 'pending', // pending, confirmed, cancelled
         createdAt: serverTimestamp(),

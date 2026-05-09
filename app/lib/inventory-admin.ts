@@ -7,7 +7,7 @@ import { RecipeItem } from './types/inventory'
  * Deducts stock for a given order using Firebase Admin SDK.
  * Suitable for API routes and Webhooks.
  */
-export async function deductStockForOrderAdmin(orderId: string, orderItems: any[]) {
+export async function deductStockForOrderAdmin(orderId: string, orderItems: any[], tenantId?: string) {
     if (!orderItems || orderItems.length === 0) return
 
     const db = getAdminDb()
@@ -19,7 +19,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
 
             // Note: 'in' queries limited to 10.
             const menuSnapshot = await transaction.get(
-                getAdminTenantCollection('menu_items').where('name', 'in', itemNames)
+                getAdminTenantCollection('menu_items', tenantId).where('name', 'in', itemNames)
             )
 
             const menuMap = new Map()
@@ -44,7 +44,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
             // 3. Fetch Ingredients to Check Stock
             // We use standard reads here (blocking)
             const ingredientIds = Array.from(ingredientUsage.keys())
-            const ingredientsRefs = ingredientIds.map(id => getAdminTenantCollection('ingredients').doc(id))
+            const ingredientsRefs = ingredientIds.map(id => getAdminTenantCollection('ingredients', tenantId).doc(id))
             const ingredientsDocs = await transaction.getAll(...ingredientsRefs)
 
             const depletedIngredientIds: string[] = []
@@ -72,7 +72,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
             if (depletedIngredientIds.length > 0) {
                 // WE MUST READ before WRITING in a transaction.
 
-                const inStockMenuQuery = getAdminTenantCollection('menu_items').where('stock', '==', 'in_stock')
+                const inStockMenuQuery = getAdminTenantCollection('menu_items', tenantId).where('stock', '==', 'in_stock')
                 const inStockMenuSnap = await transaction.get(inStockMenuQuery)
 
                 inStockMenuSnap.docs.forEach(menuDoc => {
@@ -102,7 +102,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
                 })
 
                 // Log Transaction
-                const txRef = getAdminTenantCollection('inventory_transactions').doc()
+                const txRef = getAdminTenantCollection('inventory_transactions', tenantId).doc()
                 transaction.set(txRef, {
                     ingredientId: update.id,
                     type: 'order',
@@ -126,7 +126,7 @@ export async function deductStockForOrderAdmin(orderId: string, orderItems: any[
  * Checks if there is enough stock for a list of items.
  * Returns missing items if any.
  */
-export async function checkStockAvailability(items: { name: string, quantity: number }[]) {
+export async function checkStockAvailability(items: { name: string, quantity: number }[], tenantId?: string) {
     if (!items.length) return { success: true, missingItems: [] }
 
     const db = getAdminDb()
@@ -134,7 +134,7 @@ export async function checkStockAvailability(items: { name: string, quantity: nu
     try {
         // 1. Fetch Recipes
         const itemNames = items.map(i => i.name)
-        const menuSnap = await getAdminTenantCollection('menu_items').where('name', 'in', itemNames).get()
+        const menuSnap = await getAdminTenantCollection('menu_items', tenantId).where('name', 'in', itemNames).get()
         const menuMap = new Map()
         menuSnap.docs.forEach(d => menuMap.set(d.data().name, d.data()))
 
@@ -164,7 +164,7 @@ export async function checkStockAvailability(items: { name: string, quantity: nu
         const ingredientsMap = new Map<string, number>() // id -> currentStock
 
         for (const chunk of chunks) {
-            const q = await getAdminTenantCollection('ingredients').where(FieldPath.documentId(), 'in', chunk).get()
+            const q = await getAdminTenantCollection('ingredients', tenantId).where(FieldPath.documentId(), 'in', chunk).get()
             q.docs.forEach(d => ingredientsMap.set(d.id, d.data().currentStock || 0))
         }
 

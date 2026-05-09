@@ -1,13 +1,13 @@
 import { getAdminDb } from './firebase-admin'
 import { FieldValue } from 'firebase-admin/firestore'
+import { getAdminTenantCollection } from './db/tenant_db_admin'
 
 /**
  * Generates a unique referral code and creates a coupon.
  * Uses Admin SDK for secure checks and writes.
  */
-export async function getOrCreateReferralCodeAdmin(userId: string, userName: string = 'FRIEND'): Promise<string> {
-    const db = getAdminDb()
-    const userRef = db.collection('customers').doc(userId)
+export async function getOrCreateReferralCodeAdmin(userId: string, userName: string = 'FRIEND', tenantId?: string): Promise<string> {
+    const userRef = getAdminTenantCollection('customers', tenantId).doc(userId)
 
     // 1. Check existing
     const userSnap = await userRef.get()
@@ -26,21 +26,18 @@ export async function getOrCreateReferralCodeAdmin(userId: string, userName: str
         code = `BO-${cleanName}-${suffix}`
 
         // Check uniqueness in coupons collection
-        const q = await db.collection('coupons').where('code', '==', code).get()
+        const q = await getAdminTenantCollection('coupons', tenantId).where('code', '==', code).get()
         if (q.empty) isUnique = true
         attempts++
     }
 
     if (!isUnique) throw new Error("Failed to generate unique code")
 
-    // 3. Create Coupon & Update User Atomically? 
-    // Not strictly necessary to be atomic across collections if low risk, but good practice.
-    // However, Coupon ID is auto-generated.
-
-    const couponRef = db.collection('coupons').doc()
+    const couponRef = getAdminTenantCollection('coupons', tenantId).doc()
     const expiry = new Date()
     expiry.setFullYear(expiry.getFullYear() + 10) // 10 years
 
+    const db = getAdminDb()
     const batch = db.batch()
 
     // Create Coupon
@@ -70,9 +67,8 @@ export async function getOrCreateReferralCodeAdmin(userId: string, userName: str
 /**
  * Validates referral code and returns referrer ID.
  */
-export async function resolveReferralCodeAdmin(code: string): Promise<string | null> {
-    const db = getAdminDb()
-    const q = await db.collection('customers').where('referralCode', '==', code.toUpperCase().trim()).limit(1).get()
+export async function resolveReferralCodeAdmin(code: string, tenantId?: string): Promise<string | null> {
+    const q = await getAdminTenantCollection('customers', tenantId).where('referralCode', '==', code.toUpperCase().trim()).limit(1).get()
 
     if (q.empty) return null
     return q.docs[0].id
@@ -82,9 +78,8 @@ export async function resolveReferralCodeAdmin(code: string): Promise<string | n
 /**
  * Rewards referrer (Admin SDK)
  */
-export async function rewardReferrerAdmin(referrerId: string, amount: number) {
-    const db = getAdminDb()
-    const ref = db.collection('customers').doc(referrerId)
+export async function rewardReferrerAdmin(referrerId: string, amount: number, tenantId?: string) {
+    const ref = getAdminTenantCollection('customers', tenantId).doc(referrerId)
 
     await ref.update({
         walletBalance: FieldValue.increment(amount),

@@ -8,7 +8,8 @@ import { UserPreferences } from './LunchQuizModal'
 import LunchQuizModal from './LunchQuizModal'
 import { useTelegram } from '../context/TelegramContext'
 import { useCart } from '../context/CartContext'
-import { getMenuItemById } from '../data/menuData'
+import { getMenuItemById, getMenu } from '../data/menuData'
+import { useTenant } from '../context/TenantContext'
 import { saveQuizResult } from '../lib/db/quiz'
 import { usePathname } from 'next/navigation'
 
@@ -18,6 +19,8 @@ interface Message {
 }
 
 export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang: string, activeVibe: string, onVibeChange?: (vibe: string) => void }) {
+    const tenantConfig = useTenant()
+    const menu = getMenu(tenantConfig.id)
     const { addToCart, isOpen: isCartOpen } = useCart()
     const { isTelegram, user } = useTelegram()
     const [isOpen, setIsOpen] = useState(false)
@@ -89,7 +92,7 @@ export default function FloatingChat({ lang, activeVibe, onVibeChange }: { lang:
 
                         let addedCount = 0
                         itemsToOrder.forEach((item: any) => {
-                            const dish = getMenuItemById(item.id)
+                            const dish = getMenuItemById(item.id, menu)
                             if (dish) {
                                 addToCart(dish, item.qty || 1)
                                 addedCount++

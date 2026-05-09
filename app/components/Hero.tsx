@@ -13,19 +13,10 @@ interface HeroProps {
   heroSub?: string
 }
 
-import { tenantConfig } from '../lib/config/tenant'
-
-interface HeroProps {
-  t: any
-  lang: string
-  onBookClick: () => void
-  onMenuClick: () => void
-  heroImage?: string
-  heroTitle?: string
-  heroSub?: string
-}
+import { useTenant } from '../context/TenantContext'
 
 export default function Hero({ t, lang, onBookClick, onMenuClick, heroImage, heroTitle, heroSub }: HeroProps) {
+  const tenantConfig = useTenant()
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background">
       {/* Background Image */}

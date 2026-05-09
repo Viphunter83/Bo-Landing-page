@@ -1,12 +1,21 @@
-import { tenantConfig } from '../../../lib/config/tenant'
+import { getTenantConfig } from '../../../lib/firebase/tenant'
 import { NextResponse } from 'next/server'
-import { fullMenu } from '../../../data/menuData'
+
+import { getMenu } from '../../../data/menuData'
 import { getAIClient } from '../../../lib/ai/client'
 
 export async function POST(req: Request) {
     try {
+        const tenantId = req.headers.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'bo_dubai'
+        const tenantConfig = await getTenantConfig(tenantId);
+        
+        if (!tenantConfig) {
+            return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+        }
+        
         const body = await req.json()
         const { platform, topic, tone, lang } = body
+
 
         if (!platform || !topic) {
             return NextResponse.json(
@@ -17,14 +26,15 @@ export async function POST(req: Request) {
 
         // 1. Find Context (Menu Item)
         // Check if 'topic' matches a menu item ID or Name
-        const menuItem = fullMenu.find(i => i.id === topic || i.name === topic)
+        const menu = getMenu(tenantId)
+        const menuItem = menu.find(i => i.id === topic || i.name === topic)
 
         let contextInfo = ""
         if (menuItem) {
             contextInfo = `
             DISH DETAILS:
             - Name: ${menuItem.name}
-            - Price: ${menuItem.price} ${tenantConfig.localization.currency.symbol}
+            - Price: ${menuItem.price}
             - Description: ${menuItem.desc}
             - Ingredients: ${menuItem.ingredients?.join(', ')}
             `
@@ -45,7 +55,7 @@ export async function POST(req: Request) {
 
         RULES:
         1. Start with a hook (Question or Bold Statement).
-        2. Include the Price if it's a specific dish (${tenantConfig.localization.currency.symbol}).
+        2. Include the Price if it's a specific dish.
         3. Use line breaks for readability.
         4. End with a Call to Action (e.g., "Book via link in bio").
         5. Add 5-7 relevant hashtags (must include #${tenantConfig.brand.name.replace(/\s+/g, '')} #${tenantConfig.localization.timezone.split('/')[1]}).

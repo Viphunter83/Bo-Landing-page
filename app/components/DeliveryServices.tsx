@@ -1,13 +1,14 @@
 'use client'
 
 import { ExternalLink, ShoppingBag } from 'lucide-react'
-import { tenantConfig } from '../lib/config/tenant'
+import { useTenant } from '../context/TenantContext'
 
 interface DeliveryServicesProps {
     lang: string
 }
 
 export default function DeliveryServices({ lang }: DeliveryServicesProps) {
+    const tenantConfig = useTenant()
     if (!tenantConfig.features.enableDelivery || !tenantConfig.content.deliveryLinks) {
         return null
     }

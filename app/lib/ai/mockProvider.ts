@@ -1,15 +1,16 @@
 import { AIProvider, ChatMessage } from './types'
-import { fullMenu } from '../../data/menuData'
+import { MenuItem } from '../../data/menuData'
 
 export class MockAIProvider implements AIProvider {
     async generateResponse(messages: ChatMessage[], context?: any): Promise<string> {
         const lastMessage = messages[messages.length - 1].content.toLowerCase()
+        const menu: MenuItem[] = context?.menu || []
 
         // Simulate network delay for realism
         await new Promise(resolve => setTimeout(resolve, 800))
 
         // 1. Check for specific menu items requests
-        const matchedDish = fullMenu.find(dish =>
+        const matchedDish = menu.find(dish =>
             lastMessage.includes(dish.name.toLowerCase()) ||
             lastMessage.includes(dish.nameRu.toLowerCase()) ||
             (dish.tag && lastMessage.includes(dish.tag.toLowerCase()))

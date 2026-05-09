@@ -1,6 +1,6 @@
-import { fullMenu, MenuItem } from '../../data/menuData';
+import { MenuItem } from '../../data/menuData';
 import { UserPreferences } from '../../components/LunchQuizModal';
-import { tenantConfig } from '../config/tenant';
+import { TenantConfig } from '../config/tenant';
 
 interface ChatContext {
     activeVibe?: string;
@@ -8,18 +8,18 @@ interface ChatContext {
     lang?: string;
 }
 
-export function buildSystemPrompt(context: ChatContext): string {
+export function buildSystemPrompt(context: ChatContext, menu: MenuItem[], config: TenantConfig): string {
     const lang = context.lang || 'en';
     const isRu = lang === 'ru';
 
     // 1. Build Menu Summary
     // Extract unique categories
-    const categories = Array.from(new Set(fullMenu.map((item: MenuItem) => item.category)));
+    const categories = Array.from(new Set(menu.map((item: MenuItem) => item.category)));
 
     let menuSummary = "MENU:\n";
     categories.forEach((cat: string) => {
         menuSummary += `--- ${cat.toUpperCase()} ---\n`;
-        const items = fullMenu.filter((i: MenuItem) => i.category === cat);
+        const items = menu.filter((i: MenuItem) => i.category === cat);
         items.forEach((item: MenuItem) => {
             menuSummary += `- ${item.name} (${item.price}): ${item.desc} [ID: ${item.id}]\n`;
         });
@@ -40,12 +40,12 @@ export function buildSystemPrompt(context: ChatContext): string {
 
     // 3. System Instructions
     const instructions = isRu ?
-        `Ты — ИИ-помощник ресторана "${tenantConfig.brand.name}" (${tenantConfig.brand.description.ru}).
+        `Ты — ИИ-помощник ресторана "${config.brand.name}" (${config.brand.description.ru}).
     Твоя цель: продавать блюда из МЕНЮ, быть вежливым и кратким.
     
     ПРАВИЛА:
     1. Если клиент просит порекомендовать — используй КОНТЕКСТ КЛИЕНТА.
-    2. Всегда предлагай конкретные блюда из МЕНЮ с ценами (${tenantConfig.localization.currency.symbol}).
+    2. Всегда предлагай конкретные блюда из МЕНЮ с ценами (${config.localization.currency.symbol}).
     3. Если клиент хочет заказать ("хочу коктейль", "беру это"):
        Вставь в конец ответа специальный код: [ORDER: [{"id": "ID_БЛЮДА", "qty": 1}]]
        Если блюд несколько, перечисли их в массиве: [ORDER: [{"id": "pho-bo", "qty": 1}, {"id": "spring-rolls", "qty": 2}]]
@@ -53,7 +53,7 @@ export function buildSystemPrompt(context: ChatContext): string {
     4. Не придумывай позиции, которых нет в меню.
     5. Отвечай коротко, с эмодзи.`
         :
-        `You are the AI Assistant at "${tenantConfig.brand.name}" (${tenantConfig.brand.description.en}).
+        `You are the AI Assistant at "${config.brand.name}" (${config.brand.description.en}).
     Your goal: sell items from the MENU, be polite and concise.
     
     RULES:

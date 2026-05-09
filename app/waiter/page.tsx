@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { addDoc, serverTimestamp } from 'firebase/firestore'
 import { getTenantCollection } from '../lib/db/tenant_db'
-import { fullMenu, getMenuByCategory } from '../data/menuData'
+import { getMenu, getMenuByCategory } from '../data/menuData'
+import { useTenant } from '../context/TenantContext'
 import { LogOut, Grid, Utensils, ShoppingBag, Plus, Minus, ChevronLeft, Send, CheckCircle } from 'lucide-react'
 
 // Types
@@ -22,10 +23,17 @@ interface TableOrder {
 
 export default function WaiterApp() {
     const router = useRouter()
+    const tenantConfig = useTenant()
+    const menu = getMenu(tenantConfig.id)
     const [view, setView] = useState<'tables' | 'menu'>('tables')
     const [selectedTable, setSelectedTable] = useState<number | null>(null)
     const [cart, setCart] = useState<TableOrder>({})
-    const [activeCategory, setActiveCategory] = useState('classic')
+    
+    // Categories based on menu types
+    const categories = ['classic', 'spicy', 'fresh', 'drinks', 'desserts', 'cocktails', 'snacks'] as const
+    type Category = typeof categories[number]
+    
+    const [activeCategory, setActiveCategory] = useState<Category>(menu[0]?.category || 'classic')
     const [submitting, setSubmitting] = useState(false)
     const [mounted, setMounted] = useState(false)
 
@@ -184,10 +192,10 @@ export default function WaiterApp() {
                     {/* Categories */}
                     <div className="flex gap-2 overflow-x-auto pb-4 mb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                         <style dangerouslySetInnerHTML={{ __html: `::-webkit-scrollbar { display: none; }` }} />
-                        {['classic', 'spicy', 'fresh', 'drinks', 'desserts'].map(cat => (
+                        {categories.map(cat => (
                             <button
                                 key={cat}
-                                onClick={() => setActiveCategory(cat)}
+                                onClick={() => setActiveCategory(cat as Category)}
                                 className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-bold uppercase transition-colors ${activeCategory === cat ? 'bg-white text-black' : 'bg-zinc-800 text-zinc-400'}`}
                             >
                                 {cat}
@@ -196,7 +204,7 @@ export default function WaiterApp() {
                     </div>
 
                     <div className="space-y-4">
-                        {getMenuByCategory(activeCategory).map(item => (
+                        {getMenuByCategory(activeCategory, menu).map(item => (
                             <div key={item.id} className="bg-zinc-900/50 rounded-xl p-3 flex gap-4 active:bg-zinc-800 transition-colors" onClick={() => addToCart(item)}>
                                 <Image src={item.image} alt={item.name} width={80} height={80} className="w-20 h-20 rounded-lg object-cover bg-zinc-800" />
                                 <div className="flex-1 py-1">

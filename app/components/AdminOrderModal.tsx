@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { X, Calendar, Clock, User, Phone, MapPin, ShoppingBag, Truck, Check } from 'lucide-react'
 import { addDoc, serverTimestamp } from 'firebase/firestore'
-import { getTenantCollection } from '../lib/db/tenant_db'
+import { useTenantCollection } from '../hooks/useTenantCollection'
 import { useToast } from '../admin/context/ToastContext'
 import { OrderType, ORDER_TYPES } from '../lib/types/core'
 
@@ -16,6 +16,8 @@ interface OrderModalProps {
 export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderModalProps) {
     const [isLoading, setIsLoading] = useState(false)
     const { showToast } = useToast()
+    const bookingsRef = useTenantCollection('bookings')
+    const ordersRef = useTenantCollection('orders')
     const [orderType, setOrderType] = useState<OrderType>('dine_in')
     const [formData, setFormData] = useState({
         name: '',
@@ -46,7 +48,7 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
 
             if (orderType === 'dine_in') {
                 // Save to BOOKINGS
-                await addDoc(getTenantCollection('bookings'), {
+                await addDoc(bookingsRef, {
                     ...commonData,
                     status: 'pending',
                     date: formData.date,
@@ -65,7 +67,7 @@ export default function AdminOrderModal({ isOpen, onClose, onSuccess }: OrderMod
                     price: 0
                 })).filter(i => i.name)
 
-                await addDoc(getTenantCollection('orders'), {
+                await addDoc(ordersRef, {
                     ...commonData,
                     status: 'new', // KDS expects 'new'
                     address: formData.address,

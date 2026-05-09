@@ -5,8 +5,7 @@ import { Menu, X } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 import NotificationBell from './NotificationBell'
 import { useTelegram } from '../context/TelegramContext'
-
-import { tenantConfig } from '../lib/config/tenant'
+import { useTenant } from '../context/TenantContext'
 
 interface NavbarProps {
   lang: string
@@ -18,6 +17,7 @@ export default function Navbar({ lang, t, onBookClick }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const { isTelegram } = useTelegram()
+  const tenantConfig = useTenant()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)

@@ -2,12 +2,13 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowLeft, Clock, Flame, Leaf, Share2 } from 'lucide-react'
-import { getMenuItemById, fullMenu } from '../../../data/menuData'
-import { content } from '../../../data/content'
+import { headers } from 'next/headers'
+import { getMenuItemById, getMenu } from '../../../data/menuData'
+import { getContent } from '../../../data/content'
 import JsonLd from '../../../components/JsonLd'
-import Navbar from '../../../components/Navbar' // Reusing Navbar for consistency
-import Footer from '../../../components/Footer' // Reusing Footer
-import { tenantConfig } from '../../../lib/config/tenant'
+import Navbar from '../../../components/Navbar'
+import Footer from '../../../components/Footer'
+import { getTenantConfig } from '../../../lib/firebase/tenant'
 
 interface PageProps {
     params: {
@@ -18,10 +19,16 @@ interface PageProps {
 
 // 1. Generate Metadata for SEO (Title, Description, OpenGraph)
 export async function generateMetadata({ params: { lang, dishId } }: PageProps) {
-    const dish = getMenuItemById(dishId)
-    if (!dish) return {}
+    const headersList = headers();
+    const tenantId = headersList.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+    const tenantConfig = await getTenantConfig(tenantId);
+    if (!tenantConfig) return { title: 'Dish Not Found' }
 
-    const t = content[lang as keyof typeof content]
+    const menu = getMenu(tenantId);
+    
+    const dish = getMenuItemById(dishId, menu)
+    if (!dish) return { title: 'Dish Not Found' }
+
     const name = (lang === 'ru' ? dish.nameRu : lang === 'ar' ? dish.nameAr : dish.name) || dish.name
     const desc = (lang === 'ru' ? dish.descRu : lang === 'ar' ? dish.descAr : dish.desc) || dish.desc
 
@@ -37,8 +44,17 @@ export async function generateMetadata({ params: { lang, dishId } }: PageProps) 
 }
 
 // 2. Main Page Component
-export default function DishPage({ params: { lang, dishId } }: PageProps) {
-    const dish = getMenuItemById(dishId)
+export default async function DishPage({ params: { lang, dishId } }: PageProps) {
+    const headersList = headers();
+    const tenantId = headersList.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+    const tenantConfig = await getTenantConfig(tenantId);
+    if (!tenantConfig) {
+        notFound()
+    }
+    const menu = getMenu(tenantId);
+    const content = getContent(tenantConfig);
+
+    const dish = getMenuItemById(dishId, menu)
 
     if (!dish) {
         notFound()

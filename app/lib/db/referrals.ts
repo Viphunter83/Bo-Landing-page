@@ -7,10 +7,10 @@ import { createCoupon } from '../coupons'
  * Generates a unique referral code for a user.
  * Format: BO-[FIRSTNAME]-[3_DIGITS] (e.g. BO-ALEX-492)
  */
-export async function getOrCreateReferralCode(userId: string, userName: string = 'FRIEND'): Promise<string> {
+export async function getOrCreateReferralCode(userId: string, userName: string = 'FRIEND', tenantId?: string): Promise<string> {
     if (!db) throw new Error("Database not initialized")
 
-    const userRef = doc(getTenantCollection('customers'), userId)
+    const userRef = doc(getTenantCollection('customers', tenantId), userId)
 
     // 1. Check if already has code
     const snapshot = await getDoc(userRef)
@@ -32,7 +32,7 @@ export async function getOrCreateReferralCode(userId: string, userName: string =
         code = `BO-${cleanName}-${suffix}`
 
         // We check uniqueness against COUPONS collection now, as that's the source of truth for redeeming
-        const q = query(getTenantCollection('coupons'), where('code', '==', code))
+        const q = query(getTenantCollection('coupons', tenantId), where('code', '==', code))
         const qSnap = await getDocs(q)
         if (qSnap.empty) {
             isUnique = true
@@ -57,7 +57,7 @@ export async function getOrCreateReferralCode(userId: string, userName: string =
         source: 'referral',
         userId: userId, // Owner of the code
         expiryDays: 3650 // 10 Years
-    })
+    }, tenantId)
 
     return code
 }
@@ -65,13 +65,13 @@ export async function getOrCreateReferralCode(userId: string, userName: string =
 /**
  * Validates a referral code and returns the Referrer ID (User ID).
  */
-export async function resolveReferralCode(code: string): Promise<string | null> {
+export async function resolveReferralCode(code: string, tenantId?: string): Promise<string | null> {
     if (!db || !code) return null
 
     // Format normalization ?? Maybe strictly uppercase
     const cleanCode = code.trim().toUpperCase()
 
-    const q = query(getTenantCollection('customers'), where('referralCode', '==', cleanCode))
+    const q = query(getTenantCollection('customers', tenantId), where('referralCode', '==', cleanCode))
     const snapshot = await getDocs(q)
 
     if (snapshot.empty) return null
@@ -83,10 +83,10 @@ export async function resolveReferralCode(code: string): Promise<string | null> 
  * Rewards the referrer with credit.
  * Should be called after the referee completes their first order.
  */
-export async function rewardReferrer(referrerId: string, amount: number) {
+export async function rewardReferrer(referrerId: string, amount: number, tenantId?: string) {
     if (!db) return
 
-    const referrerRef = doc(getTenantCollection('customers'), referrerId)
+    const referrerRef = doc(getTenantCollection('customers', tenantId), referrerId)
 
     try {
         await updateDoc(referrerRef, {

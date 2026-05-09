@@ -38,8 +38,11 @@ service cloud.firestore {
       // Полный доступ для админов арендатора (включая платформенных админов)
       allow read, write: if isTenantAdmin(tenantId);
       
-      // Позволяем создание заказов и бронирований для клиентов
-      allow create: if collectionId in ['orders', 'bookings'];
+      // Позволяем пользователю читать и писать свой профиль
+      allow read, write: if collectionId == 'users' && isAuthenticated() && request.auth.uid == docId;
+
+      // Позволяем создание заказов, бронирований и результатов квизов для клиентов
+      allow create: if collectionId in ['orders', 'bookings', 'quiz_results'];
     }
 
     // 2. Глобальные пользователи (профили)

@@ -1,7 +1,7 @@
 import { db } from './firebase'
 import { query, orderBy, limit, onSnapshot } from 'firebase/firestore'
-import { tenantConfig } from './config/tenant'
 import { getTenantCollection } from './db/tenant_db'
+import { TenantConfig } from './config/tenant'
 
 export interface TrendActivity {
     id: string
@@ -16,9 +16,9 @@ export interface TrendActivity {
     timestamp: number
 }
 
-// Fallback Mock Data Generators using tenantConfig
-export function generateMockActivity(): TrendActivity {
-    const { ticker } = tenantConfig.content
+// Fallback Mock Data Generators using provided tenantConfig
+export function generateMockActivity(config: TenantConfig): TrendActivity {
+    const { ticker } = config.content
     const type = Math.random() > 0.3 ? 'order' : (Math.random() > 0.5 ? 'booking' : 'review')
     const name = ticker.names[Math.floor(Math.random() * ticker.names.length)]
     const location = ticker.locations[Math.floor(Math.random() * ticker.locations.length)]
@@ -27,7 +27,7 @@ export function generateMockActivity(): TrendActivity {
         const dish = ticker.dishes[Math.floor(Math.random() * ticker.dishes.length)]
         return {
             id: Math.random().toString(36).substr(2, 9),
-            tenantId: tenantConfig.id,
+            tenantId: config.id,
             type,
             message: {
                 en: `🔥 ${name} from ${location} just ordered ${dish.name.en}`,
@@ -42,7 +42,7 @@ export function generateMockActivity(): TrendActivity {
     if (type === 'booking') {
         return {
             id: Math.random().toString(36).substr(2, 9),
-            tenantId: tenantConfig.id,
+            tenantId: config.id,
             type,
             message: {
                 en: `📅 New table booking for tonight! (${Math.floor(Math.random() * 4) + 2} guests)`,
@@ -56,7 +56,7 @@ export function generateMockActivity(): TrendActivity {
 
     return {
         id: Math.random().toString(36).substr(2, 9),
-        tenantId: tenantConfig.id,
+        tenantId: config.id,
         type,
         message: {
             en: `⭐️ An amazing 5-star review just came in from Google Maps!`,
@@ -68,17 +68,17 @@ export function generateMockActivity(): TrendActivity {
     }
 }
 
-export function getInitialTrends(): TrendActivity[] {
-    return Array.from({ length: 5 }).map(generateMockActivity)
+export function getInitialTrends(config: TenantConfig): TrendActivity[] {
+    return Array.from({ length: 5 }).map(() => generateMockActivity(config))
 }
 
 // Realtime Listener filtered by Tenant
-export function subscribeToRealtimeTrends(callback: (activity: TrendActivity) => void) {
+export function subscribeToRealtimeTrends(config: TenantConfig, callback: (activity: TrendActivity) => void) {
     if (!db) return () => { }
 
     // Listen to recent orders for this tenant
     const qOrders = query(
-        getTenantCollection('orders'),
+        getTenantCollection('orders', config.id),
         orderBy('createdAt', 'desc'),
         limit(1)
     )
@@ -94,7 +94,7 @@ export function subscribeToRealtimeTrends(callback: (activity: TrendActivity) =>
 
                 callback({
                     id: change.doc.id,
-                    tenantId: tenantConfig.id,
+                    tenantId: config.id,
                     type: 'order',
                     message: {
                         en: `🔥 New Order! ${name} ordered ${itemsCount} items.`,
@@ -110,7 +110,7 @@ export function subscribeToRealtimeTrends(callback: (activity: TrendActivity) =>
 
     // Listen to recent bookings for this tenant
     const qBookings = query(
-        getTenantCollection('bookings'),
+        getTenantCollection('bookings', config.id),
         orderBy('createdAt', 'desc'),
         limit(1)
     )
@@ -125,7 +125,7 @@ export function subscribeToRealtimeTrends(callback: (activity: TrendActivity) =>
                 const guests = data.guests || 2
                 callback({
                     id: change.doc.id,
-                    tenantId: tenantConfig.id,
+                    tenantId: config.id,
                     type: 'booking',
                     message: {
                         en: `📅 New Booking! Table for ${guests}.`,

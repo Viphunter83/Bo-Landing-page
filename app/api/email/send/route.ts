@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplates } from '../../../lib/email/templates'
-
-
-// Initialize safely inside handler or check existence
-
+import { getTenantConfig } from '../../../lib/firebase/tenant'
 
 export async function POST(req: Request) {
     try {
@@ -15,30 +12,39 @@ export async function POST(req: Request) {
         }
         const resend = new Resend(apiKey)
 
-        const { type, data, to, subject } = await req.json()
+        const { type, data, to, subject, tenantId } = await req.json()
 
         if (!to) {
             return NextResponse.json({ success: false, error: 'Missing recipient email' }, { status: 400 })
         }
 
+        if (!tenantId) {
+            return NextResponse.json({ success: false, error: 'Missing tenant ID' }, { status: 400 })
+        }
+
+        const config = await getTenantConfig(tenantId)
+        if (!config) {
+            return NextResponse.json({ success: false, error: 'Tenant configuration not found' }, { status: 404 })
+        }
+
         let html = ''
 
         if (type === 'order') {
-            html = EmailTemplates.orderConfirmation(data)
+            html = EmailTemplates.orderConfirmation(data, config)
         } else if (type === 'booking') {
-            html = EmailTemplates.bookingConfirmation(data)
+            html = EmailTemplates.bookingConfirmation(data, config)
         } else if (type === 'marketing') {
-            html = EmailTemplates.marketingPromo(data.segment)
+            html = EmailTemplates.marketingPromo(data.segment, config)
         } else if (type === 'quiz_coupon') {
-            html = EmailTemplates.quizCoupon(data.code)
+            html = EmailTemplates.quizCoupon(data.code, config)
         } else {
             return NextResponse.json({ success: false, error: 'Invalid email type' }, { status: 400 })
         }
 
         const dataRes = await resend.emails.send({
-            from: 'Bo Restaurant <onboarding@resend.dev>', // Update this with your verified domain later
-            to: [to], // For testing, Resend only allows sending to your own email if domain not verified
-            subject: subject || 'Notification from Bo',
+            from: `${config.brand.name} <onboarding@resend.dev>`,
+            to: [to],
+            subject: subject || `Notification from ${config.brand.name}`,
             html: html,
         })
 
@@ -53,3 +59,4 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
     }
 }
+

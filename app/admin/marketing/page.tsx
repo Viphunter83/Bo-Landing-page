@@ -7,7 +7,8 @@ import { query, getDocs, where } from 'firebase/firestore'
 import Link from 'next/link'
 import { Mail, Send, CheckCircle, Users as UsersIcon, Flame, Copy, Sparkles, Instagram, Send as SendIcon, Clock, Coins } from 'lucide-react'
 import { useToast } from '../context/ToastContext'
-import { fullMenu } from '../../data/menuData'
+import { useTenant } from '../../context/TenantContext'
+import { getMenu } from '../../data/menuData'
 import AdminHelp from '../components/AdminHelp'
 
 interface Lead {
@@ -35,9 +36,12 @@ function MarketingContent() {
     const [sending, setSending] = useState(false)
     const { showToast } = useToast()
 
+    const tenant = useTenant()
+    const menu = getMenu(tenant.id)
+
     // Generator State
     const [genPlatform, setGenPlatform] = useState('Instagram')
-    const [genTopic, setGenTopic] = useState(fullMenu[0]?.id || 'general')
+    const [genTopic, setGenTopic] = useState(menu[0]?.id || 'general')
     const [genTone, setGenTone] = useState('Excited')
     const [genResult, setGenResult] = useState('')
     const [generating, setGenerating] = useState(false)
@@ -492,7 +496,7 @@ function MarketingContent() {
                                         onChange={(e) => setGenTopic(e.target.value)}
                                         className="w-full bg-zinc-900 border border-zinc-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
                                     >
-                                        {fullMenu.map(item => (
+                                        {menu.map(item => (
                                             <option key={item.id} value={item.id}>{item.name}</option>
                                         ))}
                                     </select>

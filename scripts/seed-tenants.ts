@@ -1,120 +1,37 @@
-/**
- * CENTRAL TENANT CONFIGURATION
- * Use this file to manage all branding, features, and localization.
- */
+import * as admin from 'firebase-admin';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-export interface ThemeTokens {
-    background: string;    // HSL e.g. "0 0% 100%"
-    foreground: string;
-    card: string;
-    cardForeground: string;
-    popover: string;
-    popoverForeground: string;
-    primary: string;
-    primaryForeground: string;
-    secondary: string;
-    secondaryForeground: string;
-    muted: string;
-    mutedForeground: string;
-    accent: string;
-    accentForeground: string;
-    destructive: string;
-    destructiveForeground: string;
-    border: string;
-    input: string;
-    ring: string;
-    radius: string;
+// Load .env.local
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
+function formatPrivateKey(key: string | undefined) {
+    if (!key) return undefined;
+    return key.replace(/\\n/g, '\n');
 }
 
-export interface TenantConfig {
-    id: string;
-    brand: {
-        name: string;
-        legalName: string;
-        description: {
-            en: string;
-            ru: string;
-            vn: string;
-            ar?: string;
-        };
-        logo: string;
-        ogImage: string;
-        heroImage?: string;
-        heroTitle?: {
-            en: string;
-            ru: string;
-            vn: string;
-            ar?: string;
-        };
-        heroSub?: {
-            en: string;
-            ru: string;
-            vn: string;
-            ar?: string;
-        };
-        socialImages?: string[];
-        keywords: string[];
-        cuisines?: string[];
-    };
-    localization: {
-        defaultLang: 'en' | 'ru' | 'vn' | 'ar';
-        languages: ('en' | 'ru' | 'vn' | 'ar')[];
-        currency: {
-            code: string;
-            symbol: string;
-            precision: number;
-        };
-        timezone: string;
-    };
-    features: {
-        enableDelivery: boolean;
-        enablePickup: boolean;
-        enableTableQR: boolean;
-        enableBooking: boolean;
-        enableShakeToWin: boolean;
-        enableAIWaiter: boolean;
-        enableReferral: boolean;
-    };
-    contact: {
-        email: string;
-        phone: string;
-        whatsapp: string; // Format: International format without '+' (e.g. 971500000000)
-        address: string;
-        city?: string;
-        countryCode?: string;
-        googleMapsLink: string;
-        socials: {
-            instagram?: string;
-            facebook?: string;
-            telegram?: string;
-            zalo?: string;
-        };
-    };
-    theme: {
-        mode: 'light' | 'dark' | 'system';
-        tokens: ThemeTokens;
-        primaryColor: string; // Keep for meta tags
-    };
-    content: {
-        ticker: {
-            names: string[];
-            locations: string[];
-            dishes: { id: string; name: { en: string; ru: string; vn: string; ar?: string } }[];
-        };
-        faq: {
-            question: { en: string; ru: string; vn: string; ar?: string };
-            answer: { en: string; ru: string; vn: string; ar?: string };
-        }[];
-        deliveryLinks?: {
-            platform: string;
-            url: string;
-            icon?: string;
-        }[];
-    };
+const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKey = formatPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+
+if (!projectId || !clientEmail || !privateKey) {
+    console.error('Missing Firebase Admin credentials in .env.local');
+    process.exit(1);
 }
 
-// DEFAULT CONFIG: Bo Restaurant (Dubai)
-export const boConfig: TenantConfig = {
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId,
+            clientEmail,
+            privateKey,
+        }),
+    });
+}
+
+const db = admin.firestore();
+
+const boConfig = {
     id: 'bo_dubai',
     brand: {
         name: 'Bo Restaurant',
@@ -122,17 +39,10 @@ export const boConfig: TenantConfig = {
         description: {
             en: 'Experience the soul of Vietnam in Dubai Festival City. Authentic Pho, Banh Mi, and more.',
             ru: 'Попробуйте душу Вьетнама в Dubai Festival City. Аутентичный Фо, Бан Ми и многое другое.',
-            vn: 'Trải nghiệm linh hồn của Việt Nam tại Dubai Festival City. Phở, Bánh Mì chính hiệu và hơn thế nữa.',
-            ar: 'جرب روح فيتنام في دبي فستيفال سيتي. فو أصيل، بانه مي، وأكثر.'
+            vn: 'Trải nghiệm linh hồn của Việt Nam tại Dubai Festival City. Phở, Bánh Mì chính hiệu và hơn thế nữa.'
         },
         logo: '/logo.png',
         ogImage: '/images/og-image.jpg',
-        heroImage: '/images/og-image.jpg',
-        socialImages: [
-            '/images/og-image.jpg',
-            '/images/og-image.jpg',
-            '/images/og-image.jpg'
-        ],
         keywords: ['Vietnamese Food Dubai', 'Best Pho Dubai', 'Asian Delivery Dubai', 'Dubai Festival City Restaurants', 'Bo Dubai']
     },
     localization: {
@@ -175,7 +85,7 @@ export const boConfig: TenantConfig = {
             cardForeground: '0 0% 98%',
             popover: '0 0% 3.9%',
             popoverForeground: '0 0% 98%',
-            primary: '346.8 77.2% 49.8%', // Rose 600
+            primary: '346.8 77.2% 49.8%',
             primaryForeground: '355.7 100% 97.3%',
             secondary: '0 0% 14.9%',
             secondaryForeground: '0 0% 98%',
@@ -218,8 +128,7 @@ export const boConfig: TenantConfig = {
     }
 };
 
-// LUNA & CO: Rooftop Bar (Vietnam)
-export const lunaConfig: TenantConfig = {
+const lunaConfig = {
     id: 'luna_hcmc',
     brand: {
         name: 'Luna & Co.',
@@ -231,12 +140,6 @@ export const lunaConfig: TenantConfig = {
         },
         logo: '/luna-logo.png',
         ogImage: '/images/luna-og.jpg',
-        heroImage: '/images/luna-og.jpg',
-        socialImages: [
-            '/images/luna-og.jpg',
-            '/images/luna-og.jpg',
-            '/images/luna-og.jpg'
-        ],
         keywords: ['Rooftop Bar HCMC', 'Best Cocktails Ho Chi Minh', 'Expats Lounge Vietnam', 'Luna and Co']
     },
     localization: {
@@ -271,28 +174,28 @@ export const lunaConfig: TenantConfig = {
     },
     theme: {
         mode: 'dark',
-        primaryColor: '#8b5cf6', // Violet 600
+        primaryColor: '#8b5cf6',
         tokens: {
-            background: '260 25% 4%', // Very deep purple/black
+            background: '260 25% 4%',
             foreground: '260 10% 98%',
             card: '260 25% 6%',
             cardForeground: '260 10% 98%',
             popover: '260 25% 6%',
             popoverForeground: '260 10% 98%',
-            primary: '263.4 70% 50.4%', // Violet 500
+            primary: '263.4 70% 50.4%',
             primaryForeground: '210 40% 98%',
             secondary: '260 20% 15%',
             secondaryForeground: '260 10% 98%',
             muted: '260 20% 15%',
             mutedForeground: '260 10% 65%',
-            accent: '320 70% 60%', // Pink accent for "atmospheric" feel
+            accent: '320 70% 60%',
             accentForeground: '0 0% 100%',
             destructive: '0 62.8% 30.6%',
             destructiveForeground: '0 0% 98%',
             border: '260 20% 20%',
             input: '260 20% 20%',
             ring: '263.4 70% 50.4%',
-            radius: '1rem' // Softer rounded corners for premium feel
+            radius: '1rem'
         }
     },
     content: {
@@ -318,6 +221,15 @@ export const lunaConfig: TenantConfig = {
     }
 };
 
-// Switcher based on Environment Variable
-export const tenantConfig = process.env.NEXT_PUBLIC_TENANT_ID === 'luna_hcmc' ? lunaConfig : boConfig;
+async function seed() {
+    console.log('Seeding bo_dubai...');
+    await db.collection('tenants').doc('bo_dubai').set(boConfig);
+    console.log('Seeding luna_hcmc...');
+    await db.collection('tenants').doc('luna_hcmc').set(lunaConfig);
+    console.log('Seed completed successfully!');
+}
 
+seed().catch(err => {
+    console.error('Error seeding data:', err);
+    process.exit(1);
+});

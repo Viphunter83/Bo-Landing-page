@@ -2,10 +2,11 @@
 
 import { useState } from 'react'
 import { Plus, Minus } from 'lucide-react'
-import { tenantConfig } from '../lib/config/tenant'
+import { useTenant } from '../context/TenantContext'
 
 export default function FAQ({ lang }: { lang: string }) {
-    const [openIndex, setOpenIndex] = useState<number | null>(0)
+    const tenantConfig = useTenant()
+    const [openIndex, setOpenIndex] = useState<number | null>(null)
     const data = tenantConfig.content.faq
 
     const titles = {

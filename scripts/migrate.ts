@@ -1,9 +1,9 @@
 import "dotenv/config";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, writeBatch } from "firebase/firestore";
-import { fullMenu } from "../app/data/menuData";
-import { content } from "../app/data/content";
-import { tenantConfig } from "../app/lib/config/tenant";
+import { getMenu } from "../app/data/menuData";
+import { getContent } from "../app/data/content";
+import { boConfig, lunaConfig } from "../app/lib/config/tenant";
 
 // Use environment variables for Firebase config
 const firebaseConfig = {
@@ -33,17 +33,22 @@ async function migrate() {
     try {
         // 1. Migrate Site Settings
         console.log("⚙️ Migrating Site Settings...");
+        const currentConfig = tenantId === 'luna_hcmc' ? lunaConfig : boConfig;
         const settingsRef = doc(db, 'site_settings', tenantId);
         await writeBatch(db).set(settingsRef, {
-            ...tenantConfig,
+            ...currentConfig,
             updatedAt: new Date().toISOString()
         }).commit();
         console.log(`✅ Site settings migrated for ${tenantId}`);
 
+        const fullMenu = getMenu(tenantId);
+        const content = getContent(currentConfig);
+
+
         // 2. Migrate Menu
         console.log("📦 Migrating Menu...");
         const menuBatch = writeBatch(db);
-        fullMenu.forEach((item) => {
+        fullMenu.forEach((item: any) => {
             const ref = doc(db, 'menu_items', `${tenantId}_${item.id}`);
             menuBatch.set(ref, {
                 ...item,
@@ -57,7 +62,7 @@ async function migrate() {
         // 3. Migrate Content
         console.log("📝 Migrating Content...");
         const contentBatch = writeBatch(db);
-        Object.entries(content).forEach(([lang, data]) => {
+        Object.entries(content).forEach(([lang, data]: [string, any]) => {
             const ref = doc(db, 'site_content', `${tenantId}_${lang}`);
             contentBatch.set(ref, {
                 ...data,

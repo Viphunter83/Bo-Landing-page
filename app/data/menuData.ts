@@ -191,14 +191,16 @@ export const lunaMenu: MenuItem[] = [
   }
 ];
 
-// Determine which menu to use
-export const fullMenu = process.env.NEXT_PUBLIC_TENANT_ID === 'luna_hcmc' ? lunaMenu : boMenu;
-
-export const getMenuByCategory = (category: string): MenuItem[] => {
-  if (category === 'all') return fullMenu
-  return fullMenu.filter(item => item.category === category)
+// Helper to get the right menu based on tenantId
+export const getMenu = (tenantId: string): MenuItem[] => {
+  return tenantId === 'luna_hcmc' ? lunaMenu : boMenu;
 }
 
-export const getMenuItemById = (id: string): MenuItem | undefined => {
-  return fullMenu.find(item => item.id === id)
+export const getMenuByCategory = (category: string, menu: MenuItem[]): MenuItem[] => {
+  if (category === 'all') return menu
+  return menu.filter(item => item.category === category)
+}
+
+export const getMenuItemById = (id: string, menu: MenuItem[]): MenuItem | undefined => {
+  return menu.find(item => item.id === id)
 }

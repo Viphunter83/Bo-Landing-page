@@ -1,12 +1,12 @@
 
-import { tenantConfig } from '@/app/lib/config/tenant';
-
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-const brandColor = tenantConfig.theme.primaryColor;
-const brandName = tenantConfig.brand.name;
+import { TenantConfig } from '@/app/lib/config/tenant';
 
 export const EmailTemplates = {
-  orderConfirmation: (order: any) => {
+  orderConfirmation: (order: any, config: TenantConfig) => {
+    const brandColor = config.theme.primaryColor;
+    const brandName = config.brand.name;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
     const itemsList = order.items.map((item: any) => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #333;">${item.name} <span style="font-size: 12px; color: #888;">x${item.quantity}</span></td>
@@ -44,7 +44,10 @@ export const EmailTemplates = {
     `
   },
 
-  bookingConfirmation: (booking: any) => {
+  bookingConfirmation: (booking: any, config: TenantConfig) => {
+    const brandColor = config.theme.primaryColor;
+    const brandName = config.brand.name;
+
     return `
       <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px;">
         <h1 style="color: ${brandColor};">Table Reserved! 🗓️</h1>
@@ -65,7 +68,10 @@ export const EmailTemplates = {
     `
   },
 
-  marketingPromo: (segment: string) => {
+  marketingPromo: (segment: string, config: TenantConfig) => {
+    const brandName = config.brand.name;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
     let content = ''
     if (segment === 'spicy') {
       content = `
@@ -89,7 +95,11 @@ export const EmailTemplates = {
       `
   },
 
-  quizCoupon: (code: string) => {
+  quizCoupon: (code: string, config: TenantConfig) => {
+    const brandColor = config.theme.primaryColor;
+    const brandName = config.brand.name;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
     return `
       <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px; text-align: center;">
         <h1 style="color: ${brandColor};">You've Unlocked 10% Off! 🎁</h1>
@@ -109,7 +119,10 @@ export const EmailTemplates = {
     `
   },
 
-  reviewRequest: (name: string) => {
+  reviewRequest: (name: string, config: TenantConfig) => {
+    const brandColor = config.theme.primaryColor;
+    const brandName = config.brand.name;
+
     return `
       <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px; text-align: center;">
         <h1 style="color: ${brandColor};">How was it, ${name}? ⭐</h1>
@@ -117,7 +130,7 @@ export const EmailTemplates = {
         <p>Your opinion helps us get better.</p>
         
         <div style="margin: 30px 0;">
-            <a href="${tenantConfig.contact.googleMapsLink}" style="background-color: #333; color: white; padding: 15px 30px; text-decoration: none; border-radius: 30px; border: 1px solid #555; font-weight: bold;">Leave a Review & Get a Gift 🎁</a>
+            <a href="${config.contact.googleMapsLink}" style="background-color: #333; color: white; padding: 15px 30px; text-decoration: none; border-radius: 30px; border: 1px solid #555; font-weight: bold;">Leave a Review & Get a Gift 🎁</a>
         </div>
 
         <p style="color: #888; font-size: 12px;">Just show your review screenshot next time you visit!</p>
@@ -125,7 +138,10 @@ export const EmailTemplates = {
     `
   },
 
-  birthday: (name: string) => {
+  birthday: (name: string, config: TenantConfig) => {
+    const brandColor = config.theme.primaryColor;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
     return `
       <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px; text-align: center;">
         <h1 style="color: ${brandColor};">Happy Birthday, ${name}! 🎂</h1>
@@ -141,7 +157,10 @@ export const EmailTemplates = {
     `
   },
 
-  winBack: (name: string) => {
+  winBack: (name: string, config: TenantConfig) => {
+    const brandColor = config.theme.primaryColor;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+
     return `
       <div style="font-family: sans-serif; background-color: #000; color: #fff; padding: 20px; text-align: center;">
         <h1 style="color: ${brandColor};">We Miss You, ${name} 🥺</h1>
@@ -158,4 +177,5 @@ export const EmailTemplates = {
     `
   }
 }
+
 

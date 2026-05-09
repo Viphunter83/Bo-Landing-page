@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAdminDb, getAdminMessaging } from '@/app/lib/firebase-admin'
+import { getAdminTenantCollection } from '@/app/lib/db/tenant_db_admin'
 
 export const dynamic = 'force-dynamic' // Ensure it runs every time (cron)
 
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
         const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
 
-        const usersSnap = await db.collection('customers')
+        const usersSnap = await getAdminTenantCollection('customers')
             .where('cartUpdatedAt', '<', thirtyMinsAgo)
             .where('cartUpdatedAt', '>', twentyFourHoursAgo)
             .get()

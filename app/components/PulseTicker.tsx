@@ -4,21 +4,26 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TrendActivity, getInitialTrends } from '../lib/trends'
 import { TrendingUp } from 'lucide-react'
-import { tenantConfig } from '../lib/config/tenant'
+import { useTenant } from '../context/TenantContext'
 
 export default function PulseTicker({ lang }: { lang: string }) {
+    const tenantConfig = useTenant()
     const [activities, setActivities] = useState<TrendActivity[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
 
     // Init data
     useEffect(() => {
-        setActivities(getInitialTrends())
-    }, [])
+        if (tenantConfig) {
+            setActivities(getInitialTrends(tenantConfig))
+        }
+    }, [tenantConfig])
 
     // Subscribe to Realtime Data
     useEffect(() => {
+        if (!tenantConfig) return
+
         import('../lib/trends').then(({ subscribeToRealtimeTrends }) => {
-            const unsubscribe = subscribeToRealtimeTrends((newActivity) => {
+            const unsubscribe = subscribeToRealtimeTrends(tenantConfig, (newActivity) => {
                 setActivities(prev => {
                     if (prev.find(a => a.id === newActivity.id)) return prev
                     return [newActivity, ...prev.slice(0, 9)]
@@ -27,7 +32,8 @@ export default function PulseTicker({ lang }: { lang: string }) {
             })
             return () => unsubscribe()
         })
-    }, [])
+    }, [tenantConfig])
+
 
     useEffect(() => {
         const interval = setInterval(() => {

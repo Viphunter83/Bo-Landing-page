@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { getAdminAuth, getAdminDb } from '@/app/lib/firebase-admin'
+import { getAdminTenantCollection } from '@/app/lib/db/tenant_db_admin'
 
 export async function POST(request: Request) {
     try {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
         const uid = `telegram:${telegramUser.id}`
 
         // 3. Sync to Firestore (CRM)
-        const userRef = getAdminDb().collection('users').doc(uid)
+        const userRef = getAdminTenantCollection('users').doc(uid)
         await userRef.set({
             telegramId: telegramUser.id,
             firstName: telegramUser.first_name || '',

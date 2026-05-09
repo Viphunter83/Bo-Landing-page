@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { getAdminDb } from '../../../lib/firebase-admin'
+import { getAdminTenantCollection } from '../../../lib/db/tenant_db_admin'
 import { deductStockForOrderAdmin } from '../../../lib/inventory-admin'
 
 const getStripe = () => {
@@ -37,12 +37,12 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session
         const orderId = session.client_reference_id
         const email = session.customer_email
+        const tenantId = session.metadata?.tenantId || 'bo_dubai'
 
         console.log(`Payment success for Order ${orderId}`)
 
         if (orderId) {
-            const db = getAdminDb()
-            const orderRef = db.collection('orders').doc(orderId)
+            const orderRef = getAdminTenantCollection('orders', tenantId).doc(orderId)
 
             // 1. Idempotency Check & Transaction
             // We fetch first to ensure we don't process twice
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
             // 3. Trigger Inventory Deduction (Only if successful update)
             try {
                 if (orderData?.items) {
-                    await deductStockForOrderAdmin(orderId, orderData.items)
+                    await deductStockForOrderAdmin(orderId, orderData.items, tenantId)
                 }
             } catch (invError) {
                 console.error('Inventory Deduction Error:', invError)
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
             // 4. Referral Reward Logic
             try {
                 if (orderData?.promoCode) {
-                    const couponsSnap = await db.collection('coupons').where('code', '==', orderData.promoCode).limit(1).get()
+                    const couponsSnap = await getAdminTenantCollection('coupons', tenantId).where('code', '==', orderData.promoCode).limit(1).get()
                     if (!couponsSnap.empty) {
                         const coupon = couponsSnap.docs[0].data()
                         if (coupon.source === 'referral' && coupon.userId) {
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
                             const identifier = orderData.email || orderData.customerPhone
                             if (identifier) {
                                 // Simple check: Count paid orders
-                                const pastOrders = await db.collection('orders')
+                                const pastOrders = await getAdminTenantCollection('orders', tenantId)
                                     .where('paymentStatus', '==', 'paid')
                                     .where(orderData.email ? 'email' : 'customerPhone', '==', identifier)
                                     .count()
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
                                 // If count is 1 (this order is the first paid one), reward referrer
                                 if (pastOrders.data().count === 1) {
                                     const { rewardReferrerAdmin } = require('../../../lib/referral-admin')
-                                    await rewardReferrerAdmin(coupon.userId, 50) // 50 AED Reward
+                                    await rewardReferrerAdmin(coupon.userId, 50, tenantId) // 50 AED Reward
                                     console.log(`[Referral] Rewarded ${coupon.userId} for new customer ${identifier}`)
                                 } else {
                                     console.log(`[Referral] Skipped reward - customer ${identifier} is not new.`)

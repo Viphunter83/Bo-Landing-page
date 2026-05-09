@@ -1,10 +1,10 @@
 'use client'
 
-import { ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ChevronRight, Flame } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getMenuItemById, getMenuByCategory, fullMenu } from '../data/menuData'
-import { Flame } from 'lucide-react'
+import { getMenuItemById, getMenuByCategory, getMenu } from '../data/menuData'
 
 interface SmartMenuProps {
   t: any
@@ -14,18 +14,19 @@ interface SmartMenuProps {
   activeVibe?: string
 }
 
-import { useEffect, useState } from 'react'
-import { tenantConfig } from '../lib/config/tenant'
+import { useTenant } from '../context/TenantContext'
+import { useTenantCollection } from '../hooks/useTenantCollection'
 import { query, where, onSnapshot } from 'firebase/firestore'
-import { getTenantCollection } from '../lib/db/tenant_db'
 
 export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activeVibe }: SmartMenuProps) {
+  const tenantConfig = useTenant()
+  const menuItemsRef = useTenantCollection('menu_items')
   const [liveData, setLiveData] = useState<Record<string, any>>({})
 
   useEffect(() => {
     // Listen to real-time menu updates (tenant isolated)
     console.log(`Subscribing to menu_items for tenant: ${tenantConfig.id}...`)
-    const q = query(getTenantCollection('menu_items'))
+    const q = query(menuItemsRef)
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const updates: Record<string, any> = {}
       snapshot.forEach((doc) => {
@@ -36,11 +37,14 @@ export default function SmartMenu({ t, lang, onDishClick, onFullMenuClick, activ
       console.error("Menu snapshot error:", error)
     })
     return () => unsubscribe()
-  }, [])
+  }, [tenantConfig.id])
+
+  const menu = getMenu(tenantConfig.id)
+
   // Get featured dishes based on active vibe or show default
   const featuredDishes = activeVibe 
-    ? fullMenu.filter(item => item.category === activeVibe).slice(0, 3)
-    : fullMenu.slice(0, 3)
+    ? menu.filter(item => item.category === activeVibe).slice(0, 3)
+    : menu.slice(0, 3)
 
   return (
     <section id="menu" className="py-24 bg-black relative">

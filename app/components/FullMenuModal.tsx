@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { X, Search, Filter } from 'lucide-react'
 import Image from 'next/image'
-import { fullMenu, MenuItem } from '../data/menuData'
+import { getMenu, MenuItem } from '../data/menuData'
+import { useTenant } from '../context/TenantContext'
 import DishModal from './DishModal'
 
 interface FullMenuModalProps {
@@ -14,9 +15,12 @@ interface FullMenuModalProps {
 }
 
 export default function FullMenuModal({ isOpen, onClose, lang, activeVibe }: FullMenuModalProps) {
+  const tenantConfig = useTenant()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>(activeVibe || 'all')
   const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null)
+
+  const menu = getMenu(tenantConfig.id)
 
   if (!isOpen) return null
 
@@ -31,11 +35,11 @@ export default function FullMenuModal({ isOpen, onClose, lang, activeVibe }: Ful
     { id: 'desserts', label: lang === 'en' ? 'Desserts' : lang === 'ru' ? 'Десерты' : 'حلويات' }
   ]
 
-  const filteredMenu = fullMenu.filter(item => {
+  const filteredMenu = menu.filter(item => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory
     const matchesSearch = searchQuery === '' || 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.nameRu.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.nameRu && item.nameRu.toLowerCase().includes(searchQuery.toLowerCase())) ||
       item.desc.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && matchesSearch
   })

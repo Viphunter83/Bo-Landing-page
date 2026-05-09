@@ -38,14 +38,14 @@ export interface OrderData {
     promoCode?: string | null;
 }
 
-export const createOrder = async (order: OrderData) => {
+export const createOrder = async (order: OrderData, tenantId?: string) => {
     if (!db) {
         console.warn('Firestore is not initialized. Order not saved to DB.');
         return null;
     }
 
     try {
-        const docRef = await addDoc(getTenantCollection('orders'), {
+        const docRef = await addDoc(getTenantCollection('orders', tenantId), {
             ...order,
             type: order.type || 'dine_in', // Default
             createdAt: serverTimestamp(),
@@ -65,7 +65,7 @@ export const createOrder = async (order: OrderData) => {
                     name: order.name,
                     orderTotal: totalVal,
                     promoCode: order.promoCode || undefined
-                });
+                }, tenantId);
             });
         }
 
@@ -77,11 +77,11 @@ export const createOrder = async (order: OrderData) => {
     }
 }
 
-export async function getOrders(startDate: Date, endDate: Date) {
+export async function getOrders(startDate: Date, endDate: Date, tenantId?: string) {
     if (!db) return []
 
     const q = query(
-        getTenantCollection('orders'),
+        getTenantCollection('orders', tenantId),
         where('createdAt', '>=', Timestamp.fromDate(startDate)),
         where('createdAt', '<=', Timestamp.fromDate(endDate)),
         orderBy('createdAt', 'desc')

@@ -1,7 +1,24 @@
 import { MetadataRoute } from 'next'
-import { tenantConfig } from './lib/config/tenant'
+import { headers } from 'next/headers'
+import { getTenantConfig } from './lib/firebase/tenant'
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const headersList = headers();
+  const tenantId = headersList.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+  const tenantConfig = await getTenantConfig(tenantId);
+  
+  if (!tenantConfig) {
+    return {
+        name: 'Universal Restaurant',
+        short_name: 'Restaurant',
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#000000',
+        theme_color: '#000000',
+        icons: [],
+    }
+  }
+
   return {
     name: tenantConfig.brand.name,
     short_name: tenantConfig.brand.name,
@@ -24,3 +41,4 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
   }
 }
+

@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { db } from '../../lib/firebase'
-import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, onSnapshot } from 'firebase/firestore'
 import confetti from 'canvas-confetti'
 import { Timer, AlertTriangle, CheckCircle, Gift } from 'lucide-react'
-import { tenantConfig } from '../../lib/config/tenant'
+import { useTenant } from '../../context/TenantContext'
 
 // Basic types for the page
 interface CouponData {
@@ -20,6 +20,7 @@ interface CouponData {
 }
 
 export default function OfferPage() {
+    const tenantConfig = useTenant()
     const params = useParams()
     const code = params.code as string
 
@@ -34,20 +35,13 @@ export default function OfferPage() {
     // Timer state for post-redemption countdown (5 mins)
     const [timeLeft, setTimeLeft] = useState<number | null>(null)
 
+    const currencySymbol = tenantConfig.localization.currency.symbol
+
     useEffect(() => {
         if (!code || !db) return
 
-        // Assume we need to find the doc ID first - BUT simplified: 
-        // In a real app we'd likely query by code to get ID, then listen to ID.
-        // For efficiency, let's create a server action or API to get ID by CODE.
-        // OR, just fetch once to find ID, then subscribe.
-
         const fetchAndSubscribe = async () => {
             try {
-                // We'll use our new API for safety or direct query if rules allow.
-                // Let's use direct query for now assuming public read on coupons (risky? maybe).
-                // Better: creating an internal API to get public coupon data.
-
                 const res = await fetch(`/api/marketing/coupon/get?code=${code}`)
                 const data = await res.json()
 
@@ -90,7 +84,7 @@ export default function OfferPage() {
             }
         }
 
-        fetchAndSubscribe() // cleaning up promise is hard here without helper, assume OK for now
+        fetchAndSubscribe() 
 
     }, [code])
 
@@ -110,7 +104,7 @@ export default function OfferPage() {
 
     const handleRedeem = async () => {
         if (!coupon) return
-        if (!confirm('Activating this coupon will start a 5-minute timer. Only do this in front of staff. Continue?')) return // Native confirm for speed
+        if (!confirm('Activating this coupon will start a 5-minute timer. Only do this in front of staff. Continue?')) return 
 
         setIsRedeeming(true)
         try {
@@ -126,7 +120,11 @@ export default function OfferPage() {
                     particleCount: 150,
                     spread: 70,
                     origin: { y: 0.6 },
-                    colors: ['#EF4444', '#FCD34D', '#FFFFFF'] // Red, Yellow, White
+                    colors: [
+                        `hsl(${tenantConfig.theme.tokens.primary})`,
+                        `hsl(${tenantConfig.theme.tokens.accent})`,
+                        '#FFFFFF'
+                    ] 
                 })
                 setJustRedeemed(true)
             } else {
@@ -251,7 +249,7 @@ export default function OfferPage() {
                                 <h2 className="text-sm font-bold uppercase tracking-widest" style={{ color: `hsl(${tenantConfig.theme.tokens.mutedForeground})` }}>You Received</h2>
                                 <div className="text-5xl font-black">
                                     {coupon.type === 'discount_percentage' ? `${coupon.value}% OFF` :
-                                        coupon.type === 'discount_fixed' ? `${tenantConfig.localization.currency.symbol}${coupon.value} OFF` :
+                                        coupon.type === 'discount_fixed' ? `${currencySymbol}${coupon.value} OFF` :
                                             coupon.value}
                                 </div>
                                 <p 

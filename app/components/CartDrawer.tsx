@@ -1,19 +1,22 @@
 'use client'
 
 import { useCart } from '../context/CartContext'
-import { X, Minus, Plus, ShoppingBag, Trash2, Send, Flame, Wallet, Gift } from 'lucide-react'
+import { X, Minus, Plus, ShoppingBag, Trash2, Flame, Wallet, Gift } from 'lucide-react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CONTACT_INFO } from '../data/contact'
 import CouponWallet from './CouponWallet'
 import { getCouponByCode } from '../lib/coupons'
 
 import { useState, useEffect } from 'react'
 import { createOrder } from '../lib/db/orders'
 import { DeliveryZone } from '../lib/types/delivery'
+import { useTenant } from '../context/TenantContext'
 
 export default function CartDrawer({ lang }: { lang: string }) {
+    const tenantConfig = useTenant()
     const { items, isOpen, toggleCart, updateQuantity, removeFromCart, total, isSurge, clearCart, tableNumber } = useCart()
+
+    const currencySymbol = tenantConfig.localization.currency.symbol
 
     // Phase 9.6 & 12: Delivery UI State
     const [orderType, setOrderType] = useState<'delivery' | 'pickup' | 'dine_in'>('delivery')
@@ -70,10 +73,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
     // Auto-Apply Referral Code
     useEffect(() => {
         if (isOpen && !promoCode && !appliedCouponId) {
-            const storedRef = localStorage.getItem('bo_referral_code')
+            const storedRef = localStorage.getItem(`${tenantConfig.id}_referral_code`)
             if (storedRef) {
                 setPromoCode(storedRef)
-                // Small delay to ensure state is ready or just call directly
                 applyPromo(storedRef)
             }
         }
@@ -98,25 +100,10 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
         const cleanCode = codeToCheck.trim().toUpperCase()
 
-        // Hardcoded Legacy Code
-        if (cleanCode === 'BOVIBE10') {
-            const discountValue = total * 0.10 // 10%
-            setDiscount(discountValue)
-            setPromoSuccess(lang === 'ru' ? 'Скидка 10% применена!' : '10% Discount Applied!')
-            return
-        }
-
-        // Hardcoded Marketing Deep Links
+        // Hardcoded Marketing Deep Links (Example)
         if (cleanCode === 'WELCOME50') {
-            setDiscount(50) // Fixed 50 AED
-            setPromoSuccess(lang === 'ru' ? 'Скидка 50 AED применена!' : '50 AED Discount Applied!')
-            return
-        }
-
-        if (cleanCode === 'SUMMER2025') {
-            const discountValue = total * 0.20 // 20%
-            setDiscount(discountValue)
-            setPromoSuccess(lang === 'ru' ? 'Скидка 20% применена!' : '20% Discount Applied!')
+            setDiscount(50)
+            setPromoSuccess(lang === 'ru' ? `Скидка 50 ${currencySymbol} применена!` : `50 ${currencySymbol} Discount Applied!`)
             return
         }
 
@@ -134,7 +121,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
             }
 
             if (coupon.minOrder && total < coupon.minOrder) {
-                setPromoError(lang === 'ru' ? `Мин. заказ: ${coupon.minOrder} AED` : `Min order: ${coupon.minOrder} AED`)
+                setPromoError(lang === 'ru' ? `Мин. заказ: ${coupon.minOrder} ${currencySymbol}` : `Min order: ${coupon.minOrder} ${currencySymbol}`)
                 return
             }
 
@@ -147,8 +134,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
             }
 
             setDiscount(discountValue)
-            setAppliedCouponId(coupon.id || null) // Track ID for redemption later
-            setPromoSuccess(`${coupon.value}${coupon.type === 'discount_percentage' ? '%' : ' AED'} OFF Applied!`)
+            setAppliedCouponId(coupon.id || null)
+            setPromoSuccess(`${coupon.value}${coupon.type === 'discount_percentage' ? '%' : ` ${currencySymbol}`} OFF Applied!`)
 
         } catch (e) {
             console.error(e)
@@ -156,14 +143,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
         }
     }
 
-    // Auto-recalculate discount if total changes (for percentage)
-    // Actually, simple approach: just reset if total changes? Or re-apply?
-    // For now, let's leave it.
-
     const finalTotal = Math.max(0, total + deliveryFee - discount)
 
     const [validationError, setValidationError] = useState<string | null>(null)
-
 
     const validateOrder = () => {
         setValidationError(null)
@@ -174,8 +156,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
             const zone = zones.find(z => z.id === selectedZoneId)
             if (zone && total < zone.minOrder) {
                 return lang === 'ru'
-                    ? `Мин. заказ: ${zone.minOrder} AED`
-                    : `Min order: ${zone.minOrder} AED`
+                    ? `Мин. заказ: ${zone.minOrder} ${currencySymbol}`
+                    : `Min order: ${zone.minOrder} ${currencySymbol}`
             }
         }
         if (email && !email.includes('@')) return lang === 'ru' ? 'Неверный Email' : 'Invalid email'
@@ -183,11 +165,9 @@ export default function CartDrawer({ lang }: { lang: string }) {
     }
 
     const sendOrderToAdmin = async (platform: 'WhatsApp' | 'Telegram') => {
-        // 1. Immediate Validation
         const error = validateOrder()
         if (error) {
             setValidationError(error)
-            // Auto-clear error after 3s
             setTimeout(() => setValidationError(null), 3000)
             return
         }
@@ -195,12 +175,10 @@ export default function CartDrawer({ lang }: { lang: string }) {
         setIsSubmitting(true)
 
         try {
-            // 2. Prepare Message
             const orderItems = items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join(platform === 'WhatsApp' ? '%0A' : '\n')
 
             let locationText = ''
             if (orderType === 'delivery') {
-                // Safe lookup
                 const zoneName = zones.find(z => z.id === selectedZoneId)?.name || 'Zone'
                 const addr = `📍 *Delivery to:* ${zoneName}, ${address} ${apartment ? `(Apt ${apartment})` : ''}`
                 locationText = platform === 'WhatsApp' ? `%0A${addr}` : `\n${addr}`
@@ -210,32 +188,28 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
             const paymentText = platform === 'WhatsApp' ? `%0A💳 Payment: ${paymentMethod}` : `\n💳 Payment: ${paymentMethod}`
 
-            let costsText = `Subtotal: ${total} AED`
+            let costsText = `Subtotal: ${total} ${currencySymbol}`
             if (deliveryFee > 0) {
-                costsText += platform === 'WhatsApp' ? `%0A🛵 Delivery: ${deliveryFee} AED` : `\n🛵 Delivery: ${deliveryFee} AED`
+                costsText += platform === 'WhatsApp' ? `%0A🛵 Delivery: ${deliveryFee} ${currencySymbol}` : `\n🛵 Delivery: ${deliveryFee} ${currencySymbol}`
             }
-            costsText += platform === 'WhatsApp' ? `%0A*Total: ${finalTotal} AED*` : `\n*Total: ${finalTotal} AED*`
+            costsText += platform === 'WhatsApp' ? `%0A*Total: ${finalTotal.toFixed(2)} ${currencySymbol}*` : `\n*Total: ${finalTotal.toFixed(2)} ${currencySymbol}*`
 
             const msgBody = orderItems + locationText + paymentText + (platform === 'WhatsApp' ? `%0A%0A${costsText}` : `\n\n${costsText}`)
-            const fullMsg = `Hi Bo! I would like to order:${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}${msgBody}${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}Please confirm! 🍜`
+            const fullMsg = `Hi ${tenantConfig.brand.name}! I would like to order:${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}${msgBody}${platform === 'WhatsApp' ? '%0A%0A' : '\n\n'}Please confirm! 🍜`
 
-            // 3. Open App IMMEDIATELY (Critical for iOS)
-            // We do NOT wait for anything else.
             if (platform === 'WhatsApp') {
-                window.open(`https://wa.me/${CONTACT_INFO.whatsapp}?text=${fullMsg}`, '_blank')
+                window.open(`https://wa.me/${tenantConfig.contact.whatsapp}?text=${fullMsg}`, '_blank')
             } else {
-                // Best effort copy, but don't block window.open
                 navigator.clipboard.writeText(fullMsg.replace(/%0A/g, '\n')).catch(() => { })
-                window.open(`https://t.me/${CONTACT_INFO.telegram}`, '_blank')
+                const tgUser = tenantConfig.contact.socials.telegram?.split('/').pop() || ''
+                window.open(`https://t.me/${tgUser}`, '_blank')
             }
 
-            // 4. Background Tasks (Deferred)
             setTimeout(() => {
-                // Parallel execution of non-critical tasks
                 const bgTasks = [
                     createOrder({
                         items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-                        total: `${finalTotal} AED`,
+                        total: `${finalTotal.toFixed(2)} ${currencySymbol}`,
                         platform,
                         status: 'new',
                         type: orderType,
@@ -258,7 +232,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                             name: 'Online Customer',
                             phone: platform,
                             items: items.map(i => `- ${i.quantity}x ${i.name} (${i.price})`).join('\n'),
-                            total: `${finalTotal} AED`,
+                            total: `${finalTotal.toFixed(2)} ${currencySymbol}`,
                             address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address} ${apartment}` : undefined,
                             paymentMethod,
                             deliveryFee
@@ -266,7 +240,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                     })
                 ]
 
-                // Email is optional check
                 if (email) {
                     bgTasks.push(fetch('/api/email/send', {
                         method: 'POST',
@@ -274,10 +247,10 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         body: JSON.stringify({
                             type: 'order',
                             to: email,
-                            subject: lang === 'ru' ? 'Ваш заказ в Bo Dubai 🍜' : 'Your Order at Bo Dubai 🍜',
+                            subject: lang === 'ru' ? `Ваш заказ в ${tenantConfig.brand.name} 🍜` : `Your Order at ${tenantConfig.brand.name} 🍜`,
                             data: {
                                 items: items.map(i => ({ name: lang === 'ru' ? i.nameRu : i.name, price: i.price, quantity: i.quantity })),
-                                total: `${finalTotal} AED`,
+                                total: `${finalTotal.toFixed(2)} ${currencySymbol}`,
                                 type: orderType,
                                 address: orderType === 'delivery' ? `${zones.find(z => z.id === selectedZoneId)?.name}, ${address}` : '',
                                 apartment,
@@ -287,25 +260,16 @@ export default function CartDrawer({ lang }: { lang: string }) {
                     }))
                 }
 
-                // TODO: Redeem Coupon if appliedCouponId exists
-                // (Optional for MVP: we mark it used when order is confirmed by Admin, 
-                // OR we accept that un-paid orders might consume status if we mark here. 
-                // Better: Admin marks it. Or we just trust user for now.)
-
                 Promise.allSettled(bgTasks).then(() => {
-                    console.log("Background tasks complete")
-                    // Clear cart for better UX
                     clearCart()
-                    toggleCart() // Close drawer
+                    toggleCart()
                 })
 
-                // Always reset UI state
                 setIsSubmitting(false)
             }, 1000)
 
         } catch (e) {
             console.error('Critical Error in Order Flow', e)
-            // Ensure we reset state even if main crash (unlikely due to try/catch)
             setIsSubmitting(false)
             setValidationError("System Error. Please try again.")
         }
@@ -315,7 +279,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
         <AnimatePresence>
             {isOpen && (
                 <>
-                    {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -324,7 +287,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-sm"
                     />
 
-                    {/* Drawer */}
                     <motion.div
                         initial={{ x: '100%' }}
                         animate={{ x: 0 }}
@@ -333,11 +295,10 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         className="fixed right-0 top-0 h-full w-full max-w-md bg-zinc-900 border-l border-zinc-800 z-[70] flex flex-col shadow-2xl"
                         data-testid="cart-drawer"
                     >
-                        {/* Header */}
                         <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md">
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                    <ShoppingBag className="text-yellow-500" />
+                                    <ShoppingBag style={{ color: `hsl(${tenantConfig.theme.tokens.primary})` }} />
                                     {lang === 'ru' ? 'Ваш заказ' : (lang === 'ar' ? 'طلبك' : 'Your Order')}
                                     <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-1 rounded-full">
                                         {items.length}
@@ -358,9 +319,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                 </div>
                             )}
 
-
-
-                            {/* Email Input */}
                             <div className="mb-4">
                                 <label htmlFor="email-input" className="sr-only">{lang === 'ru' ? "Ваш Email" : "Your Email"}</label>
                                 <input
@@ -369,15 +327,15 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     placeholder={lang === 'ru' ? "Ваш Email (для чека)" : "Your Email (for receipt)"}
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border placeholder:text-zinc-500"
+                                    className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none border placeholder:text-zinc-500"
+                                    style={{ borderColor: `hsl(${tenantConfig.theme.tokens.border})` }}
                                 />
                             </div>
 
-                            {/* Delivery Toggle / Table Info */}
                             <div className="bg-zinc-800 p-1 rounded-lg">
                                 {tableNumber ? (
-                                    <div className="py-2 px-3 text-center bg-yellow-500/10 border border-yellow-500/20 rounded-md">
-                                        <h3 className="text-yellow-500 font-bold flex items-center justify-center gap-2">
+                                    <div className="py-2 px-3 text-center rounded-md border" style={{ backgroundColor: `hsl(${tenantConfig.theme.tokens.primary} / 0.1)`, borderColor: `hsl(${tenantConfig.theme.tokens.primary} / 0.2)` }}>
+                                        <h3 className="font-bold flex items-center justify-center gap-2" style={{ color: `hsl(${tenantConfig.theme.tokens.primary})` }}>
                                             🍽️ Dine-in: Table #{tableNumber}
                                         </h3>
                                         <p className="text-zinc-400 text-xs">Ordering directly to your table</p>
@@ -401,14 +359,12 @@ export default function CartDrawer({ lang }: { lang: string }) {
                             </div>
                         </div>
 
-                        {/* Items */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             {items.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-4">
                                     <ShoppingBag size={48} className="opacity-20" />
                                     <p>{lang === 'ru' ? 'Корзина пуста' : (lang === 'ar' ? 'سلة التسوق فارغة' : 'Your cart is empty')}</p>
 
-                                    {/* Active Promo in Empty State */}
                                     {promoSuccess && (
                                         <motion.div
                                             initial={{ scale: 0.8, opacity: 0 }}
@@ -432,7 +388,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                     <h3 className="font-bold text-white text-sm">
                                                         {lang === 'ru' ? item.nameRu : (lang === 'ar' ? item.nameAr : item.name)}
                                                     </h3>
-                                                    <span className="text-yellow-500 font-bold text-sm">{item.price}</span>
+                                                    <span className="font-bold text-sm" style={{ color: `hsl(${tenantConfig.theme.tokens.primary})` }}>{item.price}</span>
                                                 </div>
                                                 <p className="text-xs text-zinc-400 mb-3 line-clamp-1">
                                                     {item.ingredients?.join(', ')}
@@ -468,7 +424,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                         </div>
                                     ))}
 
-                                    {/* Order Type Specific Inputs & Zones */}
                                     {orderType === 'delivery' && (
                                         <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4 animate-in slide-in-from-top-5 fade-in">
                                             <h3 className="font-bold text-white text-sm">
@@ -479,12 +434,12 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                 id="delivery-zone"
                                                 value={selectedZoneId}
                                                 onChange={e => setSelectedZoneId(e.target.value)}
-                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border"
+                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none border focus:border-primary"
                                             >
                                                 <option value="">{lang === 'ru' ? 'Выберите район' : 'Select Area'}</option>
                                                 {zones.map(z => (
                                                     <option key={z.id} value={z.id}>
-                                                        {z.name} - {z.fee} AED
+                                                        {z.name} - {z.fee} {currencySymbol}
                                                         {z.freeDeliveryThreshold && ` (Free > ${z.freeDeliveryThreshold})`}
                                                     </option>
                                                 ))}
@@ -500,7 +455,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                 placeholder={lang === 'ru' ? "Улица, здание..." : "Street, Building..."}
                                                 value={address}
                                                 onChange={e => setAddress(e.target.value)}
-                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border placeholder:text-zinc-500"
+                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none border placeholder:text-zinc-500"
                                             />
                                             <label htmlFor="apartment-input" className="sr-only">Apartment</label>
                                             <input
@@ -509,12 +464,11 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                 placeholder={lang === 'ru' ? "Квартира / Офис" : "Apartment / Office"}
                                                 value={apartment}
                                                 onChange={e => setApartment(e.target.value)}
-                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-yellow-500 border placeholder:text-zinc-500"
+                                                className="w-full bg-zinc-800 border-zinc-700 rounded-lg p-3 text-sm text-white focus:outline-none border placeholder:text-zinc-500"
                                             />
                                         </div>
                                     )}
 
-                                    {/* Promo Code Section */}
                                     <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4">
                                         <div className="flex justify-between items-center">
                                             <h3 className="font-bold text-white text-sm">
@@ -522,7 +476,8 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                             </h3>
                                             <button
                                                 onClick={() => setIsWalletOpen(true)}
-                                                className="text-yellow-500 text-xs flex items-center gap-1 hover:text-yellow-400 transition-colors"
+                                                className="text-xs flex items-center gap-1 hover:opacity-80 transition-colors"
+                                                style={{ color: `hsl(${tenantConfig.theme.tokens.primary})` }}
                                             >
                                                 <Wallet size={12} />
                                                 <span>{lang === 'ru' ? 'Мои Купоны' : 'My Wallet'}</span>
@@ -534,7 +489,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                 value={promoCode}
                                                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                                                 placeholder={lang === 'ru' ? 'Введите код' : 'Enter code'}
-                                                className="flex-1 bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500 border uppercase placeholder:normal-case"
+                                                className="flex-1 bg-zinc-800 border-zinc-700 rounded-lg p-2 text-sm text-white focus:outline-none border uppercase placeholder:normal-case"
                                             />
                                             <button
                                                 onClick={() => applyPromo()}
@@ -547,7 +502,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                         {promoSuccess && <p className="text-green-500 text-xs">{promoSuccess}</p>}
                                     </div>
 
-                                    {/* Payment Selector */}
                                     <div className="border-t border-zinc-800 pt-6 mt-6 space-y-4">
                                         <h3 className="font-bold text-white text-sm">
                                             {lang === 'ru' ? 'Способ оплаты' : 'Payment Method'}
@@ -555,25 +509,22 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                         <div className="grid grid-cols-3 gap-2">
                                             <button
                                                 onClick={() => setPaymentMethod('card')}
-                                                className={`py-2 px-1 text-xs font-bold rounded-md border transition-all ${paymentMethod === 'card'
-                                                    ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500'
-                                                    : 'bg-zinc-800 border-transparent text-zinc-400 hover:text-white'}`}
+                                                className="py-2 px-1 text-xs font-bold rounded-md border transition-all"
+                                                style={paymentMethod === 'card' ? { borderColor: `hsl(${tenantConfig.theme.tokens.primary})`, color: `hsl(${tenantConfig.theme.tokens.primary})`, backgroundColor: `hsl(${tenantConfig.theme.tokens.primary} / 0.1)` } : { backgroundColor: '#27272a', borderColor: 'transparent', color: '#a1a1aa' }}
                                             >
                                                 💳 {lang === 'ru' ? 'Карта' : 'Card'}
                                             </button>
                                             <button
                                                 onClick={() => setPaymentMethod('cash')}
-                                                className={`py-2 px-1 text-xs font-bold rounded-md border transition-all ${paymentMethod === 'cash'
-                                                    ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500'
-                                                    : 'bg-zinc-800 border-transparent text-zinc-400 hover:text-white'}`}
+                                                className="py-2 px-1 text-xs font-bold rounded-md border transition-all"
+                                                style={paymentMethod === 'cash' ? { borderColor: `hsl(${tenantConfig.theme.tokens.primary})`, color: `hsl(${tenantConfig.theme.tokens.primary})`, backgroundColor: `hsl(${tenantConfig.theme.tokens.primary} / 0.1)` } : { backgroundColor: '#27272a', borderColor: 'transparent', color: '#a1a1aa' }}
                                             >
                                                 💵 {lang === 'ru' ? 'Наличные' : 'Cash'}
                                             </button>
                                             <button
                                                 onClick={() => setPaymentMethod('online')}
-                                                className={`py-2 px-1 text-xs font-bold rounded-md border transition-all ${paymentMethod === 'online'
-                                                    ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500'
-                                                    : 'bg-zinc-800 border-transparent text-zinc-400 hover:text-white'}`}
+                                                className="py-2 px-1 text-xs font-bold rounded-md border transition-all"
+                                                style={paymentMethod === 'online' ? { borderColor: `hsl(${tenantConfig.theme.tokens.primary})`, color: `hsl(${tenantConfig.theme.tokens.primary})`, backgroundColor: `hsl(${tenantConfig.theme.tokens.primary} / 0.1)` } : { backgroundColor: '#27272a', borderColor: 'transparent', color: '#a1a1aa' }}
                                             >
                                                 🔗 {lang === 'ru' ? 'Ссылка' : 'Link'}
                                             </button>
@@ -583,29 +534,28 @@ export default function CartDrawer({ lang }: { lang: string }) {
                             )}
                         </div>
 
-                        {/* Footer */}
                         {items.length > 0 && (
                             <div className="p-6 border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-md space-y-4">
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center text-zinc-400 text-sm">
                                         <span>{lang === 'ru' ? 'Сумма' : 'Subtotal'}</span>
-                                        <span className="text-white">{total} AED</span>
+                                        <span className="text-white">{total} {currencySymbol}</span>
                                     </div>
                                     {deliveryFee > 0 && (
                                         <div className="flex justify-between items-center text-zinc-400 text-sm">
                                             <span>{lang === 'ru' ? 'Доставка' : 'Delivery'} ({zones.find(z => z.id === selectedZoneId)?.name})</span>
-                                            <span className="text-yellow-500">+{deliveryFee} AED</span>
+                                            <span style={{ color: `hsl(${tenantConfig.theme.tokens.primary})` }}>+{deliveryFee} {currencySymbol}</span>
                                         </div>
                                     )}
                                     {discount > 0 && (
                                         <div className="flex justify-between items-center text-zinc-400 text-sm">
                                             <span>{lang === 'ru' ? 'Скидка' : 'Discount'} ({promoCode})</span>
-                                            <span className="text-green-500">-{discount.toFixed(2)} AED</span>
+                                            <span className="text-green-500">-{discount.toFixed(2)} {currencySymbol}</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between items-center text-zinc-400 text-sm pt-2 border-t border-zinc-800">
                                         <span className="font-bold text-white">{lang === 'ru' ? 'Итого' : (lang === 'ar' ? 'المجموع' : 'Total')}</span>
-                                        <span className="text-white font-bold text-lg">{finalTotal.toFixed(2)} AED</span>
+                                        <span className="text-white font-bold text-lg">{finalTotal.toFixed(2)} {currencySymbol}</span>
                                     </div>
                                 </div>
 
@@ -618,7 +568,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     <button
                                         onClick={() => sendOrderToAdmin('WhatsApp')}
                                         disabled={isSubmitting}
-                                        className={`bg-green-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-500 transition-colors flex items-center justify-center gap-2 text-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className="bg-green-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-500 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <span>WhatsApp</span>
                                     </button>
@@ -626,7 +576,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                     <button
                                         onClick={async () => {
                                             if (paymentMethod === 'online') {
-                                                // Stripe Payment Flow
                                                 const error = validateOrder()
                                                 if (error) {
                                                     setValidationError(error)
@@ -636,18 +585,17 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                 setIsSubmitting(true)
 
                                                 try {
-                                                    // 1. Create Pending Order
                                                     const orderId = await createOrder({
                                                         items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
-                                                        total: `${finalTotal.toFixed(2)} AED`, // Update total
-                                                        subtotal: total, // Track original
-                                                        discount: discount > 0 ? discount : 0, // Zero instead of undefined
-                                                        promoCode: promoCode.trim().toUpperCase() || null, // Null is allowed
+                                                        total: `${finalTotal.toFixed(2)} ${currencySymbol}`,
+                                                        subtotal: total,
+                                                        discount: discount > 0 ? discount : 0,
+                                                        promoCode: promoCode.trim().toUpperCase() || null,
                                                         platform: 'Web',
                                                         status: 'new',
                                                         paymentStatus: 'pending',
                                                         type: orderType,
-                                                        table: tableNumber || null, // Null instead of undefined
+                                                        table: tableNumber || null,
                                                         address: orderType === 'delivery' ? address : null,
                                                         apartment: orderType === 'delivery' ? apartment : null,
                                                         paymentMethod: 'online',
@@ -658,7 +606,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
 
                                                     if (!orderId) throw new Error("Order creation failed")
 
-                                                    // 2. Initiate Checkout
                                                     const res = await fetch('/api/checkout', {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
@@ -669,7 +616,7 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                                 quantity: i.quantity
                                                             })),
                                                             deliveryFee,
-                                                            discount, // Pass discount
+                                                            discount,
                                                             zoneName: zones.find(z => z.id === selectedZoneId)?.name,
                                                             orderId,
                                                             email,
@@ -694,12 +641,12 @@ export default function CartDrawer({ lang }: { lang: string }) {
                                                     setIsSubmitting(false)
                                                 }
                                             } else {
-                                                // Telegram Flow
                                                 sendOrderToAdmin('Telegram')
                                             }
                                         }}
                                         disabled={isSubmitting}
-                                        className={`bg-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-400 transition-colors flex items-center justify-center gap-2 text-sm ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className="text-white font-bold py-3 px-4 rounded-xl hover:opacity-90 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{ backgroundColor: `hsl(${tenantConfig.theme.tokens.primary})` }}
                                     >
                                         <span>{paymentMethod === 'online' ? (lang === 'ru' ? 'Оплатить Онлайн' : 'Pay Now') : 'Telegram'}</span>
                                     </button>
@@ -708,7 +655,6 @@ export default function CartDrawer({ lang }: { lang: string }) {
                         )}
                     </motion.div>
 
-                    {/* Wallet Modal */}
                     <CouponWallet
                         isOpen={isWalletOpen}
                         onClose={() => setIsWalletOpen(false)}

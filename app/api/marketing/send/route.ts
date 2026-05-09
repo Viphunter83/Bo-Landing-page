@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { EmailTemplates } from '../../../lib/email/templates'
+import { getTenantConfig } from '../../../lib/firebase/tenant'
 
 const getResend = () => {
     const key = process.env.RESEND_API_KEY
@@ -23,7 +24,14 @@ export async function POST(req: Request) {
 
         // This is where you would query: const users = await db.users.where('preferences', 'contains', segment).get()
 
-        const html = EmailTemplates.marketingPromo(segment)
+        const tenantId = req.headers.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'bo_dubai'
+        const tenantConfig = await getTenantConfig(tenantId);
+        
+        if (!tenantConfig) {
+            return NextResponse.json({ error: 'Tenant not found' }, { status: 404 })
+        }
+
+        const html = EmailTemplates.marketingPromo(segment, tenantConfig)
 
         // DEMO: Send to a hardcoded email or just return success if we don't want to spam
         // But since user asked for it, let's try to send to a safe address if possible, or just log it.

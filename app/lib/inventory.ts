@@ -7,7 +7,7 @@ import { Ingredient, RecipeItem, InventoryTransaction } from './types/inventory'
  * Deducts stock for a given order.
  * This should be called AFTER payment confirmation.
  */
-export async function deductStockForOrder(orderId: string, orderItems: any[]) {
+export async function deductStockForOrder(orderId: string, orderItems: any[], tenantId?: string) {
     if (!orderItems || orderItems.length === 0) return
     const firestore = db
     if (!firestore) return
@@ -24,7 +24,7 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
 
             // NOTE: 'in' query limit is 10. If order has > 10 distinct items, we need batching.
             // For now assuming < 10 distinct items per order for MVP.
-            const menuQuery = query(getTenantCollection('menu_items'), where('name', 'in', itemNames))
+            const menuQuery = query(getTenantCollection('menu_items', tenantId), where('name', 'in', itemNames))
             const menuSnap = await getDocs(menuQuery)
 
             const menuMap = new Map()
@@ -53,7 +53,7 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
             // 3. Deduct Stock & Create Transactions
             const usageEntries = Array.from(ingredientUsage.entries())
             for (const [ingId, amount] of usageEntries) {
-                const ingRef = doc(getTenantCollection('ingredients'), ingId)
+                const ingRef = doc(getTenantCollection('ingredients', tenantId), ingId)
                 const ingDoc = await transaction.get(ingRef)
 
                 if (!ingDoc.exists()) continue
@@ -67,7 +67,7 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
                 })
 
                 // Create Transaction Record
-                const txRef = doc(getTenantCollection('inventory_transactions'))
+                const txRef = doc(getTenantCollection('inventory_transactions', tenantId))
                 transaction.set(txRef, {
                     ingredientId: ingId,
                     type: 'order',
@@ -89,12 +89,12 @@ export async function deductStockForOrder(orderId: string, orderItems: any[]) {
 /**
  * Checks if stock is sufficient for an order.
  */
-export async function checkAvailability(orderItems: any[]) {
+export async function checkAvailability(orderItems: any[], tenantId?: string) {
     if (!orderItems || orderItems.length === 0) return { success: true, missingItems: [] }
 
     try {
         const itemNames = orderItems.map(i => i.name)
-        const menuQuery = query(getTenantCollection('menu_items'), where('name', 'in', itemNames))
+        const menuQuery = query(getTenantCollection('menu_items', tenantId), where('name', 'in', itemNames))
         const menuSnap = await getDocs(menuQuery)
 
         const menuMap = new Map()
@@ -121,7 +121,7 @@ export async function checkAvailability(orderItems: any[]) {
         const usageEntries = Array.from(ingredientUsage.entries())
 
         for (const [ingId, amount] of usageEntries) {
-            const ingRef = doc(getTenantCollection('ingredients'), ingId)
+            const ingRef = doc(getTenantCollection('ingredients', tenantId), ingId)
             const ingDoc = await getDoc(ingRef)
 
             if (!ingDoc.exists()) continue

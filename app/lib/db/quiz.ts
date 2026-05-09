@@ -9,10 +9,10 @@ export interface QuizPreferences {
     email?: string; // Captured in Step 4
 }
 
-export const saveQuizResult = async (prefs: QuizPreferences, userId?: string) => {
+export const saveQuizResult = async (prefs: QuizPreferences, userId?: string, tenantId?: string) => {
     try {
         // 1. Always save the raw quiz result for analytics in the tenant-scoped collection
-        const quizResultsRef = getTenantCollection('quiz_results');
+        const quizResultsRef = getTenantCollection('quiz_results', tenantId);
         const docRef = await addDoc(quizResultsRef, {
             ...prefs,
             userId: userId || null,
@@ -23,7 +23,7 @@ export const saveQuizResult = async (prefs: QuizPreferences, userId?: string) =>
 
         // 2. If we have a logged-in user, Link results to their CRM Profile
         if (userId) {
-            const usersRef = getTenantCollection('users');
+            const usersRef = getTenantCollection('users', tenantId);
             const userRef = doc(usersRef, userId);
             await setDoc(userRef, {
                 vibe: prefs.mood,

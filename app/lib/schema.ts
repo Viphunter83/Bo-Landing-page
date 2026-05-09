@@ -1,40 +1,38 @@
-import { fullMenu } from '../data/menuData'
+import { MenuItem } from '../data/menuData'
+import { TenantConfig } from './config/tenant'
 
-export const getRestaurantSchema = () => {
-    const menuItems = fullMenu.map(item => ({
+export const getRestaurantSchema = (tenantConfig: TenantConfig, menu: MenuItem[]) => {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+    
+    const menuItems = menu.map(item => ({
         "@type": "MenuItem",
         "name": item.name,
         "description": item.desc,
-        "price": item.price.replace(' AED', ''),
-        "priceCurrency": "AED",
+        "price": item.price.replace(/[^0-9.]/g, ''),
+        "priceCurrency": tenantConfig.localization.currency.code,
         "image": item.image,
         "suitableForDiet": [
             item.vegetarian ? "https://schema.org/VegetarianDiet" : null,
             item.glutenFree ? "https://schema.org/GlutenFreeDiet" : null,
-            "https://schema.org/HalalDiet" // All items are Halal based on new concept
+            "https://schema.org/HalalDiet" 
         ].filter(Boolean)
     }))
 
     return {
         "@context": "https://schema.org",
         "@type": "Restaurant",
-        "name": "Bo",
-        "image": "https://bo-landing-page.vercel.app/og-image.jpg", // Placeholder
-        "description": "Authentic Vietnamese Cuisine in Dubai Festival City. Halal, Fresh, and Fusion.",
+        "name": tenantConfig.brand.name,
+        "image": tenantConfig.brand.ogImage,
+        "description": tenantConfig.brand.description.en,
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Market Island, Dubai Festival City Mall",
-            "addressLocality": "Dubai",
-            "addressCountry": "AE"
+            "streetAddress": tenantConfig.contact.address,
+            "addressLocality": tenantConfig.contact.city || (tenantConfig.id.includes('hcmc') ? "Ho Chi Minh City" : "Dubai"),
+            "addressCountry": tenantConfig.contact.countryCode || (tenantConfig.id.includes('hcmc') ? "VN" : "AE")
         },
-        "geo": {
-            "@type": "GeoCoordinates",
-            "latitude": "25.2212",
-            "longitude": "55.3521"
-        },
-        "telephone": "+971500000000",
+        "telephone": tenantConfig.contact.phone,
         "priceRange": "$$",
-        "servesCuisine": "Vietnamese",
+        "servesCuisine": tenantConfig.brand.cuisines || ["Vietnamese", "International"],
         "hasMenu": {
             "@type": "Menu",
             "name": "Main Menu",
@@ -42,12 +40,18 @@ export const getRestaurantSchema = () => {
                 {
                     "@type": "MenuSection",
                     "name": "Classic",
-                    "hasMenuItem": menuItems.filter(i => fullMenu.find(m => m.name === i.name)?.category === 'classic')
+                    "hasMenuItem": menuItems.filter(i => {
+                        const originalItem = menu.find(m => m.name === i.name);
+                        return originalItem?.category === 'classic';
+                    })
                 },
                 {
                     "@type": "MenuSection",
                     "name": "Spicy",
-                    "hasMenuItem": menuItems.filter(i => fullMenu.find(m => m.name === i.name)?.category === 'spicy')
+                    "hasMenuItem": menuItems.filter(i => {
+                        const originalItem = menu.find(m => m.name === i.name);
+                        return originalItem?.category === 'spicy';
+                    })
                 }
             ]
         },
@@ -55,8 +59,8 @@ export const getRestaurantSchema = () => {
             "@type": "OrderAction",
             "target": {
                 "@type": "EntryPoint",
-                "urlTemplate": "https://bo-landing-page.vercel.app",
-                "inLanguage": ["en", "ru", "ar"],
+                "urlTemplate": baseUrl,
+                "inLanguage": Array.isArray(tenantConfig.localization.languages) ? tenantConfig.localization.languages[0] : 'en',
                 "actionPlatform": [
                     "http://schema.org/DesktopWebPlatform",
                     "http://schema.org/IOSPlatform",
@@ -66,3 +70,4 @@ export const getRestaurantSchema = () => {
         }
     }
 }
+
