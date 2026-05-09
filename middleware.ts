@@ -16,15 +16,15 @@ export function middleware(request: NextRequest) {
         // Diagnostic Logging (visible in Vercel logs)
         // console.log(`[Middleware] Processing path: ${pathname}`);
 
-        // 1. Handle root path redirection to default language
+        // 1. Handle root path by rewriting to default language
         if (pathname === '/') {
             const tenantId = process.env.NEXT_PUBLIC_TENANT_ID
             // Luna HCMC defaults to Vietnamese, Bo Dubai defaults to English
             const defaultLang = tenantId === 'luna_hcmc' ? 'vn' : 'en'
             
             url.pathname = `/${defaultLang}`
-            console.log(`[Middleware] Redirecting / to /${defaultLang} for tenant ${tenantId}`);
-            return NextResponse.redirect(url)
+            // console.log(`[Middleware] Rewriting / to /${defaultLang} for tenant ${tenantId}`);
+            return NextResponse.rewrite(url)
         }
 
         // 2. Protect /admin routes (except login)
