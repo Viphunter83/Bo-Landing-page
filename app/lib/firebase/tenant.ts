@@ -10,6 +10,10 @@ export const getTenantConfig = unstable_cache(
     async (tenantId: string): Promise<TenantConfig | null> => {
         try {
             const db = getAdminDb();
+            if (!db) {
+                console.warn(`[Tenant] Firebase Admin DB not initialized for tenant: ${tenantId}. Using static fallback.`);
+                return tenantId === 'luna_hcmc' ? lunaConfig : boConfig;
+            }
             const doc = await db.collection('tenants').doc(tenantId).get();
             
             if (!doc.exists) {

@@ -1,7 +1,13 @@
 import * as admin from 'firebase-admin'
 
 function formatPrivateKey(key: string) {
-    return key.replace(/\\n/g, '\n')
+    if (!key) return undefined;
+    // Handle cases where the key might be wrapped in quotes or have escaped newlines
+    let formatted = key.replace(/\\n/g, '\n').replace(/"/g, '');
+    if (formatted.startsWith("'") && formatted.endsWith("'")) {
+        formatted = formatted.slice(1, -1);
+    }
+    return formatted;
 }
 
 export function initAdmin() {
@@ -11,44 +17,42 @@ export function initAdmin() {
         const privateKey = process.env.FIREBASE_PRIVATE_KEY
 
         if (projectId && clientEmail && privateKey) {
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId,
-                    clientEmail,
-                    privateKey: formatPrivateKey(privateKey),
-                }),
-            })
+            try {
+                admin.initializeApp({
+                    credential: admin.credential.cert({
+                        projectId,
+                        clientEmail,
+                        privateKey: formatPrivateKey(privateKey),
+                    }),
+                })
+                console.log(`[FirebaseAdmin] Initialized successfully for project: ${projectId}`);
+            } catch (error) {
+                console.error("[FirebaseAdmin] Initialization failed:", error);
+            }
         } else {
-            console.error("Firebase Admin Validation Failed. Missing keys:", {
-                projectId: !!projectId,
-                clientEmail: !!clientEmail,
-                privateKey: !!privateKey
-            })
+            console.warn("[FirebaseAdmin] Missing credentials for initialization. DB access will be unavailable.");
         }
     }
 }
 
-// Lazy getters to safely handle missing init during build time imports
+/**
+ * Safely get Firestore instance. Returns null if initialization failed.
+ */
 export const getAdminDb = () => {
     initAdmin()
-    // Check if app was initialized
-    if (!admin.apps.length) {
-        // Return a mock or throw tailored error?
-        // For build safety, if we just import this file but don't call it, we are fine.
-        // But `export const adminDb = admin.firestore()` executes immediately.
-        // So we MUST NOT export consts that call admin.* immediately.
-        throw new Error("Firebase Admin not initialized")
-    }
+    if (!admin.apps.length) return null;
     return admin.firestore()
 }
 
 export const getAdminAuth = () => {
     initAdmin()
+    if (!admin.apps.length) return null;
     return admin.auth()
 }
 
 export const getAdminMessaging = () => {
     initAdmin()
+    if (!admin.apps.length) return null;
     return admin.messaging()
 }
 
