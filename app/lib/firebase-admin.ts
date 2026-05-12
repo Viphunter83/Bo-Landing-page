@@ -36,23 +36,23 @@ export function initAdmin() {
 }
 
 /**
- * Safely get Firestore instance. Returns null if initialization failed.
+ * Safely get Firestore instance. Throws if initialization failed.
  */
 export const getAdminDb = () => {
     initAdmin()
-    if (!admin.apps.length) return null;
+    if (!admin.apps.length) throw new Error("[FirebaseAdmin] Firestore access failed: Admin SDK not initialized");
     return admin.firestore()
 }
 
 export const getAdminAuth = () => {
     initAdmin()
-    if (!admin.apps.length) return null;
+    if (!admin.apps.length) throw new Error("[FirebaseAdmin] Auth access failed: Admin SDK not initialized");
     return admin.auth()
 }
 
 export const getAdminMessaging = () => {
     initAdmin()
-    if (!admin.apps.length) return null;
+    if (!admin.apps.length) throw new Error("[FirebaseAdmin] Messaging access failed: Admin SDK not initialized");
     return admin.messaging()
 }
 
