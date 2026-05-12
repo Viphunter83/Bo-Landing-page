@@ -9,7 +9,19 @@ import { getTenantConfig } from './lib/firebase/tenant'
 
 export async function generateViewport(): Promise<Viewport> {
   const headersList = headers();
-  const tenantId = headersList.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+  const host = headersList.get('host') || '';
+  let tenantId = headersList.get('x-tenant-id');
+  
+  if (!tenantId) {
+    if (host.includes('luna')) {
+      tenantId = 'luna_hcmc';
+    } else if (host.includes('bo-dubai') || host.includes('bo-landing')) {
+      tenantId = 'bo_dubai';
+    } else {
+      tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+    }
+  }
+
   const tenantConfig = await getTenantConfig(tenantId);
   if (!tenantConfig) return {};
 
@@ -24,7 +36,19 @@ export async function generateViewport(): Promise<Viewport> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = headers();
-  const tenantId = headersList.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+  const host = headersList.get('host') || '';
+  let tenantId = headersList.get('x-tenant-id');
+  
+  if (!tenantId) {
+    if (host.includes('luna')) {
+      tenantId = 'luna_hcmc';
+    } else if (host.includes('bo-dubai') || host.includes('bo-landing')) {
+      tenantId = 'bo_dubai';
+    } else {
+      tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+    }
+  }
+
   const tenantConfig = await getTenantConfig(tenantId);
   
   if (!tenantConfig) {
@@ -103,7 +127,20 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   const headersList = headers();
-  const tenantId = headersList.get('x-tenant-id') || process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+  const host = headersList.get('host') || '';
+  let tenantId = headersList.get('x-tenant-id');
+  
+  if (!tenantId) {
+    // Fallback to hostname detection
+    if (host.includes('luna')) {
+      tenantId = 'luna_hcmc';
+    } else if (host.includes('bo-dubai') || host.includes('bo-landing')) {
+      tenantId = 'bo_dubai';
+    } else {
+      tenantId = process.env.NEXT_PUBLIC_TENANT_ID || 'luna_hcmc';
+    }
+  }
+
   const tenantConfig = await getTenantConfig(tenantId);
   
   if (!tenantConfig) {
